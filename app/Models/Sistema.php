@@ -20,7 +20,7 @@ class Sistema extends Model
     ];
 
     protected $fillable = [
-        'nombre', 'slug', 'categoria_id', 'modalidad', 'precio', 'acepta_demo', 'acepta_prueba', 'dias_prueba',
+        'nombre', 'slug', 'categoria_id', 'modalidad', 'precio', 'acepta_demo', 'acepta_prueba', 'dias_prueba', 'proximamente',
         'resumen', 'descripcion', 'icono', 'caracteristicas', 'tecnologias',
         'url_demo', 'imagen', 'imagen_oscura', 'destacado', 'visible', 'orden',
     ];
@@ -29,7 +29,7 @@ class Sistema extends Model
     {
         return [
             'destacado' => 'boolean', 'visible' => 'boolean', 'orden' => 'integer', 'visitas' => 'integer',
-            'acepta_demo' => 'boolean', 'acepta_prueba' => 'boolean', 'dias_prueba' => 'integer',
+            'acepta_demo' => 'boolean', 'acepta_prueba' => 'boolean', 'dias_prueba' => 'integer', 'proximamente' => 'boolean',
         ];
     }
 
@@ -61,6 +61,18 @@ class Sistema extends Model
     public function url(string $campo = 'imagen'): ?string
     {
         return Imagenes::url($this->{$campo});
+    }
+
+    /** Se puede pedir demostración (no en los que están en desarrollo). */
+    public function ofreceDemo(): bool
+    {
+        return $this->acepta_demo && ! $this->proximamente;
+    }
+
+    /** Se puede pedir una prueba con usuario y contraseña. */
+    public function ofrecePrueba(): bool
+    {
+        return $this->acepta_prueba && ! $this->proximamente;
     }
 
     /** @return array{0:string,1:string} [texto, color] */

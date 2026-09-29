@@ -26,10 +26,10 @@
                                 @endforeach
                             </div>
                         @endif
-                        @if ($sistema->acepta_prueba)
+                        @if ($sistema->ofrecePrueba())
                             <a class="btn btn-lg btn-success rounded-pill me-2 mb-2" href="?tipo=prueba#solicitar"><span class="fa-solid fa-flask me-2"></span>Probar {{ $sistema->dias_prueba }} días gratis</a>
                         @endif
-                        @if ($sistema->acepta_demo)
+                        @if ($sistema->ofreceDemo())
                             <a class="btn btn-lg btn-primary rounded-pill me-2 mb-2" href="?tipo=demo#solicitar">Solicitar una demo</a>
                         @endif
                         @if ($sistema->url_demo)
@@ -198,22 +198,28 @@
     @endif
 
     {{-- Solicitar demostración o prueba --}}
-    @if ($sistema->acepta_demo || $sistema->acepta_prueba)
+    @if ($sistema->ofreceDemo() || $sistema->ofrecePrueba() || $sistema->proximamente)
         <section class="py-10" id="solicitar">
             <div class="container-small px-lg-7 px-xxl-3">
                 <div class="row g-6 align-items-center">
                     <div class="col-lg-5 text-center text-lg-start">
+                        @if ($sistema->proximamente)
+                            <h5 class="text-info mb-3">Próximamente</h5>
+                            <h2 class="mb-3">Estamos terminando este sistema</h2>
+                            <p class="text-800 mb-5">Déjanos tus datos y te avisamos en cuanto esté disponible, con una demostración para tu institución.</p>
+                        @else
                         <h5 class="text-info mb-3">¿Te gustaría verlo funcionando?</h5>
-                        <h2 class="mb-3">{{ $sistema->acepta_prueba ? 'Pruébalo o pide una demostración' : 'Pide una demostración' }}</h2>
+                        <h2 class="mb-3">{{ $sistema->ofrecePrueba() ? 'Pruébalo o pide una demostración' : 'Pide una demostración' }}</h2>
                         <ul class="list-unstyled text-800 mb-5">
-                            @if ($sistema->acepta_demo)
+                            @if ($sistema->ofreceDemo())
                                 <li class="mb-2"><span class="fa-solid fa-display text-primary me-2"></span><strong>Demostración:</strong> te mostramos el sistema en una llamada y resolvemos tus dudas.</li>
                             @endif
-                            @if ($sistema->acepta_prueba)
+                            @if ($sistema->ofrecePrueba())
                                 <li class="mb-2"><span class="fa-solid fa-flask text-success me-2"></span><strong>Prueba de {{ $sistema->dias_prueba }} días:</strong> te enviamos por correo un usuario y contraseña para que lo uses tú mismo.</li>
                             @endif
                             <li class="mb-2"><span class="fa-solid fa-circle-check text-success me-2"></span>Sin compromiso de compra.</li>
                         </ul>
+                        @endif
                         @if ($wa = $cfg->enlaceWhatsapp('Hola, quiero información de '.$sistema->nombre.'.'))
                             <a class="btn btn-success" href="{{ $wa }}" target="_blank" rel="noopener"><span class="fa-brands fa-whatsapp me-2"></span>Prefiero WhatsApp</a>
                         @endif

@@ -148,6 +148,7 @@ class SistemaController extends Controller
             'dias_prueba' => (int) ($datos['dias_prueba'] ?? 15),
             'acepta_demo' => $request->boolean('acepta_demo'),
             'acepta_prueba' => $request->boolean('acepta_prueba'),
+            'proximamente' => $request->boolean('proximamente'),
         ]);
     }
 }

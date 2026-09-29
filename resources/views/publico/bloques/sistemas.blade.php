@@ -8,7 +8,7 @@
     $filas = $s->opcion('estilo') === 'filas';
     $cats = $datos['categorias']->whereIn('id', $lista->pluck('categoria_id')->filter()->unique());
     $modalidades = $lista->pluck('modalidad')->unique();
-    $conFiltros = $s->opcion('filtros') && ! $filas && ($cats->count() > 1 || $modalidades->count() > 1 || $lista->contains('acepta_prueba', true));
+    $conFiltros = $s->opcion('filtros') && ! $filas && ($cats->count() > 1 || $modalidades->count() > 1 || $lista->contains(fn ($x) => $x->ofrecePrueba()));
     $ilustraciones = ['34', '35', '36', '37'];
 @endphp
 <section class="py-10 {{ $fondo }}" id="s{{ $s->id }}">
@@ -48,14 +48,14 @@
                     @foreach ($modalidades as $mod)
                         <li class="nav-item"><a class="nav-link rounded-pill px-4" href="#" data-sgt-filtro="#catalogo{{ $s->id }}" data-valor=".mod-{{ $mod }}">{{ \App\Models\Sistema::MODALIDADES[$mod][0] ?? $mod }}</a></li>
                     @endforeach
-                    @if ($lista->contains('acepta_prueba', true))
+                    @if ($lista->contains(fn ($x) => $x->ofrecePrueba()))
                         <li class="nav-item"><a class="nav-link rounded-pill px-4" href="#" data-sgt-filtro="#catalogo{{ $s->id }}" data-valor=".con-prueba">Con prueba gratis</a></li>
                     @endif
                 </ul>
             @endif
             <div class="row g-4" id="catalogo{{ $s->id }}">
                 @foreach ($lista as $i => $sis)
-                    <div class="col-md-6 col-lg-4 cat-{{ $sis->categoria_id ?: 0 }} mod-{{ $sis->modalidad }} {{ $sis->acepta_prueba ? 'con-prueba' : '' }}" data-sgt-item>
+                    <div class="col-md-6 col-lg-4 cat-{{ $sis->categoria_id ?: 0 }} mod-{{ $sis->modalidad }} {{ $sis->ofrecePrueba() ? 'con-prueba' : '' }}" data-sgt-item>
                         <div class="card h-100 border-0 shadow-sm sgt-tarjeta overflow-hidden">
                             <a class="d-block bg-soft-primary dark__bg-1100 text-center" href="{{ route('sistema', $sis->slug) }}" style="aspect-ratio: 16/10; overflow: hidden;">
                                 @if ($sis->imagen)

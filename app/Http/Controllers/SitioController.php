@@ -84,21 +84,29 @@ class SitioController extends Controller
             'correo' => ['required', 'email', 'max:150'],
             'telefono' => ['nullable', 'string', 'max:30'],
             'sistema_id' => ['nullable', 'required_if:tipo,demo,prueba', 'exists:sistemas,id'],
-            'mensaje' => ['nullable', 'required_if:tipo,contacto', 'string', 'max:3000'],
+            // Un mensaje general necesita texto; si es sobre un sistema, se completa solo.
+            'mensaje' => ['nullable', Rule::requiredIf(fn () => $request->input('tipo') === 'contacto' && ! $request->filled('sistema_id')), 'string', 'max:3000'],
         ], [
             'sistema_id.required_if' => 'Elige el sistema que quieres conocer.',
-            'mensaje.required_if' => 'Escribe tu mensaje.',
+            'mensaje.required' => 'Escribe tu mensaje.',
         ], ['nombre' => 'nombre', 'correo' => 'correo', 'mensaje' => 'mensaje', 'telefono' => 'teléfono']);
 
         $sistema = isset($datos['sistema_id']) ? Sistema::query()->find($datos['sistema_id']) : null;
         // Una prueba solo se pide si el sistema la ofrece; si no, queda como demostración.
-        if ($datos['tipo'] === 'prueba' && ! $sistema?->acepta_prueba) {
+        if ($datos['tipo'] === 'prueba' && ! $sistema?->ofrecePrueba()) {
             $datos['tipo'] = 'demo';
         }
+        // Un sistema en desarrollo no tiene demo: la solicitud queda como «avísenme cuando esté listo».
+        if ($sistema?->proximamente && $datos['tipo'] !== 'contacto') {
+            $datos['tipo'] = 'contacto';
+        }
         if (blank($datos['mensaje'] ?? null)) {
-            $datos['mensaje'] = $datos['tipo'] === 'prueba'
-                ? "Quiero probar {$sistema->nombre} por {$sistema->dias_prueba} días."
-                : "Quiero una demostración de {$sistema?->nombre}.";
+            $datos['mensaje'] = match (true) {
+                $datos['tipo'] === 'prueba' => "Quiero probar {$sistema->nombre} por {$sistema->dias_prueba} días.",
+                $datos['tipo'] === 'demo' => "Quiero una demostración de {$sistema?->nombre}.",
+                (bool) $sistema?->proximamente => "Avísenme cuando {$sistema->nombre} esté disponible.",
+                default => "Quiero información de {$sistema?->nombre}.",
+            };
         }
 
         $mensaje = MensajeContacto::query()->create($datos + ['ip' => $request->ip()]);

@@ -121,6 +121,10 @@
                             <input class="form-check-input" id="acepta_prueba" name="acepta_prueba" type="checkbox" value="1" @checked(old('acepta_prueba', $sistema->acepta_prueba)) />
                             <label class="form-check-label" for="acepta_prueba">Pueden pedir una prueba con usuario y contraseña</label>
                         </div>
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" id="proximamente" name="proximamente" type="checkbox" value="1" @checked(old('proximamente', $sistema->proximamente)) />
+                            <label class="form-check-label" for="proximamente">Próximamente (en desarrollo: sin demo ni prueba, solo «Avísame»)</label>
+                        </div>
                         <div class="input-group input-group-sm" style="max-width: 14rem">
                             <span class="input-group-text">Prueba de</span>
                             <input class="form-control" id="dias_prueba" name="dias_prueba" type="number" min="1" max="365" value="{{ $v('dias_prueba') ?: 15 }}" aria-label="Días de prueba" />

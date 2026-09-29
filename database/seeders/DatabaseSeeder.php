@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
         $this->sistemas();
         $this->servicios();
         $this->call(PaginasSeeder::class);
+        $this->call(CatalogoSeeder::class);
         Sitio::olvidar();
     }
 
