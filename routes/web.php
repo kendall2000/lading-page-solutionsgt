@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\CategoriaController;
+use App\Http\Controllers\Admin\ChatController as AdminChatController;
 use App\Http\Controllers\Admin\ClienteController;
 use App\Http\Controllers\Admin\ConfiguracionController;
 use App\Http\Controllers\Admin\CorreoController;
@@ -15,6 +16,7 @@ use App\Http\Controllers\Admin\SeccionController;
 use App\Http\Controllers\Admin\ServicioController;
 use App\Http\Controllers\Admin\SistemaController;
 use App\Http\Controllers\Admin\UsuarioController;
+use App\Http\Controllers\ChatController;
 use App\Http\Controllers\SitioController;
 use Illuminate\Support\Facades\Route;
 
@@ -23,6 +25,15 @@ Route::get('/', [SitioController::class, 'inicio'])->name('inicio');
 Route::get('sistemas/{sistema:slug}', [SitioController::class, 'sistema'])->name('sistema');
 Route::get('manuales/{manual:slug}', [SitioController::class, 'manual'])->name('manual');
 Route::post('contacto', [SitioController::class, 'contacto'])->middleware('throttle:8,10')->name('contacto');
+
+// Chat en vivo del visitante (widget). Se identifica con una cookie; ver ChatController.
+Route::prefix('chat')->name('chat.')->group(function () {
+    Route::get('estado', [ChatController::class, 'estado'])->middleware('throttle:60,1')->name('estado');
+    Route::post('iniciar', [ChatController::class, 'iniciar'])->middleware('throttle:5,10')->name('iniciar');
+    Route::get('mensajes', [ChatController::class, 'mensajes'])->middleware('throttle:120,1')->name('mensajes');
+    Route::post('mensajes', [ChatController::class, 'enviar'])->middleware('throttle:30,1')->name('enviar');
+    Route::post('auth', [ChatController::class, 'autorizar'])->middleware('throttle:60,1')->name('auth');
+});
 
 // Panel de administración.
 Route::middleware(['auth', 'sin-cache'])->prefix('admin')->name('admin.')->group(function () {
@@ -71,6 +82,14 @@ Route::middleware(['auth', 'sin-cache'])->prefix('admin')->name('admin.')->group
     Route::delete('correos/plantillas/{plantilla}', [CorreoController::class, 'destroy'])->name('correos.plantillas.destroy');
     Route::get('correos/plantillas/{plantilla}/vista-previa', [CorreoController::class, 'vistaPrevia'])->name('correos.plantillas.previa');
     Route::post('correos/plantillas/{plantilla}/probar', [CorreoController::class, 'probarPlantilla'])->middleware('throttle:10,1')->name('correos.plantillas.probar');
+
+    // Chat en vivo con visitantes.
+    Route::get('chat', [AdminChatController::class, 'index'])->name('chat.index');
+    Route::get('chat/resumen', [AdminChatController::class, 'resumen'])->name('chat.resumen');
+    Route::get('chat/{conversacion}/mensajes', [AdminChatController::class, 'mensajes'])->name('chat.mensajes');
+    Route::post('chat/{conversacion}/mensajes', [AdminChatController::class, 'responder'])->middleware('throttle:60,1')->name('chat.responder');
+    Route::post('chat/{conversacion}/cerrar', [AdminChatController::class, 'cerrar'])->name('chat.cerrar');
+    Route::delete('chat/{conversacion}', [AdminChatController::class, 'destroy'])->name('chat.destroy');
 
     Route::get('cuenta', [CuentaController::class, 'show'])->name('cuenta');
     Route::delete('cuenta/sesiones', [CuentaController::class, 'cerrarSesiones'])->middleware('throttle:6,1')->name('cuenta.sesiones');

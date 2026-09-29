@@ -17,6 +17,34 @@ services:
       # Logs y caché de Laravel entre rebuilds (las imágenes van a Contabo).
       - solutionsgt-storage:/var/www/html/storage
 
+  # Tiempo real del chat (Laravel Reverb, compatible con Pusher/Echo). Misma imagen, otro proceso.
+  # El sitio le envía los eventos por la red interna (REVERB_HOST=solutionsgt-reverb, REVERB_PORT=8080)
+  # y el navegador se conecta por el puerto público 8098 (REVERB_PUBLICO_HOST / REVERB_PUBLICO_PORT).
+  solutionsgt-reverb:
+    image: solutionsgt-php
+    container_name: solutionsgt-reverb
+    depends_on:
+      - solutionsgt-php
+    command: ["php", "artisan", "reverb:start", "--host=0.0.0.0", "--port=8080"]
+    ports:
+      - "8098:8080"
+    networks:
+      - red-external-network
+    restart: always
+    env_file:
+      - .env
+    environment:
+      # Las migraciones (si están activadas) solo las corre el contenedor del sitio.
+      RUN_MIGRATIONS: "false"
+    volumes:
+      - ./.env:/var/www/html/.env
+      - solutionsgt-storage:/var/www/html/storage
+    healthcheck:
+      test: ["CMD-SHELL", "php -r 'exit(@fsockopen(\"127.0.0.1\", 8080) ? 0 : 1);'"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
 volumes:
   solutionsgt-storage:
 

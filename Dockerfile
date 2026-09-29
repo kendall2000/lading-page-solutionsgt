@@ -28,6 +28,7 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
         bcmath \
         zip \
         exif \
+        pcntl \
         opcache
 
 # Composer

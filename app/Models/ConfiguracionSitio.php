@@ -21,7 +21,13 @@ class ConfiguracionSitio extends Model
         'nombre', 'eslogan', 'telefono', 'whatsapp', 'correo', 'horario',
         'facebook', 'instagram', 'linkedin', 'tiktok', 'youtube', 'github',
         'color_primario', 'meta_descripcion', 'logo', 'logo_oscuro', 'favicon',
+        'chat_activo', 'chat_titulo', 'chat_bienvenida',
     ];
+
+    protected function casts(): array
+    {
+        return ['chat_activo' => 'boolean'];
+    }
 
     public function url(string $campo): ?string
     {

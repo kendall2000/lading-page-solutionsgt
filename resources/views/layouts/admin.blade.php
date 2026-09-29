@@ -7,9 +7,11 @@
 <body>
 @php
     $mensajesNuevos = \App\Models\MensajeContacto::query()->where('estado', 'nuevo')->count();
+    $chatSinLeer = (int) \App\Models\Conversacion::query()->sum('no_leidos_admin');
     $menu = [
         'Panel' => [
             ['admin.inicio', 'admin.inicio', 'pie-chart', 'Inicio'],
+            ['admin.chat.index', 'admin.chat.*', 'message-circle', 'Chat en vivo'],
             ['admin.mensajes.index', 'admin.mensajes.*', 'inbox', 'Solicitudes y mensajes'],
         ],
         'Sitio web' => [
@@ -50,6 +52,9 @@
                                         <span class="nav-link-text-wrapper"><span class="nav-link-text">{{ $texto }}</span></span>
                                         @if ($ruta === 'admin.mensajes.index' && $mensajesNuevos > 0)
                                             <span class="badge ms-2 badge-phoenix badge-phoenix-primary nav-link-badge">{{ $mensajesNuevos }}</span>
+                                        @endif
+                                        @if ($ruta === 'admin.chat.index')
+                                            <span class="badge ms-2 badge-phoenix badge-phoenix-danger nav-link-badge {{ $chatSinLeer ? '' : 'd-none' }}" id="sgtBadgeChat">{{ $chatSinLeer }}</span>
                                         @endif
                                     </div>
                                 </a>
@@ -150,6 +155,77 @@
         </footer>
     </div>
 </main>
+{{-- Avisos del chat en vivo: toast + contador en cualquier pantalla del panel. --}}
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1090" id="sgtToasts"></div>
+@include('partials.echo')
+<script>
+    (function () {
+        var badge = document.getElementById('sgtBadgeChat');
+        var estado = document.getElementById('sgtEstadoConexion');
+        var total = {{ $chatSinLeer }};
+        var urlChat = @json(route('admin.chat.index'));
+        var urlResumen = @json(route('admin.chat.resumen'));
+        var abierta = document.getElementById('sgtConversacion');
+
+        function ponerTotal(n) {
+            total = Math.max(0, n);
+            badge.textContent = total;
+            badge.classList.toggle('d-none', total === 0);
+        }
+        function avisar(nombre, texto, id) {
+            var t = document.createElement('div');
+            t.className = 'toast align-items-center border-0 shadow';
+            t.setAttribute('role', 'alert');
+            t.innerHTML = '<div class="toast-header"><span class="fa-solid fa-comment-dots text-primary me-2"></span><strong class="me-auto">' + sgtEscapar(nombre) + '</strong><small>ahora</small>'
+                + '<button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Cerrar"></button></div>'
+                + '<a class="toast-body d-block text-900 text-decoration-none" href="' + urlChat + '?c=' + id + '">' + sgtEscapar(texto) + '</a>';
+            document.getElementById('sgtToasts').appendChild(t);
+            new bootstrap.Toast(t, { delay: 8000 }).show();
+            t.addEventListener('hidden.bs.toast', function () { t.remove(); });
+        }
+        function marcarConexion(enVivo) {
+            if (!estado) return;
+            estado.className = 'badge badge-phoenix ms-1 badge-phoenix-' + (enVivo ? 'success' : 'warning');
+            estado.textContent = enVivo ? 'En vivo' : 'Sin tiempo real: se actualiza cada pocos segundos';
+        }
+
+        // Tiempo real: canal privado del panel (autorizado con la sesión en /broadcasting/auth).
+        var echo = window.sgtPanelEcho = sgtCrearEcho(@json(url('/broadcasting/auth')));
+        if (echo) {
+            echo.private('chat.panel').listen('.mensaje.enviado', function (e) {
+                document.dispatchEvent(new CustomEvent('sgt:mensaje', { detail: e }));
+                var viendola = abierta && Number(abierta.dataset.id) === e.conversacion.id;
+                if (!viendola) {
+                    ponerTotal(total + 1);
+                    avisar(e.conversacion.nombre, e.mensaje.cuerpo, e.conversacion.id);
+                }
+                var item = document.querySelector('[data-conversacion="' + e.conversacion.id + '"]');
+                if (item) {
+                    item.querySelector('.sgt-ultimo').textContent = e.mensaje.cuerpo;
+                    var nl = item.querySelector('.sgt-no-leidos');
+                    if (!viendola) { nl.textContent = e.conversacion.no_leidos_admin; nl.classList.remove('d-none'); }
+                    item.parentNode.prepend(item);
+                }
+            });
+            var conexion = echo.connector.pusher.connection;
+            conexion.bind('state_change', function (s) { marcarConexion(s.current === 'connected'); });
+            marcarConexion(conexion.state === 'connected');
+        } else {
+            marcarConexion(false);
+        }
+
+        // Respaldo sin tiempo real: se consulta el total sin leer cada 20 segundos.
+        setInterval(function () {
+            if (echo && echo.connector.pusher.connection.state === 'connected') return;
+            sgtFetch(urlResumen).then(function (d) {
+                if (d.total > total && d.conversaciones.length && !abierta) {
+                    avisar(d.conversaciones[0].nombre, 'Tienes mensajes nuevos en el chat.', d.conversaciones[0].id);
+                }
+                ponerTotal(d.total);
+            }).catch(function () {});
+        }, 20000);
+    })();
+</script>
 @include('partials.scripts')
 </body>
 </html>

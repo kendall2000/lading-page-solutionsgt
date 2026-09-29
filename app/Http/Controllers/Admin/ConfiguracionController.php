@@ -33,11 +33,13 @@ class ConfiguracionController extends Controller
             'facebook' => $url, 'instagram' => $url, 'linkedin' => $url, 'tiktok' => $url, 'youtube' => $url, 'github' => $url,
             'color_primario' => ['nullable', 'regex:/^#[0-9a-fA-F]{6}$/'],
             'meta_descripcion' => ['nullable', 'string', 'max:300'],
+            'chat_titulo' => ['nullable', 'string', 'max:80'],
+            'chat_bienvenida' => ['nullable', 'string', 'max:300'],
             ...collect($imagenes)->mapWithKeys(fn ($c) => [$c => Imagenes::regla($c === 'favicon' ? 512 : 4096, $c === 'favicon' ? 'png,ico,jpg,jpeg,webp' : 'png,jpg,jpeg,webp')])->all(),
         ], ['color_primario.regex' => 'El color debe ser como #3874ff.'] + Imagenes::MENSAJES);
 
         $cfg = ConfiguracionSitio::query()->firstOrCreate([]);
-        $cfg->fill(collect($datos)->except($imagenes)->all())->save();
+        $cfg->fill(collect($datos)->except($imagenes)->all() + ['chat_activo' => $request->boolean('chat_activo')])->save();
 
         try {
             Imagenes::guardarCampos($request, $cfg, $imagenes, 'sitio');

@@ -42,6 +42,28 @@
                     </div>
                 </div>
 
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="d-flex flex-between-center mb-3">
+                            <h4 class="mb-0">Chat en vivo</h4>
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" id="chat_activo" name="chat_activo" type="checkbox" value="1" @checked(old('chat_activo', $cfg->chat_activo ?? true)) />
+                                <label class="form-check-label fw-semi-bold" for="chat_activo">Mostrar el chat en el sitio</label>
+                            </div>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-5">
+                                <label class="form-label" for="chat_titulo">Título de la ventana</label>
+                                <input class="form-control" id="chat_titulo" name="chat_titulo" value="{{ $campo('chat_titulo') }}" maxlength="80" placeholder="Chatea con nosotros" />
+                            </div>
+                            <div class="col-md-7">
+                                <label class="form-label" for="chat_bienvenida">Mensaje de bienvenida</label>
+                                <input class="form-control" id="chat_bienvenida" name="chat_bienvenida" value="{{ $campo('chat_bienvenida') }}" maxlength="300" placeholder="Escríbenos y te respondemos aquí mismo…" />
+                            </div>
+                        </div>
+                        <p class="form-text mb-0 mt-2">Las conversaciones se responden en <a href="{{ route('admin.chat.index') }}">Chat en vivo</a>. Si un visitante escribe y no estás conectado, te llega un correo a «Avisos a» (Correos).</p>
+                    </div>
+                </div>
             </div>
 
             <div class="col-xl-5">

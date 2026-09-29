@@ -20,7 +20,7 @@
         <meta property="og:image" content="{{ $imagenOg }}">
     @endif
     <style>
-        .sgt-whatsapp { position: fixed; right: 1.5rem; bottom: 1.5rem; z-index: 1030; width: 3.5rem; height: 3.5rem; border-radius: 50%; background: #25d366; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.75rem; box-shadow: 0 .5rem 1.5rem rgba(0,0,0,.2); transition: transform .2s; }
+        .sgt-whatsapp { position: fixed; left: 1.5rem; bottom: 2.5rem; z-index: 1030; width: 3.5rem; height: 3.5rem; border-radius: 50%; background: #25d366; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.75rem; box-shadow: 0 .5rem 1.5rem rgba(0,0,0,.2); transition: transform .2s; }
         .sgt-whatsapp:hover { color: #fff; transform: scale(1.08); }
         .sgt-icono { width: 3.5rem; height: 3.5rem; border-radius: 1rem; display: inline-flex; align-items: center; justify-content: center; font-size: 1.5rem; background: rgba(var(--phoenix-primary-rgb), .1); color: var(--phoenix-primary); flex-shrink: 0; }
         .sgt-icono-sm { width: 2.5rem; height: 2.5rem; border-radius: .75rem; font-size: 1.1rem; }
@@ -135,6 +135,10 @@
         </div>
     </section>
 </main>
+
+@if ($cfg->chat_activo)
+    @include('publico.partes.chat')
+@endif
 
 @if ($whatsapp)
     <a class="sgt-whatsapp" href="{{ $whatsapp }}" target="_blank" rel="noopener" title="Escríbeme por WhatsApp" aria-label="WhatsApp"><span class="fa-brands fa-whatsapp"></span></a>

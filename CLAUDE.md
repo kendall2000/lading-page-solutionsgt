@@ -62,6 +62,21 @@ restaurante solo sirvió de modelo inicial (estructura, módulo de Correos, Dock
   `nuevo_mensaje`, `confirmacion_contacto`, `recuperar_contrasena` (no se borran ni cambia su código).
 - Pedido del usuario (2026-09-28): **nada de configuración de correo quemada en el .env**.
 
+## Chat en vivo (visitante ↔ panel)
+
+- Widget flotante de la plantilla (`support-chat`) en todo el sitio (`publico/partes/chat`), bandeja en
+  `/admin/chat` (diseño `apps/chat.html`) y aviso (toast + contador) en todo el panel.
+- Tablas `conversaciones` (visitante identificado por cookie cifrada `chat_visitante`; en la base solo el
+  sha256 del token) y `mensajes_chat`. Guardar/enviar siempre con `App\Services\Chat`.
+- Tiempo real con **Laravel Reverb** (contenedor `solutionsgt-reverb`, puerto público 8098): evento
+  `MensajeEnviado` (ShouldBroadcastNow, sin cola) por canales privados `chat.conversacion.{id}` y `chat.panel`.
+  El panel se autoriza en `/broadcasting/auth` (`routes/channels.php`); el visitante en `POST /chat/auth`
+  comprobando su cookie. Si Reverb no responde, el mensaje queda guardado y ambos lados consultan cada pocos
+  segundos (respaldo). Echo y pusher-js compilados en `public/vendors` (sin npm).
+- `.env`: `REVERB_HOST/PORT` = cómo el sitio habla con Reverb (red interna); `REVERB_PUBLICO_*` = cómo se
+  conecta el navegador. Aviso de chat nuevo por correo con la plantilla `nuevo_chat`.
+- En pruebas el broadcaster es `null`: las JSON con cookie necesitan `withCredentials()`.
+
 ## Estructura
 
 - **Sitio armado por páginas** (pedido del usuario): `paginas` (menú, con submenú de un nivel vía `padre_id`;
