@@ -49,8 +49,8 @@ restaurante solo sirvió de modelo inicial (estructura, módulo de Correos, Dock
 
 ## Imágenes (Contabo)
 
-- Disco `contabo` (S3 compatible, `use_path_style_endpoint`), mismas credenciales que el restaurante,
-  mismo bucket, carpeta `CONTABO_CARPETA=solutionsgt`. Siempre con `App\Support\Imagenes` (subir, url, borrar).
+- Disco `contabo` (S3 compatible, `use_path_style_endpoint`) con **bucket propio** `<id>:lading-page-solutionsgt`
+  (`CONTABO_CARPETA` vacío). Siempre con `App\Support\Imagenes` (subir, url, borrar).
 - Rutas que empiezan con `assets/` son imágenes locales de la plantilla.
 
 ## Correos (nada en el .env)
