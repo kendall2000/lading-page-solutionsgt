@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Conversacion;
+use App\Rules\PocosEnlaces;
 use App\Services\Chat;
 use App\Services\Correos;
+use App\Support\Antispam;
 use App\Support\Sitio;
 use Illuminate\Broadcasting\BroadcastManager;
 use Illuminate\Http\JsonResponse;
@@ -12,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 /**
@@ -46,13 +49,17 @@ class ChatController extends Controller
     {
         abort_unless(Sitio::config()->chat_activo, 404);
         $datos = $request->validate([
-            'nombre' => ['required', 'string', 'max:120'],
+            'nombre' => ['required', 'string', 'max:120', new PocosEnlaces(0)],
             'correo' => ['required', 'email', 'max:150'],
             'telefono' => ['nullable', 'string', 'max:30'],
-            'mensaje' => ['required', 'string', 'max:'.Chat::MAXIMO],
+            'mensaje' => ['required', 'string', 'max:'.Chat::MAXIMO, new PocosEnlaces],
             'pagina' => ['nullable', 'string', 'max:255'],
             'empresa_web' => ['prohibited'], // campo trampa para robots
         ], [], ['nombre' => 'nombre', 'correo' => 'correo', 'mensaje' => 'mensaje']);
+        // Enviado sin pasar por el widget o en menos segundos de lo que tarda una persona.
+        if (Antispam::muyRapido($request->input('llegada'))) {
+            throw ValidationException::withMessages(['llegada' => Antispam::MENSAJE_RAPIDO]);
+        }
 
         $token = Str::random(48);
         $conversacion = Conversacion::query()->create([
@@ -84,7 +91,7 @@ class ChatController extends Controller
         if ($conversacion->estado === 'cerrada') {
             return response()->json(['message' => 'La conversación fue cerrada. Empieza un chat nuevo.', 'cerrada' => true], 409);
         }
-        $datos = $request->validate(['cuerpo' => ['required', 'string', 'max:'.Chat::MAXIMO]], [], ['cuerpo' => 'mensaje']);
+        $datos = $request->validate(['cuerpo' => ['required', 'string', 'max:'.Chat::MAXIMO, new PocosEnlaces]], [], ['cuerpo' => 'mensaje']);
 
         $mensaje = $this->chat->enviar($conversacion, 'visitante', $datos['cuerpo']);
 

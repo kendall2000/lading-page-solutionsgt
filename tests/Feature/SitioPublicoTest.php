@@ -91,7 +91,7 @@ class SitioPublicoTest extends TestCase
         Direccion::query()->create(['nombre' => 'Oficina central', 'direccion' => 'Zona 10', 'ciudad' => 'Guatemala', 'principal' => true, 'visible' => true]);
         $this->get('/contactenos')->assertSee('Oficina central')->assertSee('maps.google.com', false);
 
-        $this->from('/contactenos')->post('/contacto', [
+        $this->from('/contactenos')->post('/contacto', $this->antispam() + [
             'nombre' => 'Juan Pérez', 'correo' => 'juan@ejemplo.com', 'telefono' => '5555 5555', 'mensaje' => 'Quiero información.',
         ])->assertRedirectContains('#contacto')->assertSessionHas('contacto_ok', 'contacto');
 
@@ -103,7 +103,7 @@ class SitioPublicoTest extends TestCase
         $sistema = Sistema::query()->firstOrFail();
         $sistema->update(['acepta_prueba' => true, 'dias_prueba' => 10]);
 
-        $this->from("/sistemas/{$sistema->slug}")->post('/contacto', [
+        $this->from("/sistemas/{$sistema->slug}")->post('/contacto', $this->antispam() + [
             'tipo' => 'prueba', 'nombre' => 'Ana', 'correo' => 'ana@ejemplo.com', 'sistema_id' => $sistema->id, 'ancla' => 'solicitar',
         ])->assertRedirectContains('#solicitar')->assertSessionHas('contacto_ok', 'prueba');
 
@@ -117,16 +117,16 @@ class SitioPublicoTest extends TestCase
         $sistema = Sistema::query()->firstOrFail();
         $sistema->update(['acepta_prueba' => false]);
 
-        $this->from('/')->post('/contacto', ['tipo' => 'prueba', 'nombre' => 'Ana', 'correo' => 'ana@ejemplo.com', 'sistema_id' => $sistema->id]);
+        $this->from('/')->post('/contacto', $this->antispam() + ['tipo' => 'prueba', 'nombre' => 'Ana', 'correo' => 'ana@ejemplo.com', 'sistema_id' => $sistema->id]);
 
         $this->assertSame('demo', MensajeContacto::query()->firstOrFail()->tipo);
     }
 
     public function test_el_formulario_valida_los_datos(): void
     {
-        $this->from('/')->post('/contacto', ['nombre' => '', 'correo' => 'no-es-correo', 'mensaje' => ''])
+        $this->from('/')->post('/contacto', $this->antispam() + ['nombre' => '', 'correo' => 'no-es-correo', 'mensaje' => ''])
             ->assertSessionHasErrors(['nombre', 'correo', 'mensaje']);
-        $this->from('/')->post('/contacto', ['tipo' => 'demo', 'nombre' => 'Ana', 'correo' => 'ana@ejemplo.com'])
+        $this->from('/')->post('/contacto', $this->antispam() + ['tipo' => 'demo', 'nombre' => 'Ana', 'correo' => 'ana@ejemplo.com'])
             ->assertSessionHasErrors(['sistema_id']);
 
         $this->assertSame(0, MensajeContacto::query()->count());
@@ -134,7 +134,7 @@ class SitioPublicoTest extends TestCase
 
     public function test_los_robots_que_llenan_el_campo_trampa_no_guardan_nada(): void
     {
-        $this->from('/')->post('/contacto', [
+        $this->from('/')->post('/contacto', $this->antispam() + [
             'nombre' => 'Robot', 'correo' => 'robot@spam.com', 'mensaje' => 'spam', 'empresa_web' => 'http://spam',
         ])->assertRedirect();
 

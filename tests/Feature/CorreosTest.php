@@ -73,7 +73,7 @@ class CorreosTest extends TestCase
         Mail::fake();
         ConfiguracionCorreo::actual()->update(['avisos_a' => 'yo@ejemplo.com']);
 
-        $this->from('/')->post('/contacto', ['nombre' => 'Ana', 'correo' => 'ana@ejemplo.com', 'mensaje' => 'Hola'])->assertSessionHas('contacto_ok');
+        $this->from('/')->post('/contacto', $this->antispam() + ['nombre' => 'Ana', 'correo' => 'ana@ejemplo.com', 'mensaje' => 'Hola'])->assertSessionHas('contacto_ok');
 
         Mail::assertNothingSent();
         $this->assertDatabaseHas('mensajes_contacto', ['correo' => 'ana@ejemplo.com']);
@@ -85,7 +85,7 @@ class CorreosTest extends TestCase
         Mail::fake();
         $this->activarServidor();
 
-        $this->from('/')->post('/contacto', ['nombre' => 'Ana', 'correo' => 'ana@ejemplo.com', 'mensaje' => 'Quiero una demo'])->assertSessionHas('contacto_ok');
+        $this->from('/')->post('/contacto', $this->antispam() + ['nombre' => 'Ana', 'correo' => 'ana@ejemplo.com', 'mensaje' => 'Quiero una demo'])->assertSessionHas('contacto_ok');
 
         Mail::assertSent(CorreoPlantilla::class, 3);
         Mail::assertSent(CorreoPlantilla::class, fn ($m) => $m->hasTo('socio@ejemplo.com') && $m->hasReplyTo('ana@ejemplo.com') && str_contains($m->asunto, 'Ana'));

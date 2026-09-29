@@ -10,12 +10,15 @@ use App\Models\MensajeContacto;
 use App\Models\Pagina;
 use App\Models\Servicio;
 use App\Models\Sistema;
+use App\Rules\PocosEnlaces;
 use App\Services\Correos;
+use App\Support\Antispam;
 use App\Support\Sitio;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 /** Sitio público: páginas armadas con secciones, detalle de sistemas y manuales, y formulario de solicitudes. */
@@ -79,17 +82,22 @@ class SitioController extends Controller
         $request->mergeIfMissing(['tipo' => 'contacto']);
         $datos = $request->validate([
             'tipo' => ['required', Rule::in(array_keys(MensajeContacto::TIPOS))],
-            'nombre' => ['required', 'string', 'max:120'],
-            'empresa' => ['nullable', 'string', 'max:150'],
+            'nombre' => ['required', 'string', 'max:120', new PocosEnlaces(0)],
+            'empresa' => ['nullable', 'string', 'max:150', new PocosEnlaces(0)],
             'correo' => ['required', 'email', 'max:150'],
             'telefono' => ['nullable', 'string', 'max:30'],
             'sistema_id' => ['nullable', 'required_if:tipo,demo,prueba', 'exists:sistemas,id'],
             // Un mensaje general necesita texto; si es sobre un sistema, se completa solo.
-            'mensaje' => ['nullable', Rule::requiredIf(fn () => $request->input('tipo') === 'contacto' && ! $request->filled('sistema_id')), 'string', 'max:3000'],
+            'mensaje' => ['nullable', Rule::requiredIf(fn () => $request->input('tipo') === 'contacto' && ! $request->filled('sistema_id')), 'string', 'max:3000', new PocosEnlaces],
         ], [
             'sistema_id.required_if' => 'Elige el sistema que quieres conocer.',
             'mensaje.required' => 'Escribe tu mensaje.',
         ], ['nombre' => 'nombre', 'correo' => 'correo', 'mensaje' => 'mensaje', 'telefono' => 'teléfono']);
+
+        // Enviado sin pasar por el formulario o en menos segundos de lo que tarda una persona.
+        if (Antispam::muyRapido($request->input('llegada'))) {
+            throw ValidationException::withMessages(['formulario' => Antispam::MENSAJE_RAPIDO]);
+        }
 
         $sistema = isset($datos['sistema_id']) ? Sistema::query()->find($datos['sistema_id']) : null;
         // Una prueba solo se pide si el sistema la ofrece; si no, queda como demostración.
@@ -107,6 +115,13 @@ class SitioController extends Controller
                 (bool) $sistema?->proximamente => "Avísenme cuando {$sistema->nombre} esté disponible.",
                 default => "Quiero información de {$sistema?->nombre}.",
             };
+        }
+
+        // El mismo mensaje del mismo correo hace poco (doble clic, recarga o robot): no se repite ni se avisa otra vez.
+        $repetido = MensajeContacto::query()->where('correo', $datos['correo'])->where('mensaje', $datos['mensaje'])
+            ->where('created_at', '>=', now()->subMinutes(10))->exists();
+        if ($repetido) {
+            return $volver()->with('contacto_ok', $datos['tipo']);
         }
 
         $mensaje = MensajeContacto::query()->create($datos + ['ip' => $request->ip()]);

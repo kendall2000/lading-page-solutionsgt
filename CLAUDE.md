@@ -103,6 +103,10 @@ restaurante solo sirvió de modelo inicial (estructura, módulo de Correos, Dock
   `public/robots.txt`: Apache lo serviría antes que Laravel). Fuera de producción robots bloquea todo.
   El layout público pone canónica, Open Graph y datos de la empresa (JSON-LD); fichas extra por
   `@push('datos_estructurados')` (sistema y manual), siempre con `JSON_HEX_TAG`.
+- Antispam (sin servicios externos, elegido por el usuario): campo trampa `empresa_web`, límite de envíos,
+  marca de llegada cifrada `llegada` (`App\Support\Antispam`: sin marca o < 3 s = robot), regla
+  `PocosEnlaces` (0 en nombre/empresa, máx. 3 en mensajes) y contacto repetido en 10 min no se duplica.
+  En pruebas, los envíos llevan `$this->antispam() + [...]`.
 - Enlaces escritos en el panel: solo `https://`, `/`, `#`, `mailto:`, `tel:` (`Bloques::REGLA_ENLACE`).
 - Público: `SitioController`. Vistas en `resources/views/publico` + `layouts/publico` (menú desde `Sitio::menu()`).
 - Panel: `app/Http/Controllers/Admin/*`, vistas en `resources/views/admin` + `layouts/admin`.

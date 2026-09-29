@@ -47,7 +47,7 @@ class ChatTest extends TestCase
     /** Inicia un chat y devuelve el token de la cookie del visitante. */
     private function iniciar(string $correo = 'ana@ejemplo.com'): string
     {
-        $r = $this->postJson('/chat/iniciar', ['nombre' => 'Ana López', 'correo' => $correo, 'mensaje' => 'Hola, quiero info', 'pagina' => '/software'])
+        $r = $this->postJson('/chat/iniciar', $this->antispam() + ['nombre' => 'Ana López', 'correo' => $correo, 'mensaje' => 'Hola, quiero info', 'pagina' => '/software'])
             ->assertOk()->assertJsonPath('mensajes.0.cuerpo', 'Hola, quiero info');
 
         return $r->getCookie(ChatController::COOKIE)->getValue();
@@ -60,7 +60,7 @@ class ChatTest extends TestCase
         ConfiguracionSitio::query()->first()->update(['chat_activo' => false]);
         Sitio::olvidar();
         $this->get('/')->assertDontSee('id="sgtChat"', false);
-        $this->postJson('/chat/iniciar', ['nombre' => 'A', 'correo' => 'a@a.com', 'mensaje' => 'x'])->assertNotFound();
+        $this->postJson('/chat/iniciar', $this->antispam() + ['nombre' => 'A', 'correo' => 'a@a.com', 'mensaje' => 'x'])->assertNotFound();
     }
 
     public function test_el_visitante_inicia_chat_y_se_guarda_solo_el_hash_del_token(): void
@@ -199,8 +199,8 @@ class ChatTest extends TestCase
 
     public function test_validacion_y_campo_trampa(): void
     {
-        $this->postJson('/chat/iniciar', ['nombre' => '', 'correo' => 'x', 'mensaje' => ''])->assertJsonValidationErrors(['nombre', 'correo', 'mensaje']);
-        $this->postJson('/chat/iniciar', ['nombre' => 'Bot', 'correo' => 'b@b.com', 'mensaje' => 'spam', 'empresa_web' => 'x'])->assertJsonValidationErrors(['empresa_web']);
+        $this->postJson('/chat/iniciar', $this->antispam() + ['nombre' => '', 'correo' => 'x', 'mensaje' => ''])->assertJsonValidationErrors(['nombre', 'correo', 'mensaje']);
+        $this->postJson('/chat/iniciar', $this->antispam() + ['nombre' => 'Bot', 'correo' => 'b@b.com', 'mensaje' => 'spam', 'empresa_web' => 'x'])->assertJsonValidationErrors(['empresa_web']);
         $this->assertSame(0, Conversacion::query()->count());
     }
 

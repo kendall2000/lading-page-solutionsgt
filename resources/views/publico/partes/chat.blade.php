@@ -41,6 +41,7 @@
                     {{-- Formulario para empezar (sin conversación) --}}
                     <form class="mt-auto" id="sgtChatInicio" novalidate>
                         <div style="position:absolute; left:-10000px;" aria-hidden="true"><input type="text" name="empresa_web" tabindex="-1" autocomplete="off" /></div>
+                        <input type="hidden" name="llegada" value="{{ \App\Support\Antispam::marca() }}" />
                         <input class="form-control form-control-sm mb-2" name="nombre" placeholder="Tu nombre *" maxlength="120" required aria-label="Nombre" />
                         <input class="form-control form-control-sm mb-2" name="correo" type="email" placeholder="Tu correo *" maxlength="150" required aria-label="Correo" />
                         <textarea class="form-control form-control-sm mb-2" name="mensaje" rows="3" placeholder="¿En qué te ayudamos? *" maxlength="2000" required aria-label="Mensaje"></textarea>
@@ -203,7 +204,7 @@
             e.preventDefault();
             error.classList.add('d-none');
             var f = new FormData(inicio);
-            var datos = { nombre: f.get('nombre'), correo: f.get('correo'), mensaje: f.get('mensaje'), pagina: location.pathname };
+            var datos = { nombre: f.get('nombre'), correo: f.get('correo'), mensaje: f.get('mensaje'), pagina: location.pathname, llegada: f.get('llegada') };
             if (f.get('empresa_web')) datos.empresa_web = f.get('empresa_web');
             var btn = inicio.querySelector('button');
             btn.disabled = true;

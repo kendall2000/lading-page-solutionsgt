@@ -37,6 +37,7 @@
         <label for="empresa_web_{{ $ancla ?? 'c' }}">No llenar</label>
         <input type="text" id="empresa_web_{{ $ancla ?? 'c' }}" name="empresa_web" tabindex="-1" autocomplete="off" />
     </div>
+    <input type="hidden" name="llegada" value="{{ \App\Support\Antispam::marca() }}" />
     @if ($fijo?->proximamente)
         {{-- Sistema en desarrollo: solo «avísame cuando esté listo». --}}
         <input type="hidden" name="tipo" value="contacto" />

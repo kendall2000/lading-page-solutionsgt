@@ -53,7 +53,7 @@ class CatalogoTest extends TestCase
             ->assertDontSee('días gratis');
 
         // Aunque alguien fuerce «prueba», queda como aviso (contacto).
-        $this->from('/sistemas/sistema-escolar')->post('/contacto', [
+        $this->from('/sistemas/sistema-escolar')->post('/contacto', $this->antispam() + [
             'tipo' => 'prueba', 'nombre' => 'Colegio San José', 'correo' => 'direccion@colegio.edu.gt', 'sistema_id' => $escolar->id, 'ancla' => 'solicitar',
         ])->assertSessionHasNoErrors();
 
