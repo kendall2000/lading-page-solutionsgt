@@ -27,7 +27,8 @@ Independiente de los demás sistemas; toma como modelo `C:\laragon\www\sistema-r
 
 ## Plantilla de diseño (obligatoria)
 
-- Fuente: `C:\laragon\www\sistema-restaurante\public\Plantilla\public\` (el sitio público sale de
+- Fuente: `public/Plantilla/public/` de este proyecto (copia local idéntica a la del restaurante; fuera de git
+  y de Docker). El sitio público sale de
   `pages/landing/alternate.html`; el panel, del layout del restaurante).
 - Buscar la pantalla/componente parecido, copiar su HTML a Blade y traducir. Si hace falta un archivo nuevo
   de la plantilla, copiarlo a `public/assets/...` o `public/vendors/...` y enlazarlo con `asset()`.
