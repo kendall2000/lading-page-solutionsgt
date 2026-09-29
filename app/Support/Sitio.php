@@ -10,7 +10,8 @@ use Illuminate\Support\Facades\Cache;
 /** Configuración del sitio (una fila) en caché, menú de páginas y enlaces a secciones. */
 class Sitio
 {
-    private const CLAVE = 'configuracion_sitio';
+    // «v2»: la clave anterior guardaba el modelo serializado (ilegible en Laravel 13).
+    private const CLAVE = 'configuracion_sitio_v2';
 
     private static ?ConfiguracionSitio $actual = null;
 
@@ -24,13 +25,17 @@ class Sitio
         if (self::$actual) {
             return self::$actual;
         }
-        $cfg = rescue(
-            fn () => Cache::rememberForever(self::CLAVE, fn () => ConfiguracionSitio::query()->first()),
+        // En caché va solo el arreglo de columnas, no el modelo: Laravel 13 no deserializa objetos
+        // de la caché (cache.serializable_classes = false, contra ataques si se filtra APP_KEY).
+        $datos = rescue(
+            fn () => Cache::rememberForever(self::CLAVE, fn () => ConfiguracionSitio::query()->first()?->getAttributes()),
             null,
             false,
         );
 
-        return self::$actual = $cfg ?? new ConfiguracionSitio(['nombre' => 'Solutions GT']);
+        return self::$actual = is_array($datos)
+            ? (new ConfiguracionSitio)->newFromBuilder($datos)
+            : new ConfiguracionSitio(['nombre' => 'Solutions GT']);
     }
 
     /** Páginas del menú (primer nivel) con sus submenús. */
