@@ -10,13 +10,15 @@ use Illuminate\Broadcasting\BroadcastManager;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Str;
 use Throwable;
 
 /**
  * Chat en vivo del lado del VISITANTE (widget del sitio). El visitante no tiene
  * usuario: se identifica con un token aleatorio en una cookie cifrada y en la base
- * solo se guarda su hash. Todo responde JSON.
+ * solo se guarda su hash. Sin sesión, cuando soporte cierra la conversación el
+ * navegador la olvida (el panel conserva el historial). Todo responde JSON.
  */
 class ChatController extends Controller
 {
@@ -24,12 +26,16 @@ class ChatController extends Controller
 
     public function __construct(private readonly Chat $chat) {}
 
-    /** Conversación actual del visitante (si tiene) con su historial. */
+    /**
+     * Conversación actual del visitante con su historial. No marca nada como leído:
+     * eso lo pide el widget solo cuando la ventana está abierta (POST /chat/leer).
+     */
     public function estado(Request $request): JsonResponse
     {
         $conversacion = $this->conversacion($request);
-        if ($conversacion && $conversacion->no_leidos_visitante > 0) {
-            $conversacion->update(['no_leidos_visitante' => 0]);
+        if ($conversacion?->estado === 'cerrada') {
+            // Ya se cerró: este navegador la olvida y el próximo chat empieza de cero.
+            return response()->json($this->respuesta(null))->withoutCookie(self::COOKIE);
         }
 
         return response()->json($this->respuesta($conversacion));
@@ -75,6 +81,9 @@ class ChatController extends Controller
     {
         $conversacion = $this->conversacion($request);
         abort_unless($conversacion, 404, 'No hay una conversación abierta.');
+        if ($conversacion->estado === 'cerrada') {
+            return response()->json(['message' => 'La conversación fue cerrada. Empieza un chat nuevo.', 'cerrada' => true], 409);
+        }
         $datos = $request->validate(['cuerpo' => ['required', 'string', 'max:'.Chat::MAXIMO]], [], ['cuerpo' => 'mensaje']);
 
         $mensaje = $this->chat->enviar($conversacion, 'visitante', $datos['cuerpo']);
@@ -82,16 +91,50 @@ class ChatController extends Controller
         return response()->json(['mensaje' => $mensaje->paraCliente()], 201);
     }
 
-    /** Mensajes nuevos (respaldo por si el tiempo real no está disponible). */
+    /** Mensajes nuevos, hasta dónde leyó soporte y si se cerró (respaldo sin tiempo real). */
     public function mensajes(Request $request): JsonResponse
     {
         $conversacion = $this->conversacion($request);
         abort_unless($conversacion, 404);
-        if ($conversacion->no_leidos_visitante > 0) {
-            $conversacion->update(['no_leidos_visitante' => 0]);
-        }
 
-        return response()->json(['mensajes' => $this->chat->historial($conversacion, $request->integer('despues'))]);
+        return response()->json([
+            'mensajes' => $this->chat->historial($conversacion, $request->integer('despues')),
+            'leido_hasta' => $this->chat->leidoHasta($conversacion, 'visitante'),
+            'estado' => $conversacion->estado,
+        ]);
+    }
+
+    /** El visitante tiene la ventana del chat abierta: sus mensajes recibidos quedan leídos. */
+    public function leer(Request $request): JsonResponse
+    {
+        $conversacion = $this->conversacion($request);
+        abort_unless($conversacion, 404);
+        $this->chat->marcarLeidos($conversacion, 'visitante');
+
+        return response()->json(['ok' => true]);
+    }
+
+    /** Copia de la conversación al correo del visitante (antes de que su navegador la olvide). */
+    public function copia(Request $request, Correos $correos): JsonResponse
+    {
+        $conversacion = $this->conversacion($request);
+        abort_unless($conversacion, 404);
+
+        $enviado = $correos->enviar('copia_chat', $conversacion->correo, [
+            'nombre' => $conversacion->nombre,
+            'fecha' => $conversacion->created_at->timezone(config('app.timezone'))->format('d/m/Y'),
+            'conversacion' => $this->chat->transcripcion($conversacion),
+        ]);
+
+        return $enviado
+            ? response()->json(['message' => "Te enviamos la copia a {$conversacion->correo}."])
+            : response()->json(['message' => 'No pudimos enviar el correo en este momento. Intenta más tarde.'], 503);
+    }
+
+    /** Empezar de cero: este navegador olvida la conversación (el panel conserva el historial). */
+    public function salir(): JsonResponse
+    {
+        return response()->json(['ok' => true])->withCookie(Cookie::forget(self::COOKIE));
     }
 
     /**
@@ -136,6 +179,7 @@ class ChatController extends Controller
                 'estado' => $conversacion->estado,
             ] : null,
             'mensajes' => $conversacion ? $this->chat->historial($conversacion) : [],
+            'leido_hasta' => $conversacion ? $this->chat->leidoHasta($conversacion, 'visitante') : 0,
         ];
     }
 }

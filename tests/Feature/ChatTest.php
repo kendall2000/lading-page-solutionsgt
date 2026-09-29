@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Events\ConversacionCerrada;
 use App\Events\MensajeEnviado;
+use App\Events\MensajesLeidos;
 use App\Http\Controllers\ChatController;
 use App\Mail\CorreoPlantilla;
 use App\Models\ConfiguracionCorreo;
@@ -93,10 +95,43 @@ class ChatTest extends TestCase
             ->assertCreated()->assertJsonPath('mensaje.autor', 'admin');
         $this->assertSame($this->admin->id, $c->fresh()->atendida_por);
 
-        // El visitante recibe la respuesta (consulta de respaldo) y queda leída para él.
+        // El visitante recibe la respuesta (consulta de respaldo): consultar NO la marca como leída…
         $this->withCredentials()->withCookie(ChatController::COOKIE, $token)->getJson('/chat/mensajes?despues=2')
-            ->assertJsonCount(1, 'mensajes')->assertJsonPath('mensajes.0.cuerpo', 'Sí, 15 días');
+            ->assertJsonCount(1, 'mensajes')->assertJsonPath('mensajes.0.cuerpo', 'Sí, 15 días')
+            ->assertJsonPath('mensajes.0.leido', false)
+            ->assertJsonPath('leido_hasta', 2); // sus 2 mensajes ya los vio soporte (✓✓)
+        $this->assertSame(1, $c->fresh()->no_leidos_visitante);
+        // …solo cuando abre la ventana del chat.
+        $this->withCredentials()->withCookie(ChatController::COOKIE, $token)->postJson('/chat/leer')->assertOk();
         $this->assertSame(0, $c->fresh()->no_leidos_visitante);
+        $this->actingAs($this->admin)->getJson("/admin/chat/{$c->id}/mensajes")->assertJsonPath('leido_hasta', 3);
+    }
+
+    public function test_abrir_la_conversacion_en_el_panel_marca_visto_y_solo_con_la_pestana_visible(): void
+    {
+        $token = $this->iniciar();
+        $c = Conversacion::query()->firstOrFail();
+        $primero = $c->mensajes()->first();
+        $this->assertNull($primero->leido_en);
+
+        // El visitante ve «✓ Enviado» mientras soporte no la abra.
+        $this->withCredentials()->withCookie(ChatController::COOKIE, $token)->getJson('/chat/estado')->assertJsonPath('leido_hasta', 0);
+
+        // Consultar sin «leer» (pestaña en segundo plano) no marca nada.
+        $this->actingAs($this->admin)->getJson("/admin/chat/{$c->id}/mensajes");
+        $this->assertNull($primero->fresh()->leido_en);
+
+        $this->actingAs($this->admin)->getJson("/admin/chat/{$c->id}/mensajes?leer=1");
+        $this->assertNotNull($primero->fresh()->leido_en);
+        $this->withCredentials()->withCookie(ChatController::COOKIE, $token)->getJson('/chat/estado')->assertJsonPath('leido_hasta', $primero->id);
+    }
+
+    public function test_el_evento_de_lectura_va_al_canal_de_la_conversacion(): void
+    {
+        $evento = new MensajesLeidos(7, 'admin', 42);
+        $this->assertSame('private-chat.conversacion.7', $evento->broadcastOn()[0]->name);
+        $this->assertSame(['conversacion_id' => 7, 'lector' => 'admin', 'hasta_id' => 42], $evento->broadcastWith());
+        $this->assertSame('conversacion.cerrada', (new ConversacionCerrada(7))->broadcastAs());
     }
 
     public function test_un_visitante_no_puede_ver_ni_escuchar_la_conversacion_de_otro(): void
@@ -169,18 +204,43 @@ class ChatTest extends TestCase
         $this->assertSame(0, Conversacion::query()->count());
     }
 
-    public function test_cerrar_y_reabrir_al_escribir(): void
+    public function test_cerrar_avisa_al_visitante_ofrece_copia_y_su_navegador_la_olvida(): void
     {
+        Mail::fake();
+        ConfiguracionCorreo::actual()->update(['host' => 'smtp.ejemplo.com', 'puerto' => 587, 'remitente_correo' => 'no@ejemplo.com', 'is_active' => true]);
         $token = $this->iniciar();
         $c = Conversacion::query()->firstOrFail();
 
-        $this->actingAs($this->admin)->post("/admin/chat/{$c->id}/cerrar")->assertRedirect();
-        $this->assertSame('cerrada', $c->fresh()->estado);
-        $this->actingAs($this->admin)->get('/admin/chat?estado=cerrada')->assertOk()->assertSee('Ana López');
+        $this->actingAs($this->admin)->post("/admin/chat/{$c->id}/cerrar")->assertRedirect('/admin/chat');
+        $c->refresh();
+        $this->assertSame('cerrada', $c->estado);
+        $this->assertNotNull($c->cerrada_en);
+        // Queda un aviso en el historial, visible para ambos.
+        $this->assertSame('sistema', $c->mensajes()->get()->last()->autor);
 
-        $this->withCredentials()->withCookie(ChatController::COOKIE, $token)->postJson('/chat/mensajes', ['cuerpo' => 'Sigo aquí'])->assertCreated();
-        $this->assertSame('abierta', $c->fresh()->estado);
+        // Mientras tiene la página abierta, la consulta le dice que se cerró y puede pedir la copia.
+        $this->withCredentials()->withCookie(ChatController::COOKIE, $token)->getJson('/chat/mensajes?despues=1')
+            ->assertJsonPath('estado', 'cerrada')->assertJsonPath('mensajes.0.autor', 'sistema');
+        $this->withCredentials()->withCookie(ChatController::COOKIE, $token)->postJson('/chat/copia')->assertOk();
+        Mail::assertSent(CorreoPlantilla::class, fn ($m) => $m->hasTo('ana@ejemplo.com') && str_contains($m->cuerpo, 'Hola, quiero info'));
 
-        $this->actingAs($this->admin)->getJson('/admin/chat/resumen')->assertJsonPath('total', 1); // al cerrar se marcó como leída
+        // Ya no puede escribir en ella…
+        $this->withCredentials()->withCookie(ChatController::COOKIE, $token)->postJson('/chat/mensajes', ['cuerpo' => 'Sigo aquí'])
+            ->assertStatus(409)->assertJsonPath('cerrada', true);
+        // …y al volver, su navegador la olvida y empieza de cero (el panel conserva el historial).
+        $r = $this->withCredentials()->withCookie(ChatController::COOKIE, $token)->getJson('/chat/estado')->assertJsonPath('conversacion', null);
+        $this->assertTrue($r->headers->getCookies()[0]->isCleared());
+        $this->actingAs($this->admin)->get('/admin/chat?estado=cerrada')->assertOk()->assertSee('Ana López')->assertSee('Conversación cerrada el');
+
+        // Soporte no puede responder una cerrada.
+        $this->actingAs($this->admin)->postJson("/admin/chat/{$c->id}/mensajes", ['cuerpo' => 'hola'])->assertStatus(409);
+    }
+
+    public function test_empezar_un_chat_nuevo_borra_la_cookie(): void
+    {
+        $token = $this->iniciar();
+
+        $r = $this->withCredentials()->withCookie(ChatController::COOKIE, $token)->postJson('/chat/salir')->assertOk();
+        $this->assertTrue(collect($r->headers->getCookies())->first(fn ($c) => $c->getName() === ChatController::COOKIE)->isCleared());
     }
 }

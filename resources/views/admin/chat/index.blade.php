@@ -69,10 +69,12 @@
                             </div>
                         </div>
                         <div class="d-flex gap-2">
-                            <form method="POST" action="{{ route('admin.chat.cerrar', $actual) }}">
-                                @csrf
-                                <button class="btn btn-phoenix-secondary btn-sm" type="submit">{{ $actual->estado === 'cerrada' ? 'Reabrir' : 'Cerrar conversación' }}</button>
-                            </form>
+                            @if ($actual->estado === 'abierta')
+                                <form method="POST" action="{{ route('admin.chat.cerrar', $actual) }}" onsubmit="return confirm('¿Cerrar la conversación? Al visitante le aparecerá el aviso y podrá pedir una copia por correo; su navegador la olvidará.')">
+                                    @csrf
+                                    <button class="btn btn-phoenix-secondary btn-sm" type="submit"><span class="fa-solid fa-circle-xmark me-1"></span>Cerrar conversación</button>
+                                </form>
+                            @endif
                             <form method="POST" action="{{ route('admin.chat.destroy', $actual) }}" onsubmit="return confirm('¿Eliminar esta conversación y sus mensajes?')">
                                 @csrf
                                 @method('DELETE')
@@ -82,10 +84,14 @@
                     </div>
                     <div class="card-body p-3 p-sm-4 scrollbar flex-1" id="sgtMensajes" style="height: 55vh; overflow-y: auto;"></div>
                     <div class="card-footer p-3">
-                        <form class="d-flex gap-2 align-items-end" id="sgtResponder">
-                            <textarea class="form-control" name="cuerpo" rows="2" maxlength="2000" placeholder="Escribe tu respuesta… (Enter envía, Shift+Enter hace salto de línea)" aria-label="Respuesta" required></textarea>
-                            <button class="btn btn-primary" type="submit"><span class="fa-solid fa-paper-plane"></span></button>
-                        </form>
+                        @if ($actual->estado === 'cerrada')
+                            <p class="text-700 fs--1 mb-0 text-center"><span class="fa-solid fa-lock me-1"></span>Conversación cerrada el {{ $actual->cerrada_en?->timezone(config('app.timezone'))->format('d/m/Y H:i') }}. Queda como historial; el visitante ya no la ve.</p>
+                        @else
+                            <form class="d-flex gap-2 align-items-end" id="sgtResponder">
+                                <textarea class="form-control" name="cuerpo" rows="2" maxlength="2000" placeholder="Escribe tu respuesta… (Enter envía, Shift+Enter hace salto de línea)" aria-label="Respuesta" required></textarea>
+                                <button class="btn btn-primary" type="submit"><span class="fa-solid fa-paper-plane"></span></button>
+                            </form>
+                        @endif
                     </div>
                 </div>
             @else
@@ -102,19 +108,40 @@
                 var caja = document.getElementById('sgtConversacion');
                 var lista = document.getElementById('sgtMensajes');
                 var form = document.getElementById('sgtResponder');
-                var ultimoId = 0, vistos = {};
+                var ultimoId = 0, leidoHasta = {{ (int) $leidoHasta }}, vistos = {};
                 var iniciales = @json($actual->iniciales());
 
+                // ✓ Enviado / ✓✓ Visto en mis respuestas, según hasta dónde leyó el visitante.
+                function marcas() {
+                    lista.querySelectorAll('[data-mio]').forEach(function (el) {
+                        var visto = Number(el.dataset.mio) <= leidoHasta;
+                        el.innerHTML = visto ? '<span class="text-primary">✓✓ Visto</span>' : '✓ Enviado';
+                    });
+                }
                 function agregar(m) {
                     if (!m || vistos[m.id]) return;
                     vistos[m.id] = true;
                     ultimoId = Math.max(ultimoId, m.id);
-                    var mio = m.autor === 'admin';
-                    var html = mio
-                        ? '<div class="d-flex chat-message"><div class="d-flex mb-2 justify-content-end flex-1"><div class="w-100 w-xxl-75"><div class="d-flex flex-end-center"><div class="chat-message-content me-2"><div class="mb-1 sent-message-content light bg-primary rounded-2 p-3 text-white"><p class="mb-0" style="white-space:pre-line">' + sgtEscapar(m.cuerpo) + '</p></div></div></div><div class="text-end"><p class="mb-0 fs--2 text-600 fw-semi-bold">' + sgtEscapar((m.nombre ? m.nombre + ' · ' : '') + m.hora) + '</p></div></div></div></div>'
-                        : '<div class="d-flex chat-message"><div class="d-flex mb-2 flex-1"><div class="w-100 w-xxl-75"><div class="d-flex"><div class="avatar avatar-m me-3 flex-shrink-0"><div class="avatar-name rounded-circle"><span>' + sgtEscapar(iniciales) + '</span></div></div><div class="chat-message-content received me-2"><div class="mb-1 received-message-content border rounded-2 p-3"><p class="mb-0" style="white-space:pre-line">' + sgtEscapar(m.cuerpo) + '</p></div></div></div><p class="mb-0 fs--2 text-600 fw-semi-bold ms-7">' + sgtEscapar(m.hora) + '</p></div></div></div>';
+                    var html;
+                    if (m.autor === 'sistema') {
+                        html = '<div class="text-center my-3"><span class="badge badge-phoenix badge-phoenix-secondary fs--2 px-3 py-2">' + sgtEscapar(m.cuerpo) + ' · ' + sgtEscapar(m.hora) + '</span></div>';
+                    } else if (m.autor === 'admin') {
+                        html = '<div class="d-flex chat-message"><div class="d-flex mb-2 justify-content-end flex-1"><div class="w-100 w-xxl-75"><div class="d-flex flex-end-center"><div class="chat-message-content me-2"><div class="mb-1 sent-message-content light bg-primary rounded-2 p-3 text-white"><p class="mb-0" style="white-space:pre-line">' + sgtEscapar(m.cuerpo) + '</p></div></div></div><div class="text-end"><p class="mb-0 fs--2 text-600 fw-semi-bold">' + sgtEscapar((m.nombre ? m.nombre + ' · ' : '') + m.hora) + ' · <span data-mio="' + m.id + '"></span></p></div></div></div></div>';
+                    } else {
+                        html = '<div class="d-flex chat-message"><div class="d-flex mb-2 flex-1"><div class="w-100 w-xxl-75"><div class="d-flex"><div class="avatar avatar-m me-3 flex-shrink-0"><div class="avatar-name rounded-circle"><span>' + sgtEscapar(iniciales) + '</span></div></div><div class="chat-message-content received me-2"><div class="mb-1 received-message-content border rounded-2 p-3"><p class="mb-0" style="white-space:pre-line">' + sgtEscapar(m.cuerpo) + '</p></div></div></div><p class="mb-0 fs--2 text-600 fw-semi-bold ms-7">' + sgtEscapar(m.hora) + '</p></div></div></div>';
+                    }
                     lista.insertAdjacentHTML('beforeend', html);
+                    marcas();
                     lista.scrollTop = lista.scrollHeight;
+                }
+                function aplicar(d) {
+                    (d.mensajes || []).forEach(agregar);
+                    if (typeof d.leido_hasta === 'number' && d.leido_hasta > leidoHasta) { leidoHasta = d.leido_hasta; marcas(); }
+                }
+                // Solo se marca como leído si esta pestaña del navegador está a la vista.
+                function consultar() {
+                    var leer = document.visibilityState === 'visible' ? '&leer=1' : '';
+                    return sgtFetch(caja.dataset.mensajes + '?despues=' + ultimoId + leer).then(aplicar).catch(function () {});
                 }
 
                 @json($mensajes).forEach(agregar);
@@ -123,15 +150,24 @@
                 document.addEventListener('sgt:mensaje', function (e) {
                     if (e.detail.mensaje.conversacion_id === Number(caja.dataset.id)) {
                         agregar(e.detail.mensaje);
-                        sgtFetch(caja.dataset.mensajes + '?despues=' + ultimoId).catch(function () {}); // la marca como leída
+                        consultar();
                     }
                 });
+                // Cuando el visitante lee mis respuestas: ✓✓ Visto al instante.
+                if (window.sgtPanelEcho) {
+                    window.sgtPanelEcho.private(caja.dataset.canal).listen('.mensajes.leidos', function (e) {
+                        if (e.lector === 'visitante' && e.hasta_id > leidoHasta) { leidoHasta = e.hasta_id; marcas(); }
+                    });
+                }
+                // Al volver a esta pestaña, lo pendiente queda leído.
+                document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') consultar(); });
                 // Respaldo sin tiempo real.
                 setInterval(function () {
                     if (window.sgtPanelEcho && window.sgtPanelEcho.connector.pusher.connection.state === 'connected') return;
-                    sgtFetch(caja.dataset.mensajes + '?despues=' + ultimoId).then(function (d) { (d.mensajes || []).forEach(agregar); }).catch(function () {});
+                    consultar();
                 }, 6000);
 
+                if (!form) return; // conversación cerrada: solo lectura
                 var campo = form.querySelector('textarea');
                 campo.addEventListener('keydown', function (e) {
                     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
@@ -143,7 +179,7 @@
                     campo.value = '';
                     sgtFetch(caja.dataset.responder, { method: 'POST', body: { cuerpo: texto } }, window.sgtPanelEcho)
                         .then(function (d) { agregar(d.mensaje); })
-                        .catch(function () { campo.value = texto; alert('No se pudo enviar la respuesta.'); });
+                        .catch(function (err) { campo.value = texto; alert(err.status === 409 ? 'La conversación está cerrada.' : 'No se pudo enviar la respuesta.'); });
                 });
                 campo.focus();
             })();

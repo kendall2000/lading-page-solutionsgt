@@ -33,6 +33,9 @@ Route::prefix('chat')->name('chat.')->group(function () {
     Route::get('mensajes', [ChatController::class, 'mensajes'])->middleware('throttle:120,1')->name('mensajes');
     Route::post('mensajes', [ChatController::class, 'enviar'])->middleware('throttle:30,1')->name('enviar');
     Route::post('auth', [ChatController::class, 'autorizar'])->middleware('throttle:60,1')->name('auth');
+    Route::post('leer', [ChatController::class, 'leer'])->middleware('throttle:120,1')->name('leer');
+    Route::post('copia', [ChatController::class, 'copia'])->middleware('throttle:3,10')->name('copia');
+    Route::post('salir', [ChatController::class, 'salir'])->middleware('throttle:20,1')->name('salir');
 });
 
 // Panel de administración.

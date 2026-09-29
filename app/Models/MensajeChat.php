@@ -11,7 +11,12 @@ class MensajeChat extends Model
 
     protected $table = 'mensajes_chat';
 
-    protected $fillable = ['conversacion_id', 'autor', 'user_id', 'cuerpo'];
+    protected $fillable = ['conversacion_id', 'autor', 'user_id', 'cuerpo', 'leido_en'];
+
+    protected function casts(): array
+    {
+        return ['leido_en' => 'datetime'];
+    }
 
     public function conversacion(): BelongsTo
     {
@@ -32,6 +37,7 @@ class MensajeChat extends Model
             'autor' => $this->autor,
             'nombre' => $this->autor === 'admin' ? ($this->usuario?->name ? strtok($this->usuario->name, ' ') : 'Soporte') : null,
             'cuerpo' => $this->cuerpo,
+            'leido' => $this->leido_en !== null,
             'hora' => $this->created_at?->timezone(config('app.timezone'))->format('H:i'),
             'fecha' => $this->created_at?->toIso8601String(),
         ];

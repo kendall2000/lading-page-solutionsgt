@@ -13,7 +13,7 @@ class Conversacion extends Model
     protected $table = 'conversaciones';
 
     protected $fillable = [
-        'token_hash', 'nombre', 'correo', 'telefono', 'pagina', 'ip', 'user_agent', 'estado', 'atendida_por',
+        'token_hash', 'nombre', 'correo', 'telefono', 'pagina', 'ip', 'user_agent', 'estado', 'cerrada_en', 'atendida_por',
         'no_leidos_admin', 'no_leidos_visitante', 'ultimo_mensaje_en',
     ];
 
@@ -21,7 +21,7 @@ class Conversacion extends Model
 
     protected function casts(): array
     {
-        return ['ultimo_mensaje_en' => 'datetime', 'no_leidos_admin' => 'integer', 'no_leidos_visitante' => 'integer'];
+        return ['ultimo_mensaje_en' => 'datetime', 'cerrada_en' => 'datetime', 'no_leidos_admin' => 'integer', 'no_leidos_visitante' => 'integer'];
     }
 
     public function mensajes(): HasMany

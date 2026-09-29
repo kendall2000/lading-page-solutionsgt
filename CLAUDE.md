@@ -75,6 +75,13 @@ restaurante solo sirvió de modelo inicial (estructura, módulo de Correos, Dock
   segundos (respaldo). Echo y pusher-js compilados en `public/vendors` (sin npm).
 - `.env`: `REVERB_HOST/PORT` = cómo el sitio habla con Reverb (red interna); `REVERB_PUBLICO_*` = cómo se
   conecta el navegador. Aviso de chat nuevo por correo con la plantilla `nuevo_chat`.
+- **Lectura (✓ Enviado / ✓✓ Visto)**: `mensajes_chat.leido_en`. Solo se marca con la conversación a la vista:
+  visitante con la ventana abierta (`POST /chat/leer`), panel al abrirla o consultando con `leer=1` (pestaña
+  visible). `Chat::marcarLeidos()` transmite `MensajesLeidos`. Consultar mensajes nunca marca como leído.
+- **Cierre**: `Chat::cerrar()` deja un mensaje `autor=sistema`, transmite `ConversacionCerrada` y el widget ofrece
+  copia por correo (plantilla `copia_chat`) o chat nuevo. Sin cuentas de cliente, el navegador del visitante la
+  olvida (cookie borrada); el panel la conserva en «Cerradas» como solo lectura. Pendiente (pedido del usuario):
+  cuando existan cuentas de clientes, que puedan conservar y ver sus conversaciones.
 - En pruebas el broadcaster es `null`: las JSON con cookie necesitan `withCredentials()`.
 
 ## Estructura
