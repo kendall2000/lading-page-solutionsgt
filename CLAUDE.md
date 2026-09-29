@@ -1,7 +1,9 @@
 # Solutions GT — Landing page + panel
 
 Sitio público para presentar al usuario y sus sistemas, con un panel (`/admin`) para administrar todo.
-Independiente de los demás sistemas; toma como modelo `C:\laragon\www\sistema-restaurante`.
+**Sistema ajeno e independiente de `sistema-restaurante`** (lo recalcó el usuario): no comparte código, base,
+sesiones ni despliegue con él, y al trabajar aquí no se toca el restaurante ni se asumen sus reglas. El
+restaurante solo sirvió de modelo inicial (estructura, módulo de Correos, Docker); lo que se tomó ya vive aquí.
 `C:\laragon\www\landing-page` **no es del usuario**: no usarla como referencia.
 
 ## Cómo trabajar con el usuario
