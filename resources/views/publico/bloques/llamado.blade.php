@@ -1,7 +1,7 @@
 {{-- Llamado a la acción (recuadro destacado de la plantilla). --}}
 <section class="bg-soft-primary dark__bg-1000 pb-10 overflow-hidden" id="s{{ $s->id }}">
     <div class="container-small px-lg-7 px-xxl-3">
-        <div class="position-absolute w-100 h-100 start-0 end-0" style="bottom: -350px; transform: skewY(-8deg); background: linear-gradient(102.27deg, #38ABFF 4.69%, var(--phoenix-primary) 106.27%)"></div>
+        <div class="position-absolute w-100 h-100 start-0 end-0" style="bottom: -350px; transform: skewY(-8deg); background: linear-gradient(102.27deg, {{ $cfg->color_secundario ?: '#38ABFF' }} 4.69%, var(--phoenix-primary) 106.27%)"></div>
         <div class="bg-holder" style="background-image:url({{ asset('assets/img/bg/bg-left-24.png') }});background-size:auto;background-position:left center;"></div>
         <div class="bg-holder" style="background-image:url({{ asset('assets/img/bg/bg-right-24.png') }});background-size:auto;background-position:right center;"></div>
         <div class="row justify-content-center pt-8">

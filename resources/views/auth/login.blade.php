@@ -2,8 +2,8 @@
 
 @section('contenido')
     <div class="text-center mb-6">
-        <h3 class="text-1000">Panel de administración</h3>
-        <p class="text-700">Ingresa tus credenciales para continuar</p>
+        <h3 class="text-1000">{{ \App\Support\Sitio::config()->login_titulo ?: 'Panel de administración' }}</h3>
+        <p class="text-700">{{ \App\Support\Sitio::config()->login_subtitulo ?: 'Ingresa tus credenciales para continuar' }}</p>
     </div>
 
     @include('partials.alertas')

@@ -96,7 +96,11 @@ restaurante solo sirvió de modelo inicial (estructura, módulo de Correos, Dock
 - Público: `SitioController`. Vistas en `resources/views/publico` + `layouts/publico` (menú desde `Sitio::menu()`).
 - Panel: `app/Http/Controllers/Admin/*`, vistas en `resources/views/admin` + `layouts/admin`.
   Cualquier usuario activo puede entrar al panel (no hay roles).
-- Configuración del sitio en caché: `App\Support\Sitio::config()`; llamar `Sitio::olvidar()` al guardarla.
+- **Configuración del sistema** (`/admin/sistema/configuracion`, como el módulo del restaurante): pestañas
+  Empresa, Logo e íconos (logo, logo oscuro, favicon, fondo del acceso), Fotos de inicio (sube/quita fotos del
+  carrusel de la página de inicio e imagen de la portada), Colores (principal y secundario), Redes, Chat e
+  Inicio de sesión. En caché: `App\Support\Sitio::config()` (solo el arreglo de columnas; Laravel 13 no
+  deserializa objetos de la caché); llamar `Sitio::olvidar()` al guardarla.
 - En Blade, las variables de la vista hija pasan al layout: no usar `$titulo`, `$cfg`, `$base` como variables de ciclo.
 
 ## Despliegue (Docker)

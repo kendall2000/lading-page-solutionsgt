@@ -12,15 +12,17 @@ class ConfiguracionSitio extends Model
 
     /** Imágenes configurables: campo => [título, ayuda]. */
     public const IMAGENES = [
-        'logo' => ['Logo', 'Barra superior y pie de página. PNG con fondo transparente, horizontal.'],
-        'logo_oscuro' => ['Logo para modo oscuro', 'Versión clara del logo (opcional).'],
-        'favicon' => ['Ícono de la pestaña', 'Cuadrado, de 64 a 512 px.'],
+        'logo' => ['Logo', 'Menú del sitio, panel y correos. PNG con fondo transparente, horizontal.'],
+        'logo_oscuro' => ['Logo para modo oscuro', 'Versión clara del logo: pie de página y modo oscuro (opcional).'],
+        'favicon' => ['Ícono de la pestaña', 'El iconito del navegador y del chat. Cuadrado, de 64 a 512 px.'],
+        'fondo_login' => ['Fondo del inicio de sesión', 'Imagen de la mitad izquierda del acceso al panel. Mínimo 1200 px.'],
     ];
 
     protected $fillable = [
         'nombre', 'eslogan', 'telefono', 'whatsapp', 'correo', 'horario',
         'facebook', 'instagram', 'linkedin', 'tiktok', 'youtube', 'github',
-        'color_primario', 'meta_descripcion', 'logo', 'logo_oscuro', 'favicon',
+        'color_primario', 'color_secundario', 'meta_descripcion', 'logo', 'logo_oscuro', 'favicon', 'fondo_login',
+        'login_titulo', 'login_subtitulo', 'pie_texto',
         'chat_activo', 'chat_titulo', 'chat_bienvenida',
     ];
 

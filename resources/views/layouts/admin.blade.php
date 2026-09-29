@@ -21,9 +21,9 @@
             ['admin.servicios.index', 'admin.servicios.*', 'tag', 'Planes y precios'],
             ['admin.clientes.index', 'admin.clientes.*', 'users', 'Clientes'],
             ['admin.direcciones.index', 'admin.direcciones.*', 'map-pin', 'Direcciones'],
-            ['admin.sitio.edit', 'admin.sitio.*', 'sliders', 'Datos del sitio'],
         ],
         'Configuración' => [
+            ['admin.sitio.edit', 'admin.sitio.*', 'settings', 'Configuración del sistema'],
             ['admin.correos.index', 'admin.correos.*', 'send', 'Correos'],
             ['admin.usuarios.index', 'admin.usuarios.*', 'shield', 'Usuarios'],
         ],
@@ -149,7 +149,7 @@
         <footer class="footer position-absolute">
             <div class="row g-0 justify-content-between align-items-center h-100">
                 <div class="col-12 col-sm-auto text-center">
-                    <p class="mb-0 mt-2 mt-sm-0 text-900">{{ \App\Support\Sitio::nombre() }} &copy; {{ date('Y') }}</p>
+                    <p class="mb-0 mt-2 mt-sm-0 text-900">{{ \App\Support\Sitio::config()->pie_texto ?: \App\Support\Sitio::nombre() }} &copy; {{ date('Y') }}</p>
                 </div>
             </div>
         </footer>

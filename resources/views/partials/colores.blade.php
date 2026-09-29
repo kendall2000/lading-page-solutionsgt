@@ -1,6 +1,8 @@
-{{-- Color de marca elegido en «Datos del sitio»: reemplaza el azul de Phoenix (y su versión clara en modo oscuro). --}}
+{{-- Colores de «Configuración del sistema»: reemplazan el azul de Phoenix (y su versión clara en modo oscuro). --}}
 @php
-    $p = \App\Support\Sitio::config()->color_primario ?: '#3874ff';
+    $cfgColores = \App\Support\Sitio::config();
+    $p = $cfgColores->color_primario ?: '#3874ff';
+    $s = $cfgColores->color_secundario;
     $oscuro = \App\Support\Sitio::oscurecer($p, 0.15);
     $claro = \App\Support\Sitio::oscurecer($p, -0.45);
 @endphp
@@ -17,5 +19,13 @@
         .bg-primary { background-color: {{ $p }} !important; }
         .border-primary { border-color: {{ $p }} !important; }
         .nav-links .nav-link.active, .nav-links .nav-link:hover { color: var(--phoenix-primary); }
+    </style>
+@endif
+@if ($s && preg_match('/^#[0-9a-fA-F]{6}$/', $s))
+    {{-- Color secundario: degradados de títulos resaltados y recuadros destacados de la plantilla. --}}
+    <style>
+        .text-gradient-info, .gradient-text-primary { background: linear-gradient(90deg, {{ $s }}, {{ $p }}) !important; -webkit-background-clip: text !important; background-clip: text !important; -webkit-text-fill-color: transparent !important; }
+        .text-info { color: {{ $s }} !important; }
+        .border-info { border-color: {{ $s }} !important; }
     </style>
 @endif

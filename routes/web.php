@@ -39,8 +39,8 @@ Route::prefix('chat')->name('chat.')->group(function () {
 Route::middleware(['auth', 'sin-cache'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', InicioController::class)->name('inicio');
 
-    Route::get('sitio', [ConfiguracionController::class, 'edit'])->name('sitio.edit');
-    Route::put('sitio', [ConfiguracionController::class, 'update'])->name('sitio.update');
+    Route::get('sistema/configuracion', [ConfiguracionController::class, 'edit'])->name('sitio.edit');
+    Route::put('sistema/configuracion', [ConfiguracionController::class, 'update'])->name('sitio.update');
 
     Route::resource('sistemas', SistemaController::class)->except('show')->parameters(['sistemas' => 'sistema']);
     Route::post('sistemas/{sistema}/imagenes', [SistemaController::class, 'subirImagenes'])->name('sistemas.imagenes.store');

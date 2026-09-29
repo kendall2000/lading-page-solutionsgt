@@ -52,7 +52,7 @@ class PanelTest extends TestCase
             "/admin/sistemas/{$sistema->id}/edit", '/admin/servicios', '/admin/servicios/create',
             '/admin/servicios/'.Servicio::query()->first()->id.'/edit', '/admin/clientes', '/admin/clientes/create',
             "/admin/clientes/{$cliente->id}/edit", '/admin/direcciones', '/admin/direcciones/create',
-            "/admin/direcciones/{$direccion->id}/edit", '/admin/sitio', '/admin/usuarios', '/admin/usuarios/create',
+            "/admin/direcciones/{$direccion->id}/edit", '/admin/sistema/configuracion', '/admin/usuarios', '/admin/usuarios/create',
             "/admin/usuarios/{$this->admin->id}/edit", '/admin/cuenta',
         ];
         foreach ($rutas as $ruta) {
@@ -113,7 +113,7 @@ class PanelTest extends TestCase
 
     public function test_guardar_datos_del_sitio_se_ve_en_la_portada(): void
     {
-        $this->actingAs($this->admin)->put('/admin/sitio', [
+        $this->actingAs($this->admin)->put('/admin/sistema/configuracion', [
             'nombre' => 'Solutions GT Pro',
             'whatsapp' => '5555 1234',
             'color_primario' => '#0a7cff',
