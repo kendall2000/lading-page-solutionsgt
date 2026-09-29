@@ -99,6 +99,10 @@ restaurante solo sirvió de modelo inicial (estructura, módulo de Correos, Dock
   `tipo` contacto/demo/prueba; desde el panel se envían credenciales de prueba (clave cifrada) con la plantilla
   `credenciales_prueba`. El usuario de prueba se crea a mano en el sistema correspondiente.
 - Manuales: `manuales` (Markdown, PDF en Contabo, video YouTube/Vimeo), por sistema.
+- SEO (`SeoController`): `/sitemap.xml` y `/robots.txt` se arman solos con lo publicado (no crear
+  `public/robots.txt`: Apache lo serviría antes que Laravel). Fuera de producción robots bloquea todo.
+  El layout público pone canónica, Open Graph y datos de la empresa (JSON-LD); fichas extra por
+  `@push('datos_estructurados')` (sistema y manual), siempre con `JSON_HEX_TAG`.
 - Enlaces escritos en el panel: solo `https://`, `/`, `#`, `mailto:`, `tel:` (`Bloques::REGLA_ENLACE`).
 - Público: `SitioController`. Vistas en `resources/views/publico` + `layouts/publico` (menú desde `Sitio::menu()`).
 - Panel: `app/Http/Controllers/Admin/*`, vistas en `resources/views/admin` + `layouts/admin`.

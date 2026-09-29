@@ -235,4 +235,24 @@
             </div>
         </section>
     @endif
+
+    {{-- Ficha del sistema para Google. El precio es texto libre: solo se publica el de los gratuitos. --}}
+    @push('datos_estructurados')
+        @php
+            $ficha = array_filter([
+                '@context' => 'https://schema.org',
+                '@type' => 'SoftwareApplication',
+                'name' => $sistema->nombre,
+                'description' => $sistema->resumen,
+                'url' => route('sistema', $sistema->slug),
+                'image' => $sistema->url('imagen'),
+                'applicationCategory' => 'BusinessApplication',
+                'applicationSubCategory' => $sistema->categoria?->nombre,
+                'operatingSystem' => 'Web',
+                'offers' => $sistema->modalidad === 'gratis' ? ['@type' => 'Offer', 'price' => '0', 'priceCurrency' => 'GTQ'] : null,
+                'publisher' => ['@type' => 'Organization', 'name' => \App\Support\Sitio::nombre(), 'url' => route('inicio')],
+            ]);
+        @endphp
+        <script type="application/ld+json">{!! json_encode($ficha, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) !!}</script>
+    @endpush
 @endsection

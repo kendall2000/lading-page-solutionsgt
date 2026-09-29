@@ -70,4 +70,21 @@
             .sgt-manual th, .sgt-manual td { border: 1px solid var(--phoenix-gray-200); padding: .5rem; }
         </style>
     @endpush
+
+    @push('datos_estructurados')
+        @php
+            $ficha = array_filter([
+                '@context' => 'https://schema.org',
+                '@type' => 'TechArticle',
+                'headline' => $manual->titulo,
+                'description' => $manual->resumen,
+                'url' => route('manual', $manual->slug),
+                'inLanguage' => 'es',
+                'dateModified' => $manual->updated_at?->toAtomString(),
+                'about' => $manual->sistema ? ['@type' => 'SoftwareApplication', 'name' => $manual->sistema->nombre, 'url' => route('sistema', $manual->sistema->slug)] : null,
+                'publisher' => ['@type' => 'Organization', 'name' => \App\Support\Sitio::nombre(), 'url' => route('inicio')],
+            ]);
+        @endphp
+        <script type="application/ld+json">{!! json_encode($ficha, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) !!}</script>
+    @endpush
 @endsection

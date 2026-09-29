@@ -137,6 +137,7 @@ class SitioController extends Controller
             'datos' => $this->datos($secciones->pluck('tipo')->unique()),
             'titulo' => $pagina->es_inicio ? null : $pagina->titulo,
             'descripcion' => $pagina->meta_descripcion,
+            'imagenOg' => $pagina->urlEncabezado(),
         ]);
     }
 

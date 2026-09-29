@@ -9,16 +9,35 @@
         $descripcion = ($descripcion ?? null) ?: ($cfg->meta_descripcion ?: $cfg->eslogan);
         $whatsapp = $cfg->enlaceWhatsapp('Hola, vi tu sitio web y quiero información sobre tus sistemas.');
         $actual = url()->current();
+        // Sin imagen propia, al compartir el enlace se muestra el logo.
+        $imagenOg = ($imagenOg ?? null) ?: $cfg->url('logo');
+        // Datos de la empresa para Google (nombre, logo, contacto y redes).
+        $organizacion = array_filter([
+            '@context' => 'https://schema.org',
+            '@type' => 'Organization',
+            'name' => \App\Support\Sitio::nombre(),
+            'url' => route('inicio'),
+            'logo' => $cfg->url('logo'),
+            'description' => $cfg->meta_descripcion ?: $cfg->eslogan,
+            'email' => $cfg->correo,
+            'telephone' => $cfg->telefono ?: $cfg->whatsapp,
+            'sameAs' => array_values(array_column($cfg->redes(), 0)) ?: null,
+        ]);
     @endphp
     <meta name="description" content="{{ $descripcion }}">
+    <link rel="canonical" href="{{ $actual }}">
     <meta property="og:type" content="website">
+    <meta property="og:locale" content="es_GT">
     <meta property="og:site_name" content="{{ \App\Support\Sitio::nombre() }}">
     <meta property="og:title" content="{{ isset($titulo) ? $titulo.' · ' : '' }}{{ \App\Support\Sitio::nombre() }}">
     <meta property="og:description" content="{{ $descripcion }}">
     <meta property="og:url" content="{{ $actual }}">
-    @if ($imagenOg = ($imagenOg ?? null))
+    @if ($imagenOg)
         <meta property="og:image" content="{{ $imagenOg }}">
     @endif
+    <meta name="twitter:card" content="{{ $imagenOg ? 'summary_large_image' : 'summary' }}">
+    <script type="application/ld+json">{!! json_encode($organizacion, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) !!}</script>
+    @stack('datos_estructurados')
     <style>
         .sgt-whatsapp { position: fixed; left: 1.5rem; bottom: 2.5rem; z-index: 1030; width: 3.5rem; height: 3.5rem; border-radius: 50%; background: #25d366; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.75rem; box-shadow: 0 .5rem 1.5rem rgba(0,0,0,.2); transition: transform .2s; }
         .sgt-whatsapp:hover { color: #fff; transform: scale(1.08); }

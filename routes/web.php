@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\ServicioController;
 use App\Http\Controllers\Admin\SistemaController;
 use App\Http\Controllers\Admin\UsuarioController;
 use App\Http\Controllers\ChatController;
+use App\Http\Controllers\SeoController;
 use App\Http\Controllers\SitioController;
 use Illuminate\Support\Facades\Route;
 
@@ -25,6 +26,10 @@ Route::get('/', [SitioController::class, 'inicio'])->name('inicio');
 Route::get('sistemas/{sistema:slug}', [SitioController::class, 'sistema'])->name('sistema');
 Route::get('manuales/{manual:slug}', [SitioController::class, 'manual'])->name('manual');
 Route::post('contacto', [SitioController::class, 'contacto'])->middleware('throttle:8,10')->name('contacto');
+
+// Para buscadores (se arman solos con lo publicado).
+Route::get('sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
+Route::get('robots.txt', [SeoController::class, 'robots'])->name('robots');
 
 // Chat en vivo del visitante (widget). Se identifica con una cookie; ver ChatController.
 Route::prefix('chat')->name('chat.')->group(function () {
