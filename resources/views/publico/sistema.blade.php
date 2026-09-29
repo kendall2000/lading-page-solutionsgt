@@ -1,0 +1,178 @@
+@extends('layouts.publico', ['titulo' => $sistema->nombre, 'descripcion' => $sistema->resumen, 'imagenOg' => $sistema->url('imagen')])
+
+@section('contenido')
+    {{-- Encabezado del sistema --}}
+    <section class="pb-8 overflow-hidden">
+        <div class="hero-header-container-alternate position-relative">
+            <div class="container-small px-lg-7 px-xxl-3">
+                <nav class="mb-4 pt-6" aria-label="Ruta">
+                    <ol class="breadcrumb mb-0 fs--1">
+                        <li class="breadcrumb-item"><a href="{{ route('inicio') }}">Inicio</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('inicio') }}#sistemas">Sistemas</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">{{ $sistema->nombre }}</li>
+                    </ol>
+                </nav>
+                <div class="row align-items-center g-6">
+                    <div class="col-lg-6 text-center text-lg-start">
+                        <span class="sgt-icono-sistema mb-4"><span class="{{ $sistema->icono }}"></span></span>
+                        <h1 class="fs-4 fs-md-5 fs-xl-6 fw-black mb-4">{{ $sistema->nombre }}</h1>
+                        <p class="fs-0 mb-5">{{ $sistema->resumen }}</p>
+                        @if ($sistema->listaTecnologias())
+                            <div class="d-flex flex-wrap gap-2 justify-content-center justify-content-lg-start mb-5">
+                                @foreach ($sistema->listaTecnologias() as $tec)
+                                    <span class="badge badge-phoenix badge-phoenix-secondary">{{ $tec }}</span>
+                                @endforeach
+                            </div>
+                        @endif
+                        <a class="btn btn-lg btn-primary rounded-pill me-3 mb-2" href="{{ route('inicio', ['sistema' => $sistema->id]) }}#contacto">Solicitar una demo</a>
+                        @if ($sistema->url_demo)
+                            <a class="btn btn-link fs-0 p-0 mb-2" href="{{ $sistema->url_demo }}" target="_blank" rel="noopener">Probar la demo<span class="fa-solid fa-arrow-up-right-from-square ms-2 fs--1"></span></a>
+                        @endif
+                    </div>
+                    <div class="col-lg-6 text-center">
+                        @if ($sistema->imagen)
+                            <img class="w-100 sgt-captura {{ $sistema->imagen_oscura ? 'd-dark-none' : '' }}" src="{{ $sistema->url('imagen') }}" alt="{{ $sistema->nombre }}" />
+                            @if ($sistema->imagen_oscura)
+                                <img class="w-100 sgt-captura d-light-none" src="{{ $sistema->url('imagen_oscura') }}" alt="{{ $sistema->nombre }}" />
+                            @endif
+                        @else
+                            <img class="w-75 d-dark-none" src="{{ asset('assets/img/spot-illustrations/34.png') }}" alt="" />
+                            <img class="w-75 d-light-none" src="{{ asset('assets/img/spot-illustrations/34_2.png') }}" alt="" />
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {{-- Descripción y características --}}
+    <section class="pt-8 pb-10">
+        <div class="container-small px-lg-7 px-xxl-3">
+            <div class="row g-8">
+                @if ($sistema->descripcion)
+                    <div class="{{ $sistema->listaCaracteristicas() ? 'col-lg-5' : 'col-12' }}">
+                        <h5 class="text-info mb-3">¿Qué es?</h5>
+                        @foreach (\App\Support\Imagenes::lineas($sistema->descripcion) as $parrafo)
+                            <p class="text-800">{{ $parrafo }}</p>
+                        @endforeach
+                    </div>
+                @endif
+                @if ($sistema->listaCaracteristicas())
+                    <div class="{{ $sistema->descripcion ? 'col-lg-7' : 'col-12' }}">
+                        <h5 class="text-info mb-3">¿Qué incluye?</h5>
+                        <div class="row g-3">
+                            @foreach ($sistema->listaCaracteristicas() as $caract)
+                                <div class="col-sm-6">
+                                    <div class="d-flex align-items-start">
+                                        <span class="fa-solid fa-circle-check text-success mt-1 me-2"></span>
+                                        <span class="text-900">{{ $caract }}</span>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+            </div>
+        </div>
+    </section>
+
+    {{-- Capturas --}}
+    @if ($sistema->imagenes->isNotEmpty())
+        <section class="gallery pt-0">
+            <div class="container-small position-relative px-lg-7 px-xxl-3">
+                <div class="text-center mb-7">
+                    <h5 class="text-info mb-3">Capturas</h5>
+                    <h2 class="mb-2">Así se ve por dentro</h2>
+                </div>
+                <div class="row g-3" id="galeria_sistema">
+                    @foreach ($sistema->imagenes as $img)
+                        <div class="col-6 col-md-4">
+                            <a href="#!" data-bigpicture='{"gallery":"#galeria_sistema"}' data-bp="{{ $img->url() }}" title="{{ $img->titulo }}">
+                                <img class="rounded img-fluid w-100 sgt-captura" src="{{ $img->url() }}" alt="{{ $img->titulo ?: $sistema->nombre }}" loading="lazy" />
+                            </a>
+                            @if ($img->titulo)<p class="fs--1 text-700 text-center mt-2 mb-0">{{ $img->titulo }}</p>@endif
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </section>
+    @endif
+
+    {{-- Testimonios de clientes de este sistema --}}
+    @if ($clientes->isNotEmpty())
+        <section class="pb-10">
+            <div class="container-small px-lg-7 px-xxl-3">
+                <div class="text-center mb-7">
+                    <h5 class="text-info mb-3">Clientes</h5>
+                    <h2 class="mb-2">Quiénes ya lo usan</h2>
+                </div>
+                <div class="row g-4 justify-content-center">
+                    @foreach ($clientes as $t)
+                        <div class="col-md-6 col-lg-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    @for ($e = 1; $e <= 5; $e++)
+                                        <span class="{{ $e <= $t->calificacion ? 'fa fa-star text-warning' : 'fa-regular fa-star text-warning-300' }} fs--1"></span>
+                                    @endfor
+                                    <p class="fst-italic mt-3">“{{ $t->testimonio }}”</p>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="avatar avatar-l">
+                                            @if ($t->foto)
+                                                <img class="rounded-circle" src="{{ $t->url('foto') }}" alt="" />
+                                            @else
+                                                <div class="avatar-name rounded-circle"><span>{{ $t->iniciales() }}</span></div>
+                                            @endif
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0">{{ $t->contacto ?: $t->empresa }}</h6>
+                                            <p class="fs--1 text-700 mb-0">{{ collect([$t->cargo, $t->contacto ? $t->empresa : null])->filter()->implode(' · ') }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </section>
+    @endif
+
+    {{-- Otros sistemas --}}
+    @if ($otros->isNotEmpty())
+        <section class="bg-soft-primary dark__bg-1100 py-10">
+            <div class="container-small px-lg-7 px-xxl-3">
+                <div class="text-center mb-7">
+                    <h5 class="text-info mb-3">Más sistemas</h5>
+                    <h2 class="mb-2">También te puede interesar</h2>
+                </div>
+                <div class="row g-4 justify-content-center">
+                    @foreach ($otros as $o)
+                        <div class="col-md-6 col-lg-4">
+                            <a class="card h-100 text-decoration-none hover-actions-trigger" href="{{ route('sistema', $o->slug) }}">
+                                <div class="card-body">
+                                    <span class="sgt-icono-sistema mb-3"><span class="{{ $o->icono }}"></span></span>
+                                    <h4 class="text-1000 mb-2">{{ $o->nombre }}</h4>
+                                    <p class="text-700 fs--1 mb-3">{{ \Illuminate\Support\Str::limit($o->resumen, 140) }}</p>
+                                    <span class="fs--1 fw-bold text-primary">Ver detalle<span class="fa-solid fa-angle-right ms-2"></span></span>
+                                </div>
+                            </a>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </section>
+    @endif
+
+    <section class="py-10 text-center">
+        <div class="container-small px-lg-7 px-xxl-3">
+            <h2 class="mb-3">¿Te gustaría verlo funcionando?</h2>
+            <p class="mb-5 text-700">Agenda una demostración sin compromiso y vemos cómo se adapta a tu negocio.</p>
+            <div class="d-flex flex-wrap justify-content-center gap-3">
+                @if ($wa = $cfg->enlaceWhatsapp('Hola, quiero una demostración de '.$sistema->nombre.'.'))
+                    <a class="btn btn-lg btn-success" href="{{ $wa }}" target="_blank" rel="noopener"><span class="fa-brands fa-whatsapp me-2"></span>WhatsApp</a>
+                @endif
+                <a class="btn btn-lg btn-primary" href="{{ route('inicio', ['sistema' => $sistema->id]) }}#contacto"><span class="fa-solid fa-envelope me-2"></span>Enviar un mensaje</a>
+            </div>
+        </div>
+    </section>
+@endsection

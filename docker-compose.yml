@@ -1,0 +1,25 @@
+services:
+  solutionsgt-php:
+    image: solutionsgt-php
+    container_name: solutionsgt-php
+    build: .
+    ports:
+      # 8093 ERP, 8094 ONG, 8096 restaurante: este sitio usa 8097.
+      - "8097:80"
+    networks:
+      - red-external-network
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      # .env del host (para cambiar config sin rebuild). Nunca va dentro de la imagen.
+      - ./.env:/var/www/html/.env
+      # Logs y caché de Laravel entre rebuilds (las imágenes van a Contabo).
+      - solutionsgt-storage:/var/www/html/storage
+
+volumes:
+  solutionsgt-storage:
+
+networks:
+  red-external-network:
+    external: true

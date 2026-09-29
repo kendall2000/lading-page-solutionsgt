@@ -1,0 +1,40 @@
+# Nada de esto entra a la imagen.
+
+# Secretos: el .env se monta como volumen en docker-compose, nunca se copia a la imagen.
+.env
+.env.*
+!.env.example
+
+# Plantilla Phoenix comprada (~200 MB) con código y credenciales de otro sistema.
+public/Plantilla
+
+# Fotos subidas (van en su propio volumen) y enlace de storage.
+public/uploads
+public/storage
+
+# Dependencias y artefactos que se generan dentro del contenedor.
+vendor
+node_modules
+public/build
+public/hot
+bootstrap/cache/*.php
+storage/logs/*
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/app/*
+
+# Desarrollo, pruebas y herramientas.
+.git
+.github
+.claude
+.idea
+.vscode
+.phpunit.cache
+.phpunit.result.cache
+tests
+phpunit.xml
+*.log
+docker-compose.yml
+Dockerfile
+.dockerignore
