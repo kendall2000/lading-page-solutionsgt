@@ -47,6 +47,7 @@
                         <textarea class="form-control form-control-sm mb-2" name="mensaje" rows="3" placeholder="¿En qué te ayudamos? *" maxlength="2000" required aria-label="Mensaje"></textarea>
                         <div class="text-danger fs--1 mb-2 d-none" id="sgtChatError"></div>
                         <button class="btn btn-primary btn-sm w-100" type="submit"><span class="fa-solid fa-paper-plane me-2"></span>Empezar chat</button>
+                        @include('publico.partes.aviso-privacidad')
                     </form>
 
                     {{-- Mensajes (con conversación) --}}

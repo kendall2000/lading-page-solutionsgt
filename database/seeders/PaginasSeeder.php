@@ -17,10 +17,15 @@ class PaginasSeeder extends Seeder
     public function run(): void
     {
         $this->categorias();
-        if (Pagina::query()->exists()) {
-            return;
+        // Las páginas iniciales solo en un sitio vacío; la de privacidad, siempre que falte.
+        if (! Pagina::query()->exists()) {
+            $this->paginasIniciales();
         }
+        $this->privacidad();
+    }
 
+    private function paginasIniciales(): void
+    {
         $orden = 0;
         foreach ($this->paginas() as $datos) {
             $secciones = $datos['secciones'];
@@ -35,6 +40,64 @@ class PaginasSeeder extends Seeder
                 }
             }
         }
+    }
+
+    /** Política de privacidad (fuera del menú). Se crea si falta, también en sitios ya armados. */
+    private function privacidad(): void
+    {
+        if (Pagina::query()->where('slug', Pagina::PRIVACIDAD)->exists()) {
+            return;
+        }
+        $pagina = Pagina::query()->create([
+            'titulo' => 'Política de privacidad', 'slug' => Pagina::PRIVACIDAD,
+            'subtitulo' => 'Qué datos guardamos, para qué y cómo puedes pedir que los borremos.',
+            'meta_descripcion' => 'Cómo Solutions GT usa y protege los datos que envías por el formulario de contacto y el chat del sitio.',
+            'en_menu' => false, 'visible' => true, 'orden' => 99,
+        ]);
+        $pagina->secciones()->create([
+            'tipo' => 'texto', 'orden' => 1, 'opciones' => ['alineacion' => 'izquierda'],
+            'etiqueta' => 'Última actualización: 29 de septiembre de 2026',
+            'contenido' => <<<'MD'
+En Solutions GT respetamos tu privacidad. Aquí explicamos, en palabras sencillas, qué información recibimos cuando usas este sitio y qué hacemos con ella.
+
+### Qué datos recibimos
+
+- **Formulario de contacto, demostraciones y pruebas:** tu nombre, empresa, correo, teléfono, el sistema que te interesa y tu mensaje.
+- **Chat:** tu nombre, correo y los mensajes que escribes, además de la página desde donde empezaste la conversación.
+- **Datos técnicos:** la dirección IP y el tipo de navegador, que usamos solo para proteger el sitio contra abusos y envíos automáticos (spam).
+
+No pedimos datos bancarios ni información sensible. Por favor, no los envíes por el formulario ni por el chat.
+
+### Para qué los usamos
+
+- Responder tus consultas y darte seguimiento.
+- Enviarte la demostración o los accesos de prueba que solicites.
+- Enviarte una copia de la conversación del chat, si la pides.
+
+No vendemos ni alquilamos tus datos, y no te enviaremos publicidad sin tu permiso.
+
+### Cookies
+
+Este sitio usa solo **cookies necesarias** para funcionar: la de la sesión y la de seguridad de los formularios, y la del chat, que permite continuar tu conversación si cambias de página. No usamos cookies de publicidad ni de seguimiento de terceros.
+
+### Con quién se comparten
+
+Solo con los servicios que necesitamos para operar el sitio: el servidor donde está alojado, el almacenamiento de archivos y el servicio de correo con el que te respondemos. Ellos no pueden usar tus datos para otros fines.
+
+### Cuánto tiempo los guardamos
+
+- Las conversaciones del chat, hasta 6 meses después de cerradas.
+- Los mensajes de contacto, mientras sean necesarios para atenderte o hasta que nos pidas borrarlos.
+
+### Tus derechos
+
+Puedes pedirnos en cualquier momento que te digamos qué datos tuyos tenemos, que los corrijamos o que los borremos. Escríbenos por el formulario de contacto o al correo que aparece en el sitio, y te responderemos lo antes posible.
+
+### Cambios a esta política
+
+Si cambiamos esta política, publicaremos la nueva versión en esta misma página con su fecha de actualización.
+MD,
+        ]);
     }
 
     private function categorias(): void

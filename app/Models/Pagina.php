@@ -19,6 +19,9 @@ class Pagina extends Model
         'two-factor-challenge', 'user', 'up', 'storage', 'assets', 'vendors', 'email', 'password', 'chat', 'broadcasting',
     ];
 
+    /** Dirección de la política de privacidad (enlazada en el pie y en los formularios). */
+    public const PRIVACIDAD = 'privacidad';
+
     protected $fillable = [
         'padre_id', 'titulo', 'titulo_menu', 'slug', 'subtitulo', 'imagen_encabezado', 'meta_descripcion',
         'es_inicio', 'en_menu', 'visible', 'orden',

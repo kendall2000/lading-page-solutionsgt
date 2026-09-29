@@ -30,8 +30,9 @@ class AntispamTest extends TestCase
 
     public function test_el_formulario_enviado_muy_rapido_o_sin_pasar_por_la_pagina_no_se_guarda(): void
     {
+        $this->freezeTime();
         // Sin marca (envío directo), marca alterada y marca de hace un segundo.
-        foreach ([[], ['llegada' => 'inventada'], ['llegada' => Antispam::marca(time() - 1)]] as $marca) {
+        foreach ([[], ['llegada' => 'inventada'], ['llegada' => Antispam::marca(now()->getTimestamp() - 1)]] as $marca) {
             $this->from('/contactenos')->post('/contacto', $marca + self::DATOS)
                 ->assertSessionHasErrors(['formulario' => Antispam::MENSAJE_RAPIDO]);
         }
@@ -62,6 +63,7 @@ class AntispamTest extends TestCase
 
     public function test_el_chat_tambien_filtra_robots(): void
     {
+        $this->freezeTime();
         $this->postJson('/chat/iniciar', self::DATOS)->assertJsonValidationErrors(['llegada' => Antispam::MENSAJE_RAPIDO]);
         $this->postJson('/chat/iniciar', ['llegada' => Antispam::marca()] + self::DATOS)->assertJsonValidationErrors('llegada');
         $this->postJson('/chat/iniciar', $this->antispam() + ['nombre' => 'https://spam.com'] + self::DATOS)->assertJsonValidationErrors('nombre');

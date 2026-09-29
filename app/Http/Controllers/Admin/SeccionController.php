@@ -66,6 +66,7 @@ class SeccionController extends Controller
             'opciones.resaltado' => ['nullable', 'string', 'max:60'],
             'opciones.altura' => ['nullable', Rule::in(['normal', 'alta', 'pantalla'])],
             'opciones.lado' => ['nullable', Rule::in(['derecha', 'izquierda'])],
+            'opciones.alineacion' => ['nullable', Rule::in(['centro', 'izquierda'])],
             'opciones.columnas' => ['nullable', Rule::in(['2', '3', '4'])],
             'opciones.estilo' => ['nullable', Rule::in(['tarjetas', 'filas'])],
             'opciones.categoria_id' => ['nullable', 'integer', 'exists:categorias_sistema,id'],

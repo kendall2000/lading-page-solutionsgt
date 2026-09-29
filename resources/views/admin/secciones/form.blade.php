@@ -137,6 +137,15 @@
                                         </select>
                                     </div>
                                     @break
+                                @case('alineacion')
+                                    <div class="mb-3">
+                                        <label class="form-label" for="op_alineacion">Texto (sin imagen)</label>
+                                        <select class="form-select" id="op_alineacion" name="opciones[alineacion]">
+                                            <option value="centro" @selected($op('alineacion', 'centro') === 'centro')>Centrado</option>
+                                            <option value="izquierda" @selected($op('alineacion') === 'izquierda')>A la izquierda (textos largos)</option>
+                                        </select>
+                                    </div>
+                                    @break
                                 @case('columnas')
                                     <div class="mb-3">
                                         <label class="form-label" for="op_columnas">Tarjetas por fila</label>

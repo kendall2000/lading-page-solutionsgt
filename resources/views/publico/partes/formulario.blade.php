@@ -84,5 +84,6 @@
     </div>
     <div class="col-12 d-grid">
         <button class="btn btn-primary" type="submit"><span class="fa-solid fa-paper-plane me-2"></span>Enviar</button>
+        @include('publico.partes.aviso-privacidad')
     </div>
 </form>

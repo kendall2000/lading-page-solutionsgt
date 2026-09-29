@@ -1,0 +1,1 @@
+@include('errors.plantilla', ['codigo' => 404, 'ilustracion' => 404, 'titulo' => 'No encontramos esta página', 'mensaje' => 'Puede que la dirección esté mal escrita o que la página ya no exista. Desde el inicio encontrarás nuestros sistemas y servicios.'])

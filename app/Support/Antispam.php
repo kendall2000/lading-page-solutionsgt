@@ -22,7 +22,7 @@ class Antispam
     /** Marca que va oculta en el formulario (campo «llegada»): la hora en que se mostró, cifrada. */
     public static function marca(?int $hora = null): string
     {
-        return Crypt::encryptString((string) ($hora ?? time()));
+        return Crypt::encryptString((string) ($hora ?? now()->getTimestamp()));
     }
 
     /** true si la marca falta, fue alterada o el formulario se envió antes de MINIMO_SEGUNDOS. */
@@ -37,7 +37,7 @@ class Antispam
             return true;
         }
 
-        return time() - $hora < self::MINIMO_SEGUNDOS;
+        return now()->getTimestamp() - $hora < self::MINIMO_SEGUNDOS;
     }
 
     /** Cantidad de enlaces (http://, https://, www.) en un texto. */

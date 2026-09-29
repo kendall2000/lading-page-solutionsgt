@@ -148,6 +148,7 @@
                 <p class="text-600 mb-0">&copy; {{ date('Y') }} {{ \App\Support\Sitio::nombre() }}. Todos los derechos reservados.</p>
                 <p class="text-600 mb-0">
                     @if ($cfg->eslogan){{ $cfg->eslogan }} · @endif
+                    @if ($privacidad = \App\Support\Sitio::enlacePrivacidad())<a class="text-600" href="{{ $privacidad }}">Privacidad</a> · @endif
                     <a class="text-600" href="{{ route('login') }}" rel="nofollow">Acceso</a>
                 </p>
             </div>

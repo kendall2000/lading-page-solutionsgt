@@ -1,0 +1,1 @@
+@include('errors.plantilla', ['codigo' => 419, 'ilustracion' => 403, 'titulo' => 'La página expiró', 'mensaje' => 'Pasó mucho tiempo desde que abriste la página. Vuelve atrás, recárgala e inténtalo de nuevo.'])

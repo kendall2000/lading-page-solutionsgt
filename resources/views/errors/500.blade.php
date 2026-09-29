@@ -1,0 +1,1 @@
+@include('errors.plantilla', ['codigo' => 500, 'ilustracion' => 500, 'titulo' => 'Algo salió mal', 'mensaje' => 'Tuvimos un problema al mostrar esta página. Ya quedó registrado; inténtalo de nuevo en unos minutos.'])

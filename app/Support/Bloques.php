@@ -30,7 +30,7 @@ class Bloques
             'nombre' => 'Texto con imagen', 'icono' => 'align-left',
             'descripcion' => 'Un título y párrafos (quiénes somos, misión…) con una imagen opcional al lado.',
             'campos' => ['etiqueta', 'titulo', 'contenido', 'imagen', 'boton'],
-            'opciones' => ['lado'],
+            'opciones' => ['lado', 'alineacion'],
         ],
         'tarjetas' => [
             'nombre' => 'Tarjetas', 'icono' => 'grid',

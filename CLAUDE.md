@@ -107,6 +107,12 @@ restaurante solo sirvió de modelo inicial (estructura, módulo de Correos, Dock
   marca de llegada cifrada `llegada` (`App\Support\Antispam`: sin marca o < 3 s = robot), regla
   `PocosEnlaces` (0 en nombre/empresa, máx. 3 en mensajes) y contacto repetido en 10 min no se duplica.
   En pruebas, los envíos llevan `$this->antispam() + [...]`.
+- Páginas de error propias en `resources/views/errors` (403, 404, 419, 429, 500, 503) con `errors/plantilla`
+  (diseño `pages/errors/*.html` de Phoenix, sin menú ni consultas: debe verse aunque la base falle).
+- Privacidad (elegido por el usuario): página `privacidad` (`Pagina::PRIVACIDAD`, fuera del menú, la crea
+  `PaginasSeeder` si falta), enlace en el pie y línea «Al enviar aceptas…» bajo formulario y chat
+  (`publico/partes/aviso-privacidad`); si se oculta, los enlaces desaparecen. Sin banner de cookies (solo
+  cookies necesarias; si se agrega analítica, habrá que ponerlo).
 - Enlaces escritos en el panel: solo `https://`, `/`, `#`, `mailto:`, `tel:` (`Bloques::REGLA_ENLACE`).
 - Público: `SitioController`. Vistas en `resources/views/publico` + `layouts/publico` (menú desde `Sitio::menu()`).
 - Panel: `app/Http/Controllers/Admin/*`, vistas en `resources/views/admin` + `layouts/admin`.

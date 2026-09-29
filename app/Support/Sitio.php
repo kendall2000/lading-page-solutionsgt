@@ -71,6 +71,15 @@ class Sitio
         }, fn () => route('inicio'), false);
     }
 
+    /** Enlace a la política de privacidad (página «privacidad» visible) o null si no existe. */
+    public static function enlacePrivacidad(): ?string
+    {
+        return self::$enlaces['_privacidad'] ??= rescue(
+            fn () => Pagina::query()->publicas()->where('slug', Pagina::PRIVACIDAD)->exists() ? route('pagina', Pagina::PRIVACIDAD) : '',
+            '', false,
+        ) ?: null;
+    }
+
     public static function nombre(): string
     {
         return self::config()->nombre ?: 'Solutions GT';
