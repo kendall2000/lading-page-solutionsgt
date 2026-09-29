@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\RegistraCambios;
 use App\Support\Bloques;
 use App\Support\Imagenes;
 use Illuminate\Database\Eloquent\Model;
@@ -13,6 +14,8 @@ use Illuminate\Support\Str;
 /** Bloque de una página (portada, texto, tarjetas, tecnologías…). Ver App\Support\Bloques. */
 class Seccion extends Model
 {
+    use RegistraCambios;
+
     protected $table = 'secciones';
 
     protected $fillable = [

@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\RegistraCambios;
 use App\Support\Imagenes;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Cliente extends Model
 {
+    use RegistraCambios;
+
     protected $table = 'clientes';
 
     protected $fillable = [

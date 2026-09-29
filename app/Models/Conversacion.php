@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\RegistraCambios;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -10,6 +11,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 /** Conversación del chat en vivo con un visitante (identificado por el hash del token de su cookie). */
 class Conversacion extends Model
 {
+    use RegistraCambios;
+
     protected $table = 'conversaciones';
 
     protected $fillable = [

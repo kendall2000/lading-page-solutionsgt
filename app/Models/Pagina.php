@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\RegistraCambios;
 use App\Support\Imagenes;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -11,6 +12,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /** Página del sitio (Inicio, Nosotros, Servicios…): va en el menú y se arma con secciones. */
 class Pagina extends Model
 {
+    use RegistraCambios;
+
     protected $table = 'paginas';
 
     /** Direcciones que usa el sistema: una página no puede llamarse así. */

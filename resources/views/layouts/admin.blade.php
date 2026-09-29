@@ -11,6 +11,7 @@
     $menu = [
         'Panel' => [
             ['admin.inicio', 'admin.inicio', 'pie-chart', 'Inicio'],
+            ['admin.estadisticas', 'admin.estadisticas', 'bar-chart-2', 'Estadísticas'],
             ['admin.chat.index', 'admin.chat.*', 'message-circle', 'Chat en vivo'],
             ['admin.mensajes.index', 'admin.mensajes.*', 'inbox', 'Solicitudes y mensajes'],
         ],
@@ -26,6 +27,7 @@
             ['admin.sitio.edit', 'admin.sitio.*', 'settings', 'Configuración del sistema'],
             ['admin.correos.index', 'admin.correos.*', 'send', 'Correos'],
             ['admin.usuarios.index', 'admin.usuarios.*', 'shield', 'Usuarios'],
+            ['admin.bitacora.index', 'admin.bitacora.*', 'clock', 'Bitácora de cambios'],
         ],
     ];
 @endphp

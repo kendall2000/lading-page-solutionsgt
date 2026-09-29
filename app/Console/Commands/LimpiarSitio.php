@@ -12,16 +12,20 @@ class LimpiarSitio extends Command
 {
     protected $signature = 'sitio:limpiar';
 
-    protected $description = 'Borra la bitácora de correos de más de 90 días y los chats cerrados sin actividad hace más de 6 meses';
+    protected $description = 'Borra la bitácora de correos de más de 90 días, los chats cerrados sin actividad hace más de 6 meses y las visitas de más de 13 meses';
 
     /** Plazos elegidos por el usuario (2026-09-29). */
     public const DIAS_BITACORA = 90;
 
     public const MESES_CHATS = 6;
 
+    /** Visitas: 13 meses, para poder comparar un mes con el mismo del año anterior. La bitácora de cambios no se borra. */
+    public const MESES_VISITAS = 13;
+
     public function handle(): int
     {
         $bitacora = DB::table('bitacora_correos')->where('created_at', '<', now()->subDays(self::DIAS_BITACORA))->delete();
+        $visitas = DB::table('visitas')->where('created_at', '<', now()->subMonths(self::MESES_VISITAS))->delete();
 
         // Solo cerradas: una abierta sigue esperando respuesta aunque sea vieja.
         $limite = now()->subMonths(self::MESES_CHATS);
@@ -34,7 +38,7 @@ class LimpiarSitio extends Command
             Conversacion::query()->whereKey($ids)->delete();
         }
 
-        $this->info("Bitácora de correos: {$bitacora} registros borrados. Chats cerrados: {$viejas->count()} borrados.");
+        $this->info("Bitácora de correos: {$bitacora} registros borrados. Chats cerrados: {$viejas->count()} borrados. Visitas: {$visitas} borradas.");
 
         return self::SUCCESS;
     }

@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\RegistraCambios;
 use App\Support\Imagenes;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 class Servicio extends Model
 {
+    use RegistraCambios;
+
     protected $table = 'servicios';
 
     protected $fillable = ['nombre', 'precio', 'periodo', 'descripcion', 'incluye', 'destacado', 'visible', 'orden'];

@@ -1,8 +1,15 @@
 @extends('layouts.admin', ['titulo' => 'Solicitudes y mensajes'])
 
 @section('contenido')
-    <h2 class="mb-2 text-1100">Solicitudes y mensajes</h2>
-    <p class="text-700 mb-4">Lo que llega por los formularios del sitio: mensajes, pedidos de demostración y de prueba.</p>
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+        <div>
+            <h2 class="mb-2 text-1100">Solicitudes y mensajes</h2>
+            <p class="text-700 mb-0">Lo que llega por los formularios del sitio: mensajes, pedidos de demostración y de prueba.</p>
+        </div>
+        <a class="btn btn-phoenix-secondary" href="{{ route('admin.mensajes.exportar', array_filter(['estado' => $estado, 'tipo' => $tipo])) }}">
+            <span class="fa-solid fa-file-excel me-2"></span>Descargar para Excel
+        </a>
+    </div>
 
     @php $filtro = fn (array $cambios) => route('admin.mensajes.index', array_filter(array_merge(['estado' => $estado, 'tipo' => $tipo], $cambios))); @endphp
     <div class="d-flex flex-wrap gap-2 mb-3">

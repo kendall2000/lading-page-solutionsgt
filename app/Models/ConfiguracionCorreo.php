@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\RegistraCambios;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -11,6 +12,8 @@ use Illuminate\Database\Eloquent\Model;
  */
 class ConfiguracionCorreo extends Model
 {
+    use RegistraCambios;
+
     protected $table = 'configuracion_correo';
 
     protected $fillable = ['host', 'puerto', 'usuario', 'clave', 'cifrado', 'remitente_correo', 'remitente_nombre', 'responder_a', 'avisos_a', 'is_active', 'probado_en'];

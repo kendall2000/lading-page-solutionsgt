@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\RegistraCambios;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /** Lo que llega por los formularios del sitio: contacto, solicitud de demostración o de prueba. */
 class MensajeContacto extends Model
 {
+    use RegistraCambios;
+
     protected $table = 'mensajes_contacto';
 
     /** tipo => [texto, color del badge, título para el aviso]. */

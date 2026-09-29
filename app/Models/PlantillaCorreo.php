@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\RegistraCambios;
 use Illuminate\Database\Eloquent\Model;
 
 /** Plantilla de correo con variables «{{ nombre }}» que se reemplazan al enviar. */
 class PlantillaCorreo extends Model
 {
+    use RegistraCambios;
+
     protected $table = 'plantillas_correo';
 
     protected $fillable = ['codigo', 'nombre', 'descripcion', 'asunto', 'contenido', 'variables', 'is_active'];

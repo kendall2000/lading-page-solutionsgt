@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\MensajeContacto;
 use App\Services\Correos;
+use App\Support\Csv;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /** Bandeja de lo que llega por los formularios: mensajes, solicitudes de demostración y de prueba. */
 class MensajeController extends Controller
@@ -28,6 +30,23 @@ class MensajeController extends Controller
             'conteo' => MensajeContacto::query()->selectRaw('estado, COUNT(*) as total')->groupBy('estado')->pluck('total', 'estado'),
             'conteoTipos' => MensajeContacto::query()->selectRaw('tipo, COUNT(*) as total')->groupBy('tipo')->pluck('total', 'tipo'),
         ]);
+    }
+
+    /** Descarga para Excel con los mismos filtros de la bandeja (sin la clave de prueba). */
+    public function exportar(Request $request): StreamedResponse
+    {
+        $estado = array_key_exists((string) $request->query('estado'), MensajeContacto::ESTADOS) ? $request->query('estado') : null;
+        $tipo = array_key_exists((string) $request->query('tipo'), MensajeContacto::TIPOS) ? $request->query('tipo') : null;
+        $mensajes = MensajeContacto::query()->with('sistema')
+            ->when($estado, fn ($q) => $q->where('estado', $estado))
+            ->when($tipo, fn ($q) => $q->where('tipo', $tipo))
+            ->latest()->cursor();
+
+        return Csv::descargar('solicitudes', ['Fecha', 'Tipo', 'Estado', 'Nombre', 'Empresa', 'Correo', 'Teléfono', 'Sistema', 'Mensaje', 'Notas', 'Credenciales enviadas'],
+            $mensajes->map(fn (MensajeContacto $m) => [
+                $m->created_at, $m->tipoInfo()[0], MensajeContacto::ESTADOS[$m->estado][0] ?? $m->estado, $m->nombre, $m->empresa,
+                $m->correo, $m->telefono, $m->sistema?->nombre, $m->mensaje, $m->notas, $m->credenciales_enviadas_en,
+            ]));
     }
 
     public function show(MensajeContacto $mensaje): View

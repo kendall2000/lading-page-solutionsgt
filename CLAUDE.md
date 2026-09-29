@@ -43,7 +43,8 @@ restaurante solo sirvió de modelo inicial (estructura, módulo de Correos, Dock
 - BD propia `solutionsgt` en `31.220.77.136` (mismo servidor que los otros sistemas; **no tocar** otras bases).
   El `.env` local apunta a esa BD real: `migrate` y `db:seed` escriben ahí.
 - Tablas: `users`, `configuracion_sitio` (una fila), `paginas`, `secciones`, `elementos`, `categorias_sistema`, `manuales`, `configuracion_correo`, `plantillas_correo`, `bitacora_correos`, `sistemas`, `sistema_imagenes`, `servicios` (planes), `clientes`
-  (incluye logo y testimonio), `direcciones`, `mensajes_contacto` + las de Laravel (`sessions`, `cache`, `jobs`…).
+  (incluye logo y testimonio), `direcciones`, `mensajes_contacto`, `conversaciones`, `mensajes_chat`, `visitas`,
+  `bitacora_cambios` + las de Laravel (`sessions`, `cache`, `jobs`…).
 - `DatabaseSeeder` solo crea lo que falta (no pisa lo editado en el panel). El usuario inicial sale de
   `ADMIN_EMAIL` / `ADMIN_PASSWORD` o se genera y se muestra una sola vez.
 
@@ -124,14 +125,32 @@ restaurante solo sirvió de modelo inicial (estructura, módulo de Correos, Dock
   deserializa objetos de la caché); llamar `Sitio::olvidar()` al guardarla.
 - En Blade, las variables de la vista hija pasan al layout: no usar `$titulo`, `$cfg`, `$base` como variables de ciclo.
 
+## Estadísticas, visitas y bitácora (pedido del usuario: «muy dinámico, estadísticas de todo»)
+
+- **Visitas** (contador propio, sin cookies ni servicios externos): middleware `visita` en las rutas públicas GET
+  (`RegistrarVisita` → `App\Services\Visitas`). Tabla `visitas`; el visitante es sha256(IP + navegador + día + APP_KEY):
+  únicos por día, sin guardar IP. No cuenta robots, precargas, errores ni a quien tiene sesión en el panel.
+  Origen por Referer (`interno` = navegación dentro del sitio) o `utm_source`.
+- **Estadísticas** (`/admin/estadisticas`, `App\Services\Estadisticas`): rango (hoy, 7/30/90 días, mes, mes anterior,
+  12 meses o personalizado, máx. 2 años) comparado con el periodo anterior; pestañas Resumen, Visitas, Solicitudes,
+  Chat, Correos y Usuarios y bitácora. Gráficas ECharts que se dibujan al abrir cada pestaña. SQL de hora/día de la
+  semana distinto en SQLite (pruebas) y MySQL: `Estadisticas::expresion()`.
+- **Bitácora de cambios** (`/admin/bitacora`, `App\Services\Bitacora`): rasgo `RegistraCambios` en los modelos del
+  panel (crear/editar/borrar con antes → después) + entradas, salidas y accesos fallidos (eventos de Auth en
+  `AppServiceProvider`). Solo con usuario en sesión (visitantes, tareas y seeders no). Secretos (`$hidden`,
+  password, clave…) quedan como «(cambió)». Cambios hechos con `query()->update()` no pasan por eventos: no se anotan.
+  Un modelo nuevo del panel: agregar el rasgo y su entrada en `Bitacora::MODELOS`.
+- **Descargas para Excel**: `App\Support\Csv` (UTF-8 con BOM, escapa celdas que empiezan con = + - @). Solicitudes
+  (`/admin/mensajes/exportar`, sin la clave de prueba) y bitácora.
+
 ## Tareas programadas (respaldo y limpieza)
 
 - `routes/console.php`; las corre el contenedor `solutionsgt-tareas` (`schedule:work`, usuario www-data), sin cron.
 - **3:00 `respaldo:crear`**: `mariadb-dump` (paquete `mariadb-client` de la imagen) → gzip → cifrado con APP_KEY →
   Contabo `respaldos/<bd>-<fecha>-<aleatorio>.sql.gz.enc` (privado). Conserva los **30** más nuevos
   (`Respaldos::CONSERVAR`). Si falla, avisa con la plantilla `respaldo_fallido`. Sin APP_KEY no se pueden leer.
-- **3:30 `sitio:limpiar`**: bitácora de correos > 90 días y chats **cerrados** sin actividad > 6 meses
-  (plazos elegidos por el usuario el 2026-09-29).
+- **3:30 `sitio:limpiar`**: bitácora de correos > 90 días, chats **cerrados** sin actividad > 6 meses
+  (plazos elegidos por el usuario el 2026-09-29) y visitas > 13 meses. La bitácora de cambios no se borra.
 - Restaurar (a mano, nunca automático): `php artisan respaldo:descargar` (lista) → `respaldo:descargar 1`
   deja el `.sql` en `storage/app/respaldos/` → importarlo con el cliente de MySQL y borrar el archivo.
 

@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\RegistraCambios;
 use App\Support\Imagenes;
 use Illuminate\Database\Eloquent\Model;
 
 /** Datos generales del sitio público: una sola fila (ver App\Support\Sitio). */
 class ConfiguracionSitio extends Model
 {
+    use RegistraCambios;
+
     protected $table = 'configuracion_sitio';
 
     /** Imágenes configurables: campo => [título, ayuda]. */

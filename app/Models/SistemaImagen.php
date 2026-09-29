@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\RegistraCambios;
 use App\Support\Imagenes;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SistemaImagen extends Model
 {
+    use RegistraCambios;
+
     protected $table = 'sistema_imagenes';
 
     protected $fillable = ['sistema_id', 'ruta', 'titulo', 'orden'];

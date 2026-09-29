@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\RegistraCambios;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 class Direccion extends Model
 {
+    use RegistraCambios;
+
     protected $table = 'direcciones';
 
     protected $fillable = ['nombre', 'direccion', 'ciudad', 'telefono', 'horario', 'latitud', 'longitud', 'principal', 'visible', 'orden'];

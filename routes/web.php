@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\BitacoraController;
 use App\Http\Controllers\Admin\CategoriaController;
 use App\Http\Controllers\Admin\ChatController as AdminChatController;
 use App\Http\Controllers\Admin\ClienteController;
@@ -8,6 +9,7 @@ use App\Http\Controllers\Admin\CorreoController;
 use App\Http\Controllers\Admin\CuentaController;
 use App\Http\Controllers\Admin\DireccionController;
 use App\Http\Controllers\Admin\ElementoController;
+use App\Http\Controllers\Admin\EstadisticaController;
 use App\Http\Controllers\Admin\InicioController;
 use App\Http\Controllers\Admin\ManualController;
 use App\Http\Controllers\Admin\MensajeController;
@@ -22,9 +24,10 @@ use App\Http\Controllers\SitioController;
 use Illuminate\Support\Facades\Route;
 
 // Sitio público.
-Route::get('/', [SitioController::class, 'inicio'])->name('inicio');
-Route::get('sistemas/{sistema:slug}', [SitioController::class, 'sistema'])->name('sistema');
-Route::get('manuales/{manual:slug}', [SitioController::class, 'manual'])->name('manual');
+// «visita»: contador de visitas propio (App\Services\Visitas).
+Route::get('/', [SitioController::class, 'inicio'])->middleware('visita')->name('inicio');
+Route::get('sistemas/{sistema:slug}', [SitioController::class, 'sistema'])->middleware('visita')->name('sistema');
+Route::get('manuales/{manual:slug}', [SitioController::class, 'manual'])->middleware('visita')->name('manual');
 Route::post('contacto', [SitioController::class, 'contacto'])->middleware('throttle:8,10')->name('contacto');
 
 // Para buscadores (se arman solos con lo publicado).
@@ -46,6 +49,9 @@ Route::prefix('chat')->name('chat.')->group(function () {
 // Panel de administración.
 Route::middleware(['auth', 'sin-cache'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', InicioController::class)->name('inicio');
+    Route::get('estadisticas', EstadisticaController::class)->name('estadisticas');
+    Route::get('bitacora', [BitacoraController::class, 'index'])->name('bitacora.index');
+    Route::get('bitacora/exportar', [BitacoraController::class, 'exportar'])->name('bitacora.exportar');
 
     Route::get('sistema/configuracion', [ConfiguracionController::class, 'edit'])->name('sitio.edit');
     Route::put('sistema/configuracion', [ConfiguracionController::class, 'update'])->name('sitio.update');
@@ -71,6 +77,7 @@ Route::middleware(['auth', 'sin-cache'])->prefix('admin')->name('admin.')->group
 
     Route::resource('categorias', CategoriaController::class)->only(['store', 'update', 'destroy'])->parameters(['categorias' => 'categoria']);
     Route::resource('manuales', ManualController::class)->except('show')->parameters(['manuales' => 'manual']);
+    Route::get('mensajes/exportar', [MensajeController::class, 'exportar'])->name('mensajes.exportar');
     Route::post('mensajes/{mensaje}/credenciales', [MensajeController::class, 'credenciales'])->middleware('throttle:20,1')->name('mensajes.credenciales');
 
     Route::resource('servicios', ServicioController::class)->except('show')->parameters(['servicios' => 'servicio']);
@@ -104,4 +111,4 @@ Route::middleware(['auth', 'sin-cache'])->prefix('admin')->name('admin.')->group
 });
 
 // Páginas creadas en el panel (Nosotros, Servicios, Software…). Va al final para no tapar otras rutas.
-Route::get('{pagina:slug}', [SitioController::class, 'pagina'])->where('pagina', '[a-z0-9\-]+')->name('pagina');
+Route::get('{pagina:slug}', [SitioController::class, 'pagina'])->where('pagina', '[a-z0-9\-]+')->middleware('visita')->name('pagina');

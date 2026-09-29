@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EncabezadosSeguridad;
 use App\Http\Middleware\PreventBackHistory;
+use App\Http\Middleware\RegistrarVisita;
 use App\Http\Middleware\UsuarioActivo;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -19,7 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: '*');
 
         $middleware->web(append: [EncabezadosSeguridad::class, UsuarioActivo::class]);
-        $middleware->alias(['sin-cache' => PreventBackHistory::class]);
+        $middleware->alias(['sin-cache' => PreventBackHistory::class, 'visita' => RegistrarVisita::class]);
         $middleware->redirectGuestsTo(fn () => route('login'));
         $middleware->redirectUsersTo(fn () => route('admin.inicio'));
     })
