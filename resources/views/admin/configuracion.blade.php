@@ -7,7 +7,7 @@
 
 @section('contenido')
     <h2 class="mb-2 text-1100">Datos del sitio</h2>
-    <p class="text-700 mb-4">Textos, datos de contacto, redes sociales, colores e imágenes que se ven en el sitio público.</p>
+    <p class="text-700 mb-4">Nombre, contacto, redes sociales, color y logo del sitio. Los textos y fotos de cada página se editan en <a href="{{ route('admin.paginas.index') }}">Páginas y menú</a>.</p>
 
     <form method="POST" action="{{ route('admin.sitio.update') }}" enctype="multipart/form-data">
         @csrf
@@ -27,14 +27,6 @@
                                 <input class="form-control" id="eslogan" name="eslogan" value="{{ $campo('eslogan') }}" maxlength="150" placeholder="Desarrollo de sistemas empresariales" />
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label" for="propietario">Tu nombre</label>
-                                <input class="form-control" id="propietario" name="propietario" value="{{ $campo('propietario') }}" maxlength="120" />
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label" for="cargo">Tu cargo o profesión</label>
-                                <input class="form-control" id="cargo" name="cargo" value="{{ $campo('cargo') }}" maxlength="120" placeholder="Desarrollador de software" />
-                            </div>
-                            <div class="col-md-6">
                                 <label class="form-label" for="color_primario">Color principal</label>
                                 <div class="d-flex gap-2">
                                     <input class="form-control form-control-color" type="color" value="{{ $campo('color_primario') ?: '#3874ff' }}" oninput="document.getElementById('color_primario').value = this.value" title="Elegir color" />
@@ -50,51 +42,6 @@
                     </div>
                 </div>
 
-                <div class="card mb-4">
-                    <div class="card-body">
-                        <h4 class="mb-3">Portada</h4>
-                        <div class="row g-3">
-                            <div class="col-md-4">
-                                <label class="form-label" for="hero_resaltado">Palabra resaltada</label>
-                                <input class="form-control" id="hero_resaltado" name="hero_resaltado" value="{{ $campo('hero_resaltado') }}" maxlength="60" placeholder="Sistemas" />
-                            </div>
-                            <div class="col-md-8">
-                                <label class="form-label" for="hero_titulo">Resto del título</label>
-                                <input class="form-control" id="hero_titulo" name="hero_titulo" value="{{ $campo('hero_titulo') }}" maxlength="150" placeholder="a la medida de tu negocio" />
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label" for="hero_texto">Texto de la portada</label>
-                                <textarea class="form-control" id="hero_texto" name="hero_texto" rows="3" maxlength="600">{{ $campo('hero_texto') }}</textarea>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card mb-4">
-                    <div class="card-body">
-                        <h4 class="mb-3">Sobre mí</h4>
-                        <div class="row g-3">
-                            <div class="col-12">
-                                <label class="form-label" for="sobre_titulo">Título</label>
-                                <input class="form-control" id="sobre_titulo" name="sobre_titulo" value="{{ $campo('sobre_titulo') }}" maxlength="150" placeholder="Hola, soy" />
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label" for="sobre_texto">Tu historia</label>
-                                <textarea class="form-control" id="sobre_texto" name="sobre_texto" rows="7" maxlength="3000">{{ $campo('sobre_texto') }}</textarea>
-                                <div class="form-text">Cada línea se muestra como un párrafo.</div>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label" for="anios_experiencia">Años de experiencia</label>
-                                <input class="form-control" id="anios_experiencia" name="anios_experiencia" type="number" min="0" max="99" value="{{ $campo('anios_experiencia') }}" />
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label" for="proyectos_entregados">Proyectos entregados</label>
-                                <input class="form-control" id="proyectos_entregados" name="proyectos_entregados" type="number" min="0" value="{{ $campo('proyectos_entregados') }}" />
-                                <div class="form-text">Con 0 no se muestra la cifra.</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <div class="col-xl-5">

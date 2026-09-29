@@ -1,8 +1,9 @@
 @extends('layouts.admin', ['titulo' => 'Mensaje de '.$mensaje->nombre])
 
 @section('contenido')
-    <a class="fs--1 fw-bold" href="{{ route('admin.mensajes.index') }}"><span class="fa-solid fa-angle-left me-1"></span>Mensajes</a>
-    <h2 class="mt-2 mb-4 text-1100">Mensaje de {{ $mensaje->nombre }}</h2>
+    @php [$textoTipo, $colorTipo, $tituloTipo] = $mensaje->tipoInfo(); @endphp
+    <a class="fs--1 fw-bold" href="{{ route('admin.mensajes.index') }}"><span class="fa-solid fa-angle-left me-1"></span>Solicitudes y mensajes</a>
+    <h2 class="mt-2 mb-4 text-1100">{{ $tituloTipo }} de {{ $mensaje->nombre }} <span class="badge badge-phoenix badge-phoenix-{{ $colorTipo }} fs--1 align-middle">{{ $textoTipo }}</span></h2>
 
     <div class="row g-4">
         <div class="col-lg-8">
@@ -21,6 +22,53 @@
                     </div>
                 </div>
             </div>
+
+            {{-- Acceso de prueba: se crea el usuario en el sistema correspondiente y aquí se envían los datos. --}}
+            @if ($mensaje->tipo === 'prueba' || $mensaje->usuario_prueba)
+                <div class="card mt-4 border border-success">
+                    <div class="card-body">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                            <h4 class="mb-0"><span class="fa-solid fa-key text-success me-2"></span>Acceso de prueba</h4>
+                            @if ($mensaje->credenciales_enviadas_en)
+                                <span class="badge badge-phoenix badge-phoenix-success">Enviado el {{ $mensaje->credenciales_enviadas_en->format('d/m/Y H:i') }}</span>
+                            @endif
+                        </div>
+                        <p class="text-700 fs--1">
+                            1. Crea un usuario de prueba en <strong>{{ $mensaje->sistema?->nombre ?? 'el sistema' }}</strong>.
+                            2. Escribe aquí sus datos y envíalos: le llegan al visitante con la plantilla «Credenciales de prueba» (Correos).
+                            @if ($mensaje->vence_el)
+                                <br><strong>Vence el {{ $mensaje->vence_el->format('d/m/Y') }}</strong>{{ $mensaje->vence_el->isPast() ? ' (ya venció)' : ' (faltan '.now()->startOfDay()->diffInDays($mensaje->vence_el).' días)' }}: recuerda desactivar el usuario después.
+                            @endif
+                        </p>
+                        <form method="POST" action="{{ route('admin.mensajes.credenciales', $mensaje) }}" autocomplete="off">
+                            @csrf
+                            <div class="row g-3">
+                                <div class="col-md-12">
+                                    <label class="form-label" for="url_acceso">Dirección para entrar</label>
+                                    <input class="form-control" id="url_acceso" name="url_acceso" type="url" required maxlength="255" value="{{ old('url_acceso', $mensaje->url_acceso ?? $mensaje->sistema?->url_demo) }}" placeholder="https://demo.tusistema.com/login" />
+                                </div>
+                                <div class="col-md-5">
+                                    <label class="form-label" for="usuario_prueba">Usuario</label>
+                                    <input class="form-control" id="usuario_prueba" name="usuario_prueba" required maxlength="150" value="{{ old('usuario_prueba', $mensaje->usuario_prueba ?? $mensaje->correo) }}" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label" for="clave_prueba">Contraseña</label>
+                                    <input class="form-control" id="clave_prueba" name="clave_prueba" type="text" maxlength="150" autocomplete="off"
+                                           placeholder="{{ $mensaje->clave_prueba ? 'guardada (vacío = igual)' : '' }}" {{ $mensaje->clave_prueba ? '' : 'required' }} />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label" for="dias">Días</label>
+                                    <input class="form-control" id="dias" name="dias" type="number" min="1" max="365" required value="{{ old('dias', $mensaje->sistema?->dias_prueba ?? 15) }}" />
+                                </div>
+                            </div>
+                            <div class="d-flex flex-wrap gap-2 mt-3">
+                                <button class="btn btn-success" type="submit" name="enviar" value="1"><span class="fa-solid fa-paper-plane me-2"></span>Guardar y enviar por correo</button>
+                                <button class="btn btn-phoenix-secondary" type="submit" name="enviar" value="0">Solo guardar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            @endif
         </div>
         <div class="col-lg-4">
             <div class="card mb-4">

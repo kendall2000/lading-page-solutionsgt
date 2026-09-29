@@ -15,23 +15,13 @@ class ConfiguracionSitio extends Model
         'logo' => ['Logo', 'Barra superior y pie de página. PNG con fondo transparente, horizontal.'],
         'logo_oscuro' => ['Logo para modo oscuro', 'Versión clara del logo (opcional).'],
         'favicon' => ['Ícono de la pestaña', 'Cuadrado, de 64 a 512 px.'],
-        'foto' => ['Tu foto', 'Aparece en «Sobre mí». Cuadrada o vertical.'],
-        'imagen_hero' => ['Imagen de portada', 'Captura de uno de tus sistemas, horizontal (1600 px aprox.).'],
-        'imagen_hero_oscura' => ['Imagen de portada (modo oscuro)', 'La misma captura en modo oscuro (opcional).'],
     ];
 
     protected $fillable = [
-        'nombre', 'eslogan', 'propietario', 'cargo', 'hero_titulo', 'hero_resaltado', 'hero_texto',
-        'sobre_titulo', 'sobre_texto', 'telefono', 'whatsapp', 'correo', 'horario',
+        'nombre', 'eslogan', 'telefono', 'whatsapp', 'correo', 'horario',
         'facebook', 'instagram', 'linkedin', 'tiktok', 'youtube', 'github',
-        'anios_experiencia', 'proyectos_entregados', 'color_primario', 'meta_descripcion',
-        'logo', 'logo_oscuro', 'favicon', 'foto', 'imagen_hero', 'imagen_hero_oscura',
+        'color_primario', 'meta_descripcion', 'logo', 'logo_oscuro', 'favicon',
     ];
-
-    protected function casts(): array
-    {
-        return ['anios_experiencia' => 'integer', 'proyectos_entregados' => 'integer'];
-    }
 
     public function url(string $campo): ?string
     {

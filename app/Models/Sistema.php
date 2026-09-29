@@ -5,20 +5,37 @@ namespace App\Models;
 use App\Support\Imagenes;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Sistema extends Model
 {
     protected $table = 'sistemas';
 
+    /** modalidad => [texto, color del badge]. */
+    public const MODALIDADES = [
+        'gratis' => ['Gratis', 'success'],
+        'premium' => ['Premium', 'warning'],
+        'a_medida' => ['A la medida', 'info'],
+    ];
+
     protected $fillable = [
-        'nombre', 'slug', 'resumen', 'descripcion', 'icono', 'caracteristicas', 'tecnologias',
+        'nombre', 'slug', 'categoria_id', 'modalidad', 'precio', 'acepta_demo', 'acepta_prueba', 'dias_prueba',
+        'resumen', 'descripcion', 'icono', 'caracteristicas', 'tecnologias',
         'url_demo', 'imagen', 'imagen_oscura', 'destacado', 'visible', 'orden',
     ];
 
     protected function casts(): array
     {
-        return ['destacado' => 'boolean', 'visible' => 'boolean', 'orden' => 'integer', 'visitas' => 'integer'];
+        return [
+            'destacado' => 'boolean', 'visible' => 'boolean', 'orden' => 'integer', 'visitas' => 'integer',
+            'acepta_demo' => 'boolean', 'acepta_prueba' => 'boolean', 'dias_prueba' => 'integer',
+        ];
+    }
+
+    public function categoria(): BelongsTo
+    {
+        return $this->belongsTo(CategoriaSistema::class, 'categoria_id');
     }
 
     public function imagenes(): HasMany
@@ -31,6 +48,11 @@ class Sistema extends Model
         return $this->hasMany(Cliente::class);
     }
 
+    public function manuales(): HasMany
+    {
+        return $this->hasMany(Manual::class)->orderBy('orden')->orderBy('titulo');
+    }
+
     public function scopePublicos(Builder $q): Builder
     {
         return $q->where('visible', true)->orderBy('orden')->orderBy('nombre');
@@ -39,6 +61,12 @@ class Sistema extends Model
     public function url(string $campo = 'imagen'): ?string
     {
         return Imagenes::url($this->{$campo});
+    }
+
+    /** @return array{0:string,1:string} [texto, color] */
+    public function modalidadInfo(): array
+    {
+        return self::MODALIDADES[$this->modalidad] ?? [ucfirst((string) $this->modalidad), 'secondary'];
     }
 
     /** @return list<string> */

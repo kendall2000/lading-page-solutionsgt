@@ -26,27 +26,18 @@ class ConfiguracionController extends Controller
         $datos = $request->validate([
             'nombre' => ['required', 'string', 'max:100'],
             'eslogan' => ['nullable', 'string', 'max:150'],
-            'propietario' => ['nullable', 'string', 'max:120'],
-            'cargo' => ['nullable', 'string', 'max:120'],
-            'hero_titulo' => ['nullable', 'string', 'max:150'],
-            'hero_resaltado' => ['nullable', 'string', 'max:60'],
-            'hero_texto' => ['nullable', 'string', 'max:600'],
-            'sobre_titulo' => ['nullable', 'string', 'max:150'],
-            'sobre_texto' => ['nullable', 'string', 'max:3000'],
             'telefono' => ['nullable', 'string', 'max:30'],
             'whatsapp' => ['nullable', 'string', 'max:30'],
             'correo' => ['nullable', 'email', 'max:150'],
             'horario' => ['nullable', 'string', 'max:150'],
             'facebook' => $url, 'instagram' => $url, 'linkedin' => $url, 'tiktok' => $url, 'youtube' => $url, 'github' => $url,
-            'anios_experiencia' => ['nullable', 'integer', 'min:0', 'max:99'],
-            'proyectos_entregados' => ['nullable', 'integer', 'min:0', 'max:99999'],
             'color_primario' => ['nullable', 'regex:/^#[0-9a-fA-F]{6}$/'],
             'meta_descripcion' => ['nullable', 'string', 'max:300'],
             ...collect($imagenes)->mapWithKeys(fn ($c) => [$c => Imagenes::regla($c === 'favicon' ? 512 : 4096, $c === 'favicon' ? 'png,ico,jpg,jpeg,webp' : 'png,jpg,jpeg,webp')])->all(),
         ], ['color_primario.regex' => 'El color debe ser como #3874ff.'] + Imagenes::MENSAJES);
 
         $cfg = ConfiguracionSitio::query()->firstOrCreate([]);
-        $cfg->fill(collect($datos)->except($imagenes)->map(fn ($v, $k) => in_array($k, ['anios_experiencia', 'proyectos_entregados']) ? (int) $v : $v)->all())->save();
+        $cfg->fill(collect($datos)->except($imagenes)->all())->save();
 
         try {
             Imagenes::guardarCampos($request, $cfg, $imagenes, 'sitio');

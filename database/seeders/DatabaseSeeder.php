@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
         $this->configuracion();
         $this->sistemas();
         $this->servicios();
+        $this->call(PaginasSeeder::class);
         Sitio::olvidar();
     }
 
@@ -44,12 +45,6 @@ class DatabaseSeeder extends Seeder
         ConfiguracionSitio::query()->create([
             'nombre' => 'Solutions GT',
             'eslogan' => 'Desarrollo de sistemas empresariales',
-            'cargo' => 'Desarrollador de software',
-            'hero_resaltado' => 'Sistemas',
-            'hero_titulo' => 'que ordenan tu negocio',
-            'hero_texto' => 'Desarrollo sistemas web para restaurantes, comercios, organizaciones y empresas de servicios: ventas, inventario, caja, facturación electrónica y reportes, en la nube y listos para usar.',
-            'sobre_titulo' => 'Hola, soy',
-            'sobre_texto' => "Soy desarrollador de software en Guatemala. Diseño y construyo sistemas web que resuelven problemas reales: controlar ventas e inventario, cobrar más rápido, facturar en línea y saber en todo momento cómo va el negocio.\nCada sistema está pensado para el día a día de quien lo usa: pantallas claras, accesos por rol, respaldos automáticos y soporte directo conmigo.",
             'horario' => 'Lunes a viernes, 8:00 a 17:00',
             'meta_descripcion' => 'Solutions GT: sistemas web para restaurantes, inventario, ONG y agencias de trámites. Ventas, caja, inventario, facturación electrónica FEL y reportes en la nube.',
         ]);

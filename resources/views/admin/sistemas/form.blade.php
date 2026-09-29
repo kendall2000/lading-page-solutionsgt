@@ -3,7 +3,7 @@
 @php $v = fn ($c) => old($c, $sistema->{$c}); @endphp
 
 @section('contenido')
-    <a class="fs--1 fw-bold" href="{{ route('admin.sistemas.index') }}"><span class="fa-solid fa-angle-left me-1"></span>Sistemas</a>
+    <a class="fs--1 fw-bold" href="{{ route('admin.sistemas.index') }}"><span class="fa-solid fa-angle-left me-1"></span>Software</a>
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-2 mb-4">
         <h2 class="mb-0 text-1100">{{ $sistema->exists ? $sistema->nombre : 'Nuevo sistema' }}</h2>
         @if ($sistema->exists && $sistema->visible)
@@ -51,7 +51,7 @@
                                 <div class="form-text">Separadas por coma.</div>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label" for="url_demo">Enlace de demo</label>
+                                <label class="form-label" for="url_demo">Enlace de demo en línea o descarga (opcional)</label>
                                 <input class="form-control" id="url_demo" name="url_demo" type="url" value="{{ $v('url_demo') }}" maxlength="255" placeholder="https://" />
                             </div>
                         </div>
@@ -84,6 +84,48 @@
                             </div>
                         </div>
                         <div class="form-text">Ícono de <a href="https://fontawesome.com/search?o=r&m=free" target="_blank" rel="noopener">Font Awesome</a>, p. ej. <code>fa-solid fa-utensils</code>.</div>
+                    </div>
+                </div>
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="mb-3">Catálogo</h5>
+                        <div class="mb-3">
+                            <label class="form-label" for="categoria_id">Categoría</label>
+                            <select class="form-select" id="categoria_id" name="categoria_id">
+                                <option value="">Sin categoría</option>
+                                @foreach ($categorias as $id => $nombre)
+                                    <option value="{{ $id }}" @selected((string) $v('categoria_id') === (string) $id)>{{ $nombre }}</option>
+                                @endforeach
+                            </select>
+                            <div class="form-text">Las categorías se crean en la lista de Software, abajo.</div>
+                        </div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-6">
+                                <label class="form-label" for="modalidad">Tipo</label>
+                                <select class="form-select" id="modalidad" name="modalidad">
+                                    @foreach (\App\Models\Sistema::MODALIDADES as $clave => [$texto])
+                                        <option value="{{ $clave }}" @selected($v('modalidad') === $clave)>{{ $texto }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label" for="precio">Precio</label>
+                                <input class="form-control" id="precio" name="precio" value="{{ $v('precio') }}" maxlength="60" placeholder="Desde Q350/mes" />
+                            </div>
+                        </div>
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" id="acepta_demo" name="acepta_demo" type="checkbox" value="1" @checked(old('acepta_demo', $sistema->acepta_demo)) />
+                            <label class="form-check-label" for="acepta_demo">Pueden pedir una demostración</label>
+                        </div>
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" id="acepta_prueba" name="acepta_prueba" type="checkbox" value="1" @checked(old('acepta_prueba', $sistema->acepta_prueba)) />
+                            <label class="form-check-label" for="acepta_prueba">Pueden pedir una prueba con usuario y contraseña</label>
+                        </div>
+                        <div class="input-group input-group-sm" style="max-width: 14rem">
+                            <span class="input-group-text">Prueba de</span>
+                            <input class="form-control" id="dias_prueba" name="dias_prueba" type="number" min="1" max="365" value="{{ $v('dias_prueba') ?: 15 }}" aria-label="Días de prueba" />
+                            <span class="input-group-text">días</span>
+                        </div>
                     </div>
                 </div>
                 <div class="card mb-4">

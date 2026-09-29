@@ -6,6 +6,7 @@
             <thead>
             <tr>
                 <th class="ps-0">Fecha</th>
+                <th>Tipo</th>
                 <th>Nombre</th>
                 <th>Contacto</th>
                 <th>Sistema</th>
@@ -18,6 +19,11 @@
                 @php [$textoEstado, $colorEstado] = \App\Models\MensajeContacto::ESTADOS[$m->estado] ?? [$m->estado, 'secondary']; @endphp
                 <tr class="{{ $m->estado === 'nuevo' ? 'fw-bold' : '' }}">
                     <td class="ps-0 text-nowrap">{{ $m->created_at->format('d/m/Y H:i') }}</td>
+                    <td>
+                        @php [$textoTipo, $colorTipo] = $m->tipoInfo(); @endphp
+                        <span class="badge badge-phoenix badge-phoenix-{{ $colorTipo }}">{{ $textoTipo }}</span>
+                        @if ($m->credenciales_enviadas_en)<span class="fa-solid fa-key text-success ms-1" title="Credenciales enviadas"></span>@endif
+                    </td>
                     <td>
                         {{ $m->nombre }}
                         @if ($m->empresa)<div class="text-700 fw-normal fs--2">{{ $m->empresa }}</div>@endif

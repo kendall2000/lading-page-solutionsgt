@@ -4,29 +4,43 @@
     @include('partials.head')
     @php
         $cfg = \App\Support\Sitio::config();
-        $descripcion = $descripcion ?? ($cfg->meta_descripcion ?: $cfg->eslogan);
-        // En la portada los enlaces del menú son anclas; en otras páginas llevan a la portada.
-        $base = request()->routeIs('inicio') ? '' : route('inicio');
+        $menuSitio = \App\Support\Sitio::menu();
+        $enlaceContacto = \App\Support\Sitio::enlaceContacto();
+        $descripcion = ($descripcion ?? null) ?: ($cfg->meta_descripcion ?: $cfg->eslogan);
         $whatsapp = $cfg->enlaceWhatsapp('Hola, vi tu sitio web y quiero información sobre tus sistemas.');
+        $actual = url()->current();
     @endphp
     <meta name="description" content="{{ $descripcion }}">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="{{ \App\Support\Sitio::nombre() }}">
     <meta property="og:title" content="{{ isset($titulo) ? $titulo.' · ' : '' }}{{ \App\Support\Sitio::nombre() }}">
     <meta property="og:description" content="{{ $descripcion }}">
-    <meta property="og:url" content="{{ url()->current() }}">
-    @if ($imagenOg = ($imagenOg ?? $cfg->url('imagen_hero')))
+    <meta property="og:url" content="{{ $actual }}">
+    @if ($imagenOg = ($imagenOg ?? null))
         <meta property="og:image" content="{{ $imagenOg }}">
     @endif
     <style>
         .sgt-whatsapp { position: fixed; right: 1.5rem; bottom: 1.5rem; z-index: 1030; width: 3.5rem; height: 3.5rem; border-radius: 50%; background: #25d366; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.75rem; box-shadow: 0 .5rem 1.5rem rgba(0,0,0,.2); transition: transform .2s; }
         .sgt-whatsapp:hover { color: #fff; transform: scale(1.08); }
-        .sgt-icono-sistema { width: 3.5rem; height: 3.5rem; border-radius: 1rem; display: inline-flex; align-items: center; justify-content: center; font-size: 1.5rem; background: rgba(var(--phoenix-primary-rgb), .1); color: var(--phoenix-primary); }
+        .sgt-icono { width: 3.5rem; height: 3.5rem; border-radius: 1rem; display: inline-flex; align-items: center; justify-content: center; font-size: 1.5rem; background: rgba(var(--phoenix-primary-rgb), .1); color: var(--phoenix-primary); flex-shrink: 0; }
+        .sgt-icono-sm { width: 2.5rem; height: 2.5rem; border-radius: .75rem; font-size: 1.1rem; }
         .sgt-captura { border-radius: .75rem; box-shadow: 0 1.5rem 3rem -1rem rgba(36, 40, 46, .25); }
-        .sgt-foto { width: 100%; max-width: 380px; aspect-ratio: 4 / 5; object-fit: cover; border-radius: 1.5rem; box-shadow: 0 1.5rem 3rem -1rem rgba(36, 40, 46, .35); }
         .sgt-logo-cliente { max-height: 56px; max-width: 100%; filter: grayscale(1); opacity: .75; transition: all .2s; }
         .sgt-logo-cliente:hover { filter: none; opacity: 1; }
         .sgt-mapa { width: 100%; height: 381px; border: 0; border-radius: 1.5rem; }
+        .sgt-tarjeta { transition: transform .2s, box-shadow .2s; }
+        .sgt-tarjeta:hover { transform: translateY(-4px); box-shadow: 0 1rem 2rem -1rem rgba(36, 40, 46, .3); }
+        .sgt-carrusel .carousel-item { height: var(--sgt-alto, 560px); }
+        .sgt-carrusel .carousel-item > img { width: 100%; height: 100%; object-fit: cover; }
+        .sgt-carrusel .carousel-caption { left: 0; right: 0; bottom: 0; top: 0; display: flex; align-items: center; background: linear-gradient(90deg, rgba(0,0,0,.65) 0%, rgba(0,0,0,.15) 70%); text-align: left; padding: 0; }
+        .sgt-encabezado { background: linear-gradient(135deg, rgba(var(--phoenix-primary-rgb), .12), rgba(56, 171, 255, .08)); }
+        .sgt-encabezado-img { background-size: cover; background-position: center; position: relative; }
+        .sgt-encabezado-img::before { content: ''; position: absolute; inset: 0; background: rgba(0, 0, 0, .55); }
+        .sgt-contenido p:last-child { margin-bottom: 0; }
+        .sgt-contenido img { max-width: 100%; border-radius: .5rem; }
+        .sgt-seccion-oscura, .sgt-seccion-oscura h1, .sgt-seccion-oscura h2, .sgt-seccion-oscura h3, .sgt-seccion-oscura h4, .sgt-seccion-oscura h5 { color: #fff; }
+        .sgt-seccion-oscura p, .sgt-seccion-oscura .text-700 { color: rgba(255, 255, 255, .75) !important; }
+        @media (max-width: 767.98px) { .sgt-carrusel .carousel-item { height: 420px; } }
     </style>
 </head>
 <body>
@@ -46,11 +60,25 @@
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Abrir menú"><span class="navbar-toggler-icon"></span></button>
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item border-bottom border-bottom-lg-0"><a class="nav-link lh-1 fs--1 fw-bold py-3" href="{{ $base }}#inicio">Inicio</a></li>
-                    <li class="nav-item border-bottom border-bottom-lg-0"><a class="nav-link lh-1 fs--1 fw-bold py-3" href="{{ $base }}#sistemas">Sistemas</a></li>
-                    <li class="nav-item border-bottom border-bottom-lg-0"><a class="nav-link lh-1 fs--1 fw-bold py-3" href="{{ $base }}#sobre-mi">Sobre mí</a></li>
-                    <li class="nav-item border-bottom border-bottom-lg-0"><a class="nav-link lh-1 fs--1 fw-bold py-3" href="{{ $base }}#servicios">Servicios</a></li>
-                    <li class="nav-item"><a class="nav-link lh-1 fs--1 fw-bold py-3" href="{{ $base }}#contacto">Contacto</a></li>
+                    @foreach ($menuSitio as $item)
+                        @php $activo = $actual === $item->enlace() || $item->hijas->contains(fn ($h) => $actual === $h->enlace()); @endphp
+                        @if ($item->hijas->isEmpty())
+                            <li class="nav-item border-bottom border-bottom-lg-0">
+                                <a class="nav-link lh-1 fs--1 fw-bold py-3 {{ $activo ? 'active' : '' }}" href="{{ $item->enlace() }}" @if ($activo) aria-current="page" @endif>{{ $item->nombreMenu() }}</a>
+                            </li>
+                        @else
+                            <li class="nav-item dropdown border-bottom border-bottom-lg-0">
+                                <a class="nav-link dropdown-toggle lh-1 fs--1 fw-bold py-3 {{ $activo ? 'active' : '' }}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">{{ $item->nombreMenu() }}</a>
+                                <ul class="dropdown-menu border border-300 shadow-sm py-2">
+                                    <li><a class="dropdown-item fs--1" href="{{ $item->enlace() }}">{{ $item->nombreMenu() }}</a></li>
+                                    <li><hr class="dropdown-divider" /></li>
+                                    @foreach ($item->hijas as $hija)
+                                        <li><a class="dropdown-item fs--1 {{ $actual === $hija->enlace() ? 'active' : '' }}" href="{{ $hija->enlace() }}">{{ $hija->nombreMenu() }}</a></li>
+                                    @endforeach
+                                </ul>
+                            </li>
+                        @endif
+                    @endforeach
                 </ul>
                 <div class="d-grid d-lg-flex align-items-center">
                     <div class="nav-item d-flex align-items-center d-none d-lg-block pe-2">
@@ -60,7 +88,7 @@
                             <label class="mb-0 theme-control-toggle-label theme-control-toggle-dark" for="themeControlToggle" title="Modo claro"><span class="icon" data-feather="sun"></span></label>
                         </div>
                     </div>
-                    <a class="btn btn-phoenix-primary order-0 my-3 my-lg-0" href="{{ $base }}#contacto"><span class="fw-bold">Solicitar una demo</span></a>
+                    <a class="btn btn-phoenix-primary order-0 my-3 my-lg-0" href="{{ $enlaceContacto }}"><span class="fw-bold">Solicitar una demo</span></a>
                 </div>
             </div>
         </nav>
@@ -82,11 +110,10 @@
                     </a>
                 </div>
                 <div class="col-xl-auto flex-1">
-                    <ul class="list-unstyled d-flex justify-content-center flex-wrap mb-0 border-end-xl border-dashed border-800 gap-3 gap-xl-8 pe-xl-5 pe-xxl-8 w-75 w-md-100 mx-auto">
-                        <li><a class="text-300 dark__text-300" href="{{ $base }}#sistemas">Sistemas</a></li>
-                        <li><a class="text-300 dark__text-300" href="{{ $base }}#sobre-mi">Sobre mí</a></li>
-                        <li><a class="text-300 dark__text-300" href="{{ $base }}#servicios">Servicios</a></li>
-                        <li><a class="text-300 dark__text-300" href="{{ $base }}#contacto">Contacto</a></li>
+                    <ul class="list-unstyled d-flex justify-content-center flex-wrap mb-0 border-end-xl border-dashed border-800 gap-3 gap-xl-6 pe-xl-5 pe-xxl-8 w-75 w-md-100 mx-auto">
+                        @foreach ($menuSitio as $item)
+                            <li><a class="text-300 dark__text-300" href="{{ $item->enlace() }}">{{ $item->nombreMenu() }}</a></li>
+                        @endforeach
                     </ul>
                 </div>
                 <div class="col-xl-auto">
@@ -121,5 +148,26 @@
     <script src="{{ asset('vendors/countup/countUp.umd.js') }}"></script>
 @endpush
 @include('partials.scripts')
+<script>
+    // Filtros de galerías y del catálogo: cada botón dice a qué contenedor filtra (data-sgt-filtro) y con qué selector (data-valor).
+    document.addEventListener('click', function (e) {
+        var boton = e.target.closest('[data-sgt-filtro]');
+        if (!boton) return;
+        e.preventDefault();
+        var contenedor = document.querySelector(boton.dataset.sgtFiltro);
+        if (!contenedor) return;
+        var valor = boton.dataset.valor || '*';
+        var iso = window.Isotope && window.Isotope.data(contenedor);
+        if (iso) {
+            iso.arrange({ filter: valor });
+        } else {
+            contenedor.querySelectorAll('[data-sgt-item]').forEach(function (item) {
+                item.classList.toggle('d-none', valor !== '*' && !item.matches(valor));
+            });
+        }
+        boton.closest('ul, .sgt-filtros').querySelectorAll('[data-sgt-filtro]').forEach(function (b) { b.classList.remove('active'); });
+        boton.classList.add('active');
+    });
+</script>
 </body>
 </html>

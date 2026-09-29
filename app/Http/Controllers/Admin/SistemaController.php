@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\CategoriaSistema;
 use App\Models\Sistema;
 use App\Models\SistemaImagen;
 use App\Support\Imagenes;
@@ -20,13 +21,25 @@ class SistemaController extends Controller
     public function index(): View
     {
         return view('admin.sistemas.index', [
-            'sistemas' => Sistema::query()->withCount(['imagenes', 'clientes'])->orderBy('orden')->orderBy('nombre')->get(),
+            'sistemas' => Sistema::query()->with('categoria')->withCount(['imagenes', 'clientes', 'manuales'])->orderBy('orden')->orderBy('nombre')->get(),
+            'categorias' => CategoriaSistema::query()->withCount('sistemas')->orderBy('orden')->orderBy('nombre')->get(),
         ]);
     }
 
     public function create(): View
     {
-        return view('admin.sistemas.form', ['sistema' => new Sistema(['visible' => true, 'icono' => 'fa-solid fa-laptop-code', 'orden' => Sistema::query()->max('orden') + 1])]);
+        return view('admin.sistemas.form', [
+            'sistema' => new Sistema([
+                'visible' => true, 'icono' => 'fa-solid fa-laptop-code', 'orden' => Sistema::query()->max('orden') + 1,
+                'modalidad' => 'premium', 'acepta_demo' => true, 'dias_prueba' => 15,
+            ]),
+            'categorias' => $this->categorias(),
+        ]);
+    }
+
+    private function categorias()
+    {
+        return CategoriaSistema::query()->orderBy('orden')->orderBy('nombre')->pluck('nombre', 'id');
     }
 
     public function store(Request $request): RedirectResponse
@@ -39,7 +52,7 @@ class SistemaController extends Controller
 
     public function edit(Sistema $sistema): View
     {
-        return view('admin.sistemas.form', ['sistema' => $sistema->load('imagenes')]);
+        return view('admin.sistemas.form', ['sistema' => $sistema->load('imagenes'), 'categorias' => $this->categorias()]);
     }
 
     public function update(Request $request, Sistema $sistema): RedirectResponse
@@ -111,6 +124,10 @@ class SistemaController extends Controller
         $datos = $request->validate([
             'nombre' => ['required', 'string', 'max:120'],
             'slug' => ['required', 'string', 'max:140', Rule::unique('sistemas', 'slug')->ignore($sistema?->id)],
+            'categoria_id' => ['nullable', 'exists:categorias_sistema,id'],
+            'modalidad' => ['nullable', Rule::in(array_keys(Sistema::MODALIDADES))],
+            'precio' => ['nullable', 'string', 'max:60'],
+            'dias_prueba' => ['nullable', 'integer', 'min:1', 'max:365'],
             'resumen' => ['required', 'string', 'max:300'],
             'descripcion' => ['nullable', 'string', 'max:10000'],
             'icono' => ['nullable', 'string', 'max:60', 'regex:/^[a-z0-9 \-]+$/'],
@@ -127,6 +144,10 @@ class SistemaController extends Controller
             'orden' => (int) ($datos['orden'] ?? 0),
             'visible' => $request->boolean('visible'),
             'destacado' => $request->boolean('destacado'),
+            'modalidad' => $datos['modalidad'] ?? 'premium',
+            'dias_prueba' => (int) ($datos['dias_prueba'] ?? 15),
+            'acepta_demo' => $request->boolean('acepta_demo'),
+            'acepta_prueba' => $request->boolean('acepta_prueba'),
         ]);
     }
 }

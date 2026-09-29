@@ -8,14 +8,16 @@
                 <nav class="mb-4 pt-6" aria-label="Ruta">
                     <ol class="breadcrumb mb-0 fs--1">
                         <li class="breadcrumb-item"><a href="{{ route('inicio') }}">Inicio</a></li>
-                        <li class="breadcrumb-item"><a href="{{ route('inicio') }}#sistemas">Sistemas</a></li>
+                        <li class="breadcrumb-item"><a href="{{ \App\Support\Sitio::enlaceBloque('sistemas') }}">Software</a></li>
+                        @if ($sistema->categoria)<li class="breadcrumb-item">{{ $sistema->categoria->nombre }}</li>@endif
                         <li class="breadcrumb-item active" aria-current="page">{{ $sistema->nombre }}</li>
                     </ol>
                 </nav>
                 <div class="row align-items-center g-6">
                     <div class="col-lg-6 text-center text-lg-start">
-                        <span class="sgt-icono-sistema mb-4"><span class="{{ $sistema->icono }}"></span></span>
-                        <h1 class="fs-4 fs-md-5 fs-xl-6 fw-black mb-4">{{ $sistema->nombre }}</h1>
+                        <span class="sgt-icono mb-4"><span class="{{ $sistema->icono }}"></span></span>
+                        <h1 class="fs-4 fs-md-5 fs-xl-6 fw-black mb-3">{{ $sistema->nombre }}</h1>
+                        <div class="mb-4">@include('publico.partes.insignias', ['sis' => $sistema])</div>
                         <p class="fs-0 mb-5">{{ $sistema->resumen }}</p>
                         @if ($sistema->listaTecnologias())
                             <div class="d-flex flex-wrap gap-2 justify-content-center justify-content-lg-start mb-5">
@@ -24,9 +26,14 @@
                                 @endforeach
                             </div>
                         @endif
-                        <a class="btn btn-lg btn-primary rounded-pill me-3 mb-2" href="{{ route('inicio', ['sistema' => $sistema->id]) }}#contacto">Solicitar una demo</a>
+                        @if ($sistema->acepta_prueba)
+                            <a class="btn btn-lg btn-success rounded-pill me-2 mb-2" href="?tipo=prueba#solicitar"><span class="fa-solid fa-flask me-2"></span>Probar {{ $sistema->dias_prueba }} días gratis</a>
+                        @endif
+                        @if ($sistema->acepta_demo)
+                            <a class="btn btn-lg btn-primary rounded-pill me-2 mb-2" href="?tipo=demo#solicitar">Solicitar una demo</a>
+                        @endif
                         @if ($sistema->url_demo)
-                            <a class="btn btn-link fs-0 p-0 mb-2" href="{{ $sistema->url_demo }}" target="_blank" rel="noopener">Probar la demo<span class="fa-solid fa-arrow-up-right-from-square ms-2 fs--1"></span></a>
+                            <a class="btn btn-link fs-0 p-0 mb-2" href="{{ $sistema->url_demo }}" target="_blank" rel="noopener">{{ $sistema->modalidad === 'gratis' ? 'Usar gratis' : 'Ver demo en línea' }}<span class="fa-solid fa-arrow-up-right-from-square ms-2 fs--1"></span></a>
                         @endif
                     </div>
                     <div class="col-lg-6 text-center">
@@ -137,6 +144,33 @@
         </section>
     @endif
 
+    {{-- Manuales del sistema --}}
+    @if ($sistema->manuales->isNotEmpty())
+        <section class="pb-10">
+            <div class="container-small px-lg-7 px-xxl-3">
+                <div class="text-center mb-7">
+                    <h5 class="text-info mb-3">Manuales</h5>
+                    <h2 class="mb-2">Aprende a usarlo</h2>
+                </div>
+                <div class="row g-3 justify-content-center">
+                    @foreach ($sistema->manuales as $m)
+                        <div class="col-md-6 col-lg-4">
+                            <a class="card h-100 border-0 shadow-sm sgt-tarjeta text-decoration-none" href="{{ route('manual', $m->slug) }}">
+                                <div class="card-body d-flex gap-3 p-4">
+                                    <span class="sgt-icono sgt-icono-sm"><span class="fa-solid fa-book"></span></span>
+                                    <div>
+                                        <h5 class="text-1000 mb-1">{{ $m->titulo }}</h5>
+                                        @if ($m->resumen)<p class="text-700 fs--1 mb-0">{{ \Illuminate\Support\Str::limit($m->resumen, 100) }}</p>@endif
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </section>
+    @endif
+
     {{-- Otros sistemas --}}
     @if ($otros->isNotEmpty())
         <section class="bg-soft-primary dark__bg-1100 py-10">
@@ -150,7 +184,7 @@
                         <div class="col-md-6 col-lg-4">
                             <a class="card h-100 text-decoration-none hover-actions-trigger" href="{{ route('sistema', $o->slug) }}">
                                 <div class="card-body">
-                                    <span class="sgt-icono-sistema mb-3"><span class="{{ $o->icono }}"></span></span>
+                                    <span class="sgt-icono mb-3"><span class="{{ $o->icono }}"></span></span>
                                     <h4 class="text-1000 mb-2">{{ $o->nombre }}</h4>
                                     <p class="text-700 fs--1 mb-3">{{ \Illuminate\Support\Str::limit($o->resumen, 140) }}</p>
                                     <span class="fs--1 fw-bold text-primary">Ver detalle<span class="fa-solid fa-angle-right ms-2"></span></span>
@@ -163,16 +197,36 @@
         </section>
     @endif
 
-    <section class="py-10 text-center">
-        <div class="container-small px-lg-7 px-xxl-3">
-            <h2 class="mb-3">¿Te gustaría verlo funcionando?</h2>
-            <p class="mb-5 text-700">Agenda una demostración sin compromiso y vemos cómo se adapta a tu negocio.</p>
-            <div class="d-flex flex-wrap justify-content-center gap-3">
-                @if ($wa = $cfg->enlaceWhatsapp('Hola, quiero una demostración de '.$sistema->nombre.'.'))
-                    <a class="btn btn-lg btn-success" href="{{ $wa }}" target="_blank" rel="noopener"><span class="fa-brands fa-whatsapp me-2"></span>WhatsApp</a>
-                @endif
-                <a class="btn btn-lg btn-primary" href="{{ route('inicio', ['sistema' => $sistema->id]) }}#contacto"><span class="fa-solid fa-envelope me-2"></span>Enviar un mensaje</a>
+    {{-- Solicitar demostración o prueba --}}
+    @if ($sistema->acepta_demo || $sistema->acepta_prueba)
+        <section class="py-10" id="solicitar">
+            <div class="container-small px-lg-7 px-xxl-3">
+                <div class="row g-6 align-items-center">
+                    <div class="col-lg-5 text-center text-lg-start">
+                        <h5 class="text-info mb-3">¿Te gustaría verlo funcionando?</h5>
+                        <h2 class="mb-3">{{ $sistema->acepta_prueba ? 'Pruébalo o pide una demostración' : 'Pide una demostración' }}</h2>
+                        <ul class="list-unstyled text-800 mb-5">
+                            @if ($sistema->acepta_demo)
+                                <li class="mb-2"><span class="fa-solid fa-display text-primary me-2"></span><strong>Demostración:</strong> te mostramos el sistema en una llamada y resolvemos tus dudas.</li>
+                            @endif
+                            @if ($sistema->acepta_prueba)
+                                <li class="mb-2"><span class="fa-solid fa-flask text-success me-2"></span><strong>Prueba de {{ $sistema->dias_prueba }} días:</strong> te enviamos por correo un usuario y contraseña para que lo uses tú mismo.</li>
+                            @endif
+                            <li class="mb-2"><span class="fa-solid fa-circle-check text-success me-2"></span>Sin compromiso de compra.</li>
+                        </ul>
+                        @if ($wa = $cfg->enlaceWhatsapp('Hola, quiero información de '.$sistema->nombre.'.'))
+                            <a class="btn btn-success" href="{{ $wa }}" target="_blank" rel="noopener"><span class="fa-brands fa-whatsapp me-2"></span>Prefiero WhatsApp</a>
+                        @endif
+                    </div>
+                    <div class="col-lg-7">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body p-5">
+                                @include('publico.partes.formulario', ['sistemaFijo' => $sistema, 'ancla' => 'solicitar'])
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
-    </section>
+        </section>
+    @endif
 @endsection

@@ -8,15 +8,23 @@
 @php
     $mensajesNuevos = \App\Models\MensajeContacto::query()->where('estado', 'nuevo')->count();
     $menu = [
-        ['admin.inicio', 'admin.inicio', 'pie-chart', 'Inicio'],
-        ['admin.mensajes.index', 'admin.mensajes.*', 'mail', 'Mensajes'],
-        ['admin.sistemas.index', 'admin.sistemas.*', 'grid', 'Sistemas'],
-        ['admin.servicios.index', 'admin.servicios.*', 'tag', 'Servicios'],
-        ['admin.clientes.index', 'admin.clientes.*', 'users', 'Clientes'],
-        ['admin.direcciones.index', 'admin.direcciones.*', 'map-pin', 'Direcciones'],
-        ['admin.sitio.edit', 'admin.sitio.*', 'sliders', 'Datos del sitio'],
-        ['admin.correos.index', 'admin.correos.*', 'send', 'Correos'],
-        ['admin.usuarios.index', 'admin.usuarios.*', 'shield', 'Usuarios'],
+        'Panel' => [
+            ['admin.inicio', 'admin.inicio', 'pie-chart', 'Inicio'],
+            ['admin.mensajes.index', 'admin.mensajes.*', 'inbox', 'Solicitudes y mensajes'],
+        ],
+        'Sitio web' => [
+            ['admin.paginas.index', ['admin.paginas.*', 'admin.secciones.*'], 'layout', 'Páginas y menú'],
+            ['admin.sistemas.index', 'admin.sistemas.*', 'package', 'Software'],
+            ['admin.manuales.index', 'admin.manuales.*', 'book-open', 'Manuales'],
+            ['admin.servicios.index', 'admin.servicios.*', 'tag', 'Planes y precios'],
+            ['admin.clientes.index', 'admin.clientes.*', 'users', 'Clientes'],
+            ['admin.direcciones.index', 'admin.direcciones.*', 'map-pin', 'Direcciones'],
+            ['admin.sitio.edit', 'admin.sitio.*', 'sliders', 'Datos del sitio'],
+        ],
+        'Configuración' => [
+            ['admin.correos.index', 'admin.correos.*', 'send', 'Correos'],
+            ['admin.usuarios.index', 'admin.usuarios.*', 'shield', 'Usuarios'],
+        ],
     ];
 @endphp
 <main class="main" id="top">
@@ -30,12 +38,13 @@
         <div class="collapse navbar-collapse" id="navbarVerticalCollapse">
             <div class="navbar-vertical-content">
                 <ul class="navbar-nav flex-column" id="navbarVerticalNav">
+                    @foreach ($menu as $grupoMenu => $itemsMenu)
                     <li class="nav-item">
-                        <p class="navbar-vertical-label">Panel</p>
+                        <p class="navbar-vertical-label">{{ $grupoMenu }}</p>
                         <hr class="navbar-vertical-line" />
-                        @foreach ($menu as [$ruta, $patron, $icono, $texto])
+                        @foreach ($itemsMenu as [$ruta, $patron, $icono, $texto])
                             <div class="nav-item-wrapper">
-                                <a class="nav-link label-1 {{ request()->routeIs($patron) ? 'active' : '' }}" href="{{ route($ruta) }}" role="button">
+                                <a class="nav-link label-1 {{ request()->routeIs(...(array) $patron) ? 'active' : '' }}" href="{{ route($ruta) }}" role="button">
                                     <div class="d-flex align-items-center">
                                         <span class="nav-link-icon"><span data-feather="{{ $icono }}"></span></span>
                                         <span class="nav-link-text-wrapper"><span class="nav-link-text">{{ $texto }}</span></span>
@@ -47,8 +56,9 @@
                             </div>
                         @endforeach
                     </li>
+                    @endforeach
                     <li class="nav-item">
-                        <p class="navbar-vertical-label">Sitio</p>
+                        <p class="navbar-vertical-label">Público</p>
                         <hr class="navbar-vertical-line" />
                         <div class="nav-item-wrapper">
                             <a class="nav-link label-1" href="{{ route('inicio') }}" target="_blank" rel="noopener" role="button">

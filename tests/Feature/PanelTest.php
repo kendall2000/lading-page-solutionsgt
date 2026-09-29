@@ -114,14 +114,12 @@ class PanelTest extends TestCase
     public function test_guardar_datos_del_sitio_se_ve_en_la_portada(): void
     {
         $this->actingAs($this->admin)->put('/admin/sitio', [
-            'nombre' => 'Solutions GT',
-            'propietario' => 'Carlos Ramírez',
+            'nombre' => 'Solutions GT Pro',
             'whatsapp' => '5555 1234',
             'color_primario' => '#0a7cff',
-            'anios_experiencia' => 8,
         ])->assertRedirect()->assertSessionHasNoErrors();
 
-        $this->get('/')->assertSee('Carlos Ramírez')->assertSee('https://wa.me/50255551234', false)->assertSee('--phoenix-primary: #0a7cff', false);
+        $this->get('/')->assertSee('Solutions GT Pro')->assertSee('https://wa.me/50255551234', false)->assertSee('--phoenix-primary: #0a7cff', false);
     }
 
     public function test_no_puede_desactivarse_a_si_mismo(): void

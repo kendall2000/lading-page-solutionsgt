@@ -39,7 +39,7 @@ Independiente de los demás sistemas; toma como modelo `C:\laragon\www\sistema-r
 
 - BD propia `solutionsgt` en `31.220.77.136` (mismo servidor que los otros sistemas; **no tocar** otras bases).
   El `.env` local apunta a esa BD real: `migrate` y `db:seed` escriben ahí.
-- Tablas: `users`, `configuracion_sitio` (una fila), `configuracion_correo`, `plantillas_correo`, `bitacora_correos`, `sistemas`, `sistema_imagenes`, `servicios`, `clientes`
+- Tablas: `users`, `configuracion_sitio` (una fila), `paginas`, `secciones`, `elementos`, `categorias_sistema`, `manuales`, `configuracion_correo`, `plantillas_correo`, `bitacora_correos`, `sistemas`, `sistema_imagenes`, `servicios` (planes), `clientes`
   (incluye logo y testimonio), `direcciones`, `mensajes_contacto` + las de Laravel (`sessions`, `cache`, `jobs`…).
 - `DatabaseSeeder` solo crea lo que falta (no pisa lo editado en el panel). El usuario inicial sale de
   `ADMIN_EMAIL` / `ADMIN_PASSWORD` o se genera y se muestra una sola vez.
@@ -61,8 +61,21 @@ Independiente de los demás sistemas; toma como modelo `C:\laragon\www\sistema-r
 
 ## Estructura
 
-- Público: `SitioController` (portada, `/sistemas/{slug}`, `POST /contacto` con campo trampa y límite 5/10 min).
-  Vistas en `resources/views/publico` + `layouts/publico`.
+- **Sitio armado por páginas** (pedido del usuario): `paginas` (menú, con submenú de un nivel vía `padre_id`;
+  una es `es_inicio`) → `secciones` (bloques; tipo, textos en Markdown seguro, imagen, botones, `opciones` JSON)
+  → `elementos` (repetibles: fotos del carrusel, tarjetas, tecnologías, cifras, preguntas).
+  Catálogo de tipos en `App\Support\Bloques` (qué campos/opciones/elementos pide cada uno); la vista pública de
+  cada tipo es `resources/views/publico/bloques/{tipo}.blade.php`. Para un tipo nuevo: agregarlo en `Bloques`,
+  crear su vista y, si usa datos de otra tabla, cargarlos en `SitioController::datos()`.
+- Rutas públicas: `/` (página de inicio), `/sistemas/{slug}`, `/manuales/{slug}`, `POST /contacto` y al final
+  `/{pagina:slug}`. Las direcciones de `Pagina::RESERVADAS` no se pueden usar como página.
+- Software: `sistemas` con `categoria_id`, `modalidad` (gratis/premium/a_medida), `precio`, `acepta_demo`,
+  `acepta_prueba` y `dias_prueba`. El formulario (`publico/partes/formulario`) guarda en `mensajes_contacto` con
+  `tipo` contacto/demo/prueba; desde el panel se envían credenciales de prueba (clave cifrada) con la plantilla
+  `credenciales_prueba`. El usuario de prueba se crea a mano en el sistema correspondiente.
+- Manuales: `manuales` (Markdown, PDF en Contabo, video YouTube/Vimeo), por sistema.
+- Enlaces escritos en el panel: solo `https://`, `/`, `#`, `mailto:`, `tel:` (`Bloques::REGLA_ENLACE`).
+- Público: `SitioController`. Vistas en `resources/views/publico` + `layouts/publico` (menú desde `Sitio::menu()`).
 - Panel: `app/Http/Controllers/Admin/*`, vistas en `resources/views/admin` + `layouts/admin`.
   Cualquier usuario activo puede entrar al panel (no hay roles).
 - Configuración del sitio en caché: `App\Support\Sitio::config()`; llamar `Sitio::olvidar()` al guardarla.

@@ -1,6 +1,7 @@
-{{-- Campo de imagen con vista previa y opción de quitar. Parámetros: campo, titulo, ayuda, url. --}}
+{{-- Campo de imagen con vista previa y opción de quitar. Parámetros: campo, titulo, ayuda, url, idCampo (opcional, si hay varios en la pantalla). --}}
+@php $idc = $idCampo ?? $campo; @endphp
 <div class="mb-3">
-    <label class="form-label" for="{{ $campo }}">{{ $titulo }}</label>
+    <label class="form-label" for="{{ $idc }}">{{ $titulo }}</label>
     <div class="d-flex align-items-center gap-3">
         <div class="border border-300 rounded-2 d-flex flex-center bg-light flex-shrink-0" style="width: 96px; height: 72px; overflow: hidden;">
             @if ($url)
@@ -10,12 +11,12 @@
             @endif
         </div>
         <div class="flex-1">
-            <input class="form-control form-control-sm" id="{{ $campo }}" name="{{ $campo }}" type="file" accept="image/png,image/jpeg,image/webp{{ $campo === 'favicon' ? ',image/x-icon' : '' }}" />
+            <input class="form-control form-control-sm" id="{{ $idc }}" name="{{ $campo }}" type="file" accept="image/png,image/jpeg,image/webp{{ $campo === 'favicon' ? ',image/x-icon' : '' }}" />
             @if ($ayuda ?? null)<div class="form-text">{{ $ayuda }}</div>@endif
             @if ($url)
                 <div class="form-check mt-1 mb-0">
-                    <input class="form-check-input" id="quitar_{{ $campo }}" name="quitar_{{ $campo }}" type="checkbox" value="1" />
-                    <label class="form-check-label fs--1 text-700" for="quitar_{{ $campo }}">Quitar imagen</label>
+                    <input class="form-check-input" id="quitar_{{ $idc }}" name="quitar_{{ $campo }}" type="checkbox" value="1" />
+                    <label class="form-check-label fs--1 text-700" for="quitar_{{ $idc }}">Quitar imagen</label>
                 </div>
             @endif
         </div>

@@ -14,6 +14,10 @@
     <div class="alert alert-soft-success py-2 fs--1" role="alert">{{ $mensajesEstado[$estado] ?? $estado }}</div>
 @endif
 
+@if (session('aviso'))
+    <div class="alert alert-soft-warning py-2 fs--1" role="alert">{{ session('aviso') }}</div>
+@endif
+
 {{-- Todas las bolsas de errores (Fortify usa «updatePassword» al cambiar la contraseña). --}}
 @php $listaErrores = collect($errors->getBags())->flatMap(fn ($bolsa) => $bolsa->all()); @endphp
 @if ($listaErrores->isNotEmpty())

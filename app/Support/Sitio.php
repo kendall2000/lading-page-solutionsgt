@@ -3,14 +3,21 @@
 namespace App\Support;
 
 use App\Models\ConfiguracionSitio;
+use App\Models\Pagina;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 
-/** Configuración del sitio (una fila) en caché: se usa en cada vista. */
+/** Configuración del sitio (una fila) en caché, menú de páginas y enlaces a secciones. */
 class Sitio
 {
     private const CLAVE = 'configuracion_sitio';
 
     private static ?ConfiguracionSitio $actual = null;
+
+    private static ?Collection $menu = null;
+
+    /** @var array<string, string> */
+    private static array $enlaces = [];
 
     public static function config(): ConfiguracionSitio
     {
@@ -26,6 +33,39 @@ class Sitio
         return self::$actual = $cfg ?? new ConfiguracionSitio(['nombre' => 'Solutions GT']);
     }
 
+    /** Páginas del menú (primer nivel) con sus submenús. */
+    public static function menu(): Collection
+    {
+        return self::$menu ??= rescue(fn () => Pagina::query()->publicas()->where('en_menu', true)->whereNull('padre_id')
+            ->with(['hijas' => fn ($q) => $q->where('visible', true)->where('en_menu', true)])
+            ->orderByDesc('es_inicio')->orderBy('orden')->orderBy('id')->get(), collect(), false);
+    }
+
+    /** Enlace al formulario de contacto (primera página visible con una sección «Contacto»). */
+    public static function enlaceContacto(): string
+    {
+        return self::enlaceBloque('contacto', 'contacto');
+    }
+
+    /**
+     * Enlace a la primera página visible que tenga una sección del tipo indicado
+     * (p. ej. «sistemas» para el catálogo); sin ninguna, a la portada.
+     */
+    public static function enlaceBloque(string $tipo, ?string $ancla = null): string
+    {
+        return self::$enlaces[$tipo] ??= rescue(function () use ($tipo, $ancla) {
+            $pagina = Pagina::query()->publicas()
+                ->whereHas('secciones', fn ($q) => $q->where('tipo', $tipo)->where('visible', true))
+                ->orderByDesc('es_inicio')->orderBy('orden')->first();
+            if (! $pagina) {
+                return route('inicio');
+            }
+            $seccion = $pagina->secciones()->where('tipo', $tipo)->where('visible', true)->first();
+
+            return $pagina->enlace().'#'.($ancla ?? 's'.$seccion->id);
+        }, fn () => route('inicio'), false);
+    }
+
     public static function nombre(): string
     {
         return self::config()->nombre ?: 'Solutions GT';
@@ -34,6 +74,8 @@ class Sitio
     public static function olvidar(): void
     {
         self::$actual = null;
+        self::$menu = null;
+        self::$enlaces = [];
         Cache::forget(self::CLAVE);
     }
 

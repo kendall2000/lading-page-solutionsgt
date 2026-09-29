@@ -1,12 +1,17 @@
 <?php
 
+use App\Http\Controllers\Admin\CategoriaController;
 use App\Http\Controllers\Admin\ClienteController;
 use App\Http\Controllers\Admin\ConfiguracionController;
 use App\Http\Controllers\Admin\CorreoController;
 use App\Http\Controllers\Admin\CuentaController;
 use App\Http\Controllers\Admin\DireccionController;
+use App\Http\Controllers\Admin\ElementoController;
 use App\Http\Controllers\Admin\InicioController;
+use App\Http\Controllers\Admin\ManualController;
 use App\Http\Controllers\Admin\MensajeController;
+use App\Http\Controllers\Admin\PaginaController;
+use App\Http\Controllers\Admin\SeccionController;
 use App\Http\Controllers\Admin\ServicioController;
 use App\Http\Controllers\Admin\SistemaController;
 use App\Http\Controllers\Admin\UsuarioController;
@@ -16,7 +21,8 @@ use Illuminate\Support\Facades\Route;
 // Sitio público.
 Route::get('/', [SitioController::class, 'inicio'])->name('inicio');
 Route::get('sistemas/{sistema:slug}', [SitioController::class, 'sistema'])->name('sistema');
-Route::post('contacto', [SitioController::class, 'contacto'])->middleware('throttle:5,10')->name('contacto');
+Route::get('manuales/{manual:slug}', [SitioController::class, 'manual'])->name('manual');
+Route::post('contacto', [SitioController::class, 'contacto'])->middleware('throttle:8,10')->name('contacto');
 
 // Panel de administración.
 Route::middleware(['auth', 'sin-cache'])->prefix('admin')->name('admin.')->group(function () {
@@ -29,6 +35,24 @@ Route::middleware(['auth', 'sin-cache'])->prefix('admin')->name('admin.')->group
     Route::post('sistemas/{sistema}/imagenes', [SistemaController::class, 'subirImagenes'])->name('sistemas.imagenes.store');
     Route::put('sistemas/{sistema}/imagenes/{imagen}', [SistemaController::class, 'actualizarImagen'])->name('sistemas.imagenes.update');
     Route::delete('sistemas/{sistema}/imagenes/{imagen}', [SistemaController::class, 'borrarImagen'])->name('sistemas.imagenes.destroy');
+
+    // Páginas del sitio y sus secciones (bloques) y elementos.
+    Route::resource('paginas', PaginaController::class)->except('show')->parameters(['paginas' => 'pagina']);
+    Route::post('paginas/{pagina}/mover/{direccion}', [PaginaController::class, 'mover'])->whereIn('direccion', ['arriba', 'abajo'])->name('paginas.mover');
+    Route::post('paginas/{pagina}/secciones', [SeccionController::class, 'store'])->name('secciones.store');
+    Route::get('secciones/{seccion}', [SeccionController::class, 'edit'])->name('secciones.edit');
+    Route::put('secciones/{seccion}', [SeccionController::class, 'update'])->name('secciones.update');
+    Route::delete('secciones/{seccion}', [SeccionController::class, 'destroy'])->name('secciones.destroy');
+    Route::post('secciones/{seccion}/mover/{direccion}', [SeccionController::class, 'mover'])->whereIn('direccion', ['arriba', 'abajo'])->name('secciones.mover');
+    Route::post('secciones/{seccion}/alternar', [SeccionController::class, 'alternar'])->name('secciones.alternar');
+    Route::post('secciones/{seccion}/elementos', [ElementoController::class, 'store'])->name('elementos.store');
+    Route::put('elementos/{elemento}', [ElementoController::class, 'update'])->name('elementos.update');
+    Route::delete('elementos/{elemento}', [ElementoController::class, 'destroy'])->name('elementos.destroy');
+    Route::post('elementos/{elemento}/mover/{direccion}', [ElementoController::class, 'mover'])->whereIn('direccion', ['arriba', 'abajo'])->name('elementos.mover');
+
+    Route::resource('categorias', CategoriaController::class)->only(['store', 'update', 'destroy'])->parameters(['categorias' => 'categoria']);
+    Route::resource('manuales', ManualController::class)->except('show')->parameters(['manuales' => 'manual']);
+    Route::post('mensajes/{mensaje}/credenciales', [MensajeController::class, 'credenciales'])->middleware('throttle:20,1')->name('mensajes.credenciales');
 
     Route::resource('servicios', ServicioController::class)->except('show')->parameters(['servicios' => 'servicio']);
     Route::resource('clientes', ClienteController::class)->except('show')->parameters(['clientes' => 'cliente']);
@@ -51,3 +75,6 @@ Route::middleware(['auth', 'sin-cache'])->prefix('admin')->name('admin.')->group
     Route::get('cuenta', [CuentaController::class, 'show'])->name('cuenta');
     Route::delete('cuenta/sesiones', [CuentaController::class, 'cerrarSesiones'])->middleware('throttle:6,1')->name('cuenta.sesiones');
 });
+
+// Páginas creadas en el panel (Nosotros, Servicios, Software…). Va al final para no tapar otras rutas.
+Route::get('{pagina:slug}', [SitioController::class, 'pagina'])->where('pagina', '[a-z0-9\-]+')->name('pagina');
