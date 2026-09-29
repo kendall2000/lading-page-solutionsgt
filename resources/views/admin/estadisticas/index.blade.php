@@ -97,6 +97,7 @@
                                     ['tag', 'Planes', $contenido['planes'], route('admin.servicios.index')],
                                     ['mail', 'Solicitudes sin atender', $solicitudes['pendientes'], route('admin.mensajes.index', ['estado' => 'nuevo'])],
                                     ['message-circle', 'Chats abiertos ahora', $chat['abiertasAhora'], route('admin.chat.index')],
+                                    ['user-check', 'Cuentas de clientes activas', $contenido['cuentas'][0].' de '.$contenido['cuentas'][1].' · '.$contenido['contratos'].' sistemas vigentes', route('admin.cuentas.index')],
                                 ];
                             @endphp
                             <ul class="list-group list-group-flush">

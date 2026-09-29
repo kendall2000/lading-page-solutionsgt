@@ -20,6 +20,7 @@
                                     <h5 class="text-1000 mb-1">{{ $m->titulo }}</h5>
                                     @if ($m->resumen)<p class="text-700 fs--1 mb-2">{{ \Illuminate\Support\Str::limit($m->resumen, 110) }}</p>@endif
                                     <div class="d-flex flex-wrap gap-1">
+                                        @if ($m->solo_clientes)<span class="badge badge-phoenix badge-phoenix-warning"><span class="fa-solid fa-lock me-1"></span>Solo clientes</span>@endif
                                         @if ($m->contenido)<span class="badge badge-phoenix badge-phoenix-secondary"><span class="fa-solid fa-file-lines me-1"></span>Guía</span>@endif
                                         @if ($m->archivo)<span class="badge badge-phoenix badge-phoenix-danger"><span class="fa-solid fa-file-pdf me-1"></span>PDF</span>@endif
                                         @if ($m->video_url)<span class="badge badge-phoenix badge-phoenix-info"><span class="fa-solid fa-play me-1"></span>Video</span>@endif

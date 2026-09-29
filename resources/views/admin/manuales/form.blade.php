@@ -56,6 +56,11 @@
                             <input class="form-check-input" id="visible" name="visible" type="checkbox" value="1" @checked(old('visible', $manual->visible)) />
                             <label class="form-check-label" for="visible">Publicado</label>
                         </div>
+                        <div class="form-check form-switch mb-1">
+                            <input class="form-check-input" id="solo_clientes" name="solo_clientes" type="checkbox" value="1" @checked(old('solo_clientes', $manual->solo_clientes)) />
+                            <label class="form-check-label" for="solo_clientes"><span class="fa-solid fa-lock me-1 text-warning"></span>Solo para clientes</label>
+                        </div>
+                        <p class="fs--2 text-700 mb-3">Solo lo ven las cuentas de clientes con el sistema del manual vigente (sin sistema: cualquier cliente con un sistema vigente). Los demás ven el título con un candado y se les pide entrar.</p>
                         <div class="row g-3">
                             <div class="col-7">
                                 <label class="form-label" for="slug">Dirección</label>

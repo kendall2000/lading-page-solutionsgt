@@ -7,7 +7,9 @@ use App\Models\CategoriaSistema;
 use App\Models\Cliente;
 use App\Models\ConfiguracionCorreo;
 use App\Models\ConfiguracionSitio;
+use App\Models\Contrato;
 use App\Models\Conversacion;
+use App\Models\Cuenta;
 use App\Models\Direccion;
 use App\Models\Elemento;
 use App\Models\Manual;
@@ -37,12 +39,13 @@ class Bitacora
         Direccion::class => ['Direcciones', 'Dirección'], MensajeContacto::class => ['Solicitudes', 'Solicitud'], Conversacion::class => ['Chat', 'Conversación'],
         User::class => ['Usuarios', 'Usuario'], ConfiguracionSitio::class => ['Configuración', 'Configuración del sistema'],
         ConfiguracionCorreo::class => ['Correos', 'Servidor de correo'], PlantillaCorreo::class => ['Correos', 'Plantilla'],
+        Cuenta::class => ['Cuentas de clientes', 'Cuenta'], Contrato::class => ['Cuentas de clientes', 'Sistema contratado'],
     ];
 
     /** Campos que cambian solos (contadores, marcas de tiempo): no son un cambio de nadie. */
     private const IGNORAR = [
         'created_at', 'updated_at', 'visitas', 'remember_token', 'ultimo_acceso', 'no_leidos_admin', 'no_leidos_visitante',
-        'ultimo_mensaje_en', 'probado_en', 'leido_en',
+        'ultimo_mensaje_en', 'probado_en', 'leido_en', 'token_hash', 'token_tipo', 'token_vence', 'invitada_en',
     ];
 
     /** Secretos aunque el modelo no los oculte. */
@@ -50,8 +53,10 @@ class Bitacora
 
     public function modelo(string $accion, Model $modelo): void
     {
-        $usuario = auth()->user();
-        if (! $usuario instanceof User) {
+        // Solo lo hecho desde el panel (y el perfil de Fortify): lo que hace un cliente en «Mi cuenta» no es del panel,
+        // aunque en ese navegador también haya una sesión del panel abierta.
+        $usuario = auth('web')->user();
+        if (! $usuario instanceof User || ! request()->is('admin', 'admin/*', 'user/*')) {
             return;
         }
         $cambios = null;

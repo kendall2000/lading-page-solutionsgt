@@ -95,6 +95,22 @@
         </div>
     </form>
     @if ($cliente->exists)
+        <div class="card mt-4">
+            <div class="card-body">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                    <h4 class="mb-0">Cuentas de esta empresa</h4>
+                    <a class="btn btn-sm btn-phoenix-primary" href="{{ route('admin.cuentas.create', ['cliente' => $cliente->id]) }}"><span class="fa-solid fa-user-plus me-1"></span>Invitar a alguien de {{ $cliente->empresa }}</a>
+                </div>
+                @forelse ($cliente->cuentas as $cuentaEmpresa)
+                    <a class="d-flex justify-content-between fs--1 py-2 {{ $loop->last ? '' : 'border-bottom border-200' }}" href="{{ route('admin.cuentas.edit', $cuentaEmpresa) }}">
+                        <span class="text-900">{{ $cuentaEmpresa->nombre }} <span class="text-600">· {{ $cuentaEmpresa->correo }}</span></span>
+                        <span class="badge badge-phoenix badge-phoenix-{{ $cuentaEmpresa->estadoInfo()[1] }}">{{ $cuentaEmpresa->estadoInfo()[0] }}</span>
+                    </a>
+                @empty
+                    <p class="text-700 fs--1 mb-0">Nadie de esta empresa tiene cuenta todavía.</p>
+                @endforelse
+            </div>
+        </div>
         <form class="mt-3" method="POST" action="{{ route('admin.clientes.destroy', $cliente) }}" onsubmit="return confirm('¿Eliminar este cliente?')">
             @csrf
             @method('DELETE')

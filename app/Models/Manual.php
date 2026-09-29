@@ -16,11 +16,11 @@ class Manual extends Model
 
     protected $table = 'manuales';
 
-    protected $fillable = ['sistema_id', 'titulo', 'slug', 'resumen', 'contenido', 'archivo', 'video_url', 'visible', 'orden'];
+    protected $fillable = ['sistema_id', 'titulo', 'slug', 'resumen', 'contenido', 'archivo', 'video_url', 'visible', 'solo_clientes', 'orden'];
 
     protected function casts(): array
     {
-        return ['visible' => 'boolean', 'orden' => 'integer', 'visitas' => 'integer'];
+        return ['visible' => 'boolean', 'solo_clientes' => 'boolean', 'orden' => 'integer', 'visitas' => 'integer'];
     }
 
     public function sistema(): BelongsTo

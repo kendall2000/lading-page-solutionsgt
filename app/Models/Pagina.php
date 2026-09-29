@@ -19,7 +19,7 @@ class Pagina extends Model
     /** Direcciones que usa el sistema: una página no puede llamarse así. */
     public const RESERVADAS = [
         'admin', 'login', 'logout', 'sistemas', 'manuales', 'contacto', 'forgot-password', 'reset-password',
-        'two-factor-challenge', 'user', 'up', 'storage', 'assets', 'vendors', 'email', 'password', 'chat', 'broadcasting',
+        'two-factor-challenge', 'user', 'up', 'storage', 'assets', 'vendors', 'email', 'password', 'chat', 'broadcasting', 'mi-cuenta',
     ];
 
     /** Dirección de la política de privacidad (enlazada en el pie y en los formularios). */

@@ -13,6 +13,8 @@
         $tipoInicial = $fijo->ofrecePrueba() ? 'prueba' : 'contacto';
     }
     $ok = session('contacto_ok');
+    // Cliente con sesión: sus datos ya escritos (la solicitud queda en «Mi cuenta»).
+    $cuentaForm = auth('cliente')->user();
 @endphp
 @if ($ok)
     <div class="alert alert-soft-success" role="alert">
@@ -56,16 +58,16 @@
         </div>
     @endif
     <div class="col-sm-6">
-        <input class="form-control bg-white dark__bg-1100" type="text" name="nombre" value="{{ old('nombre') }}" placeholder="Tu nombre *" required maxlength="120" aria-label="Nombre" />
+        <input class="form-control bg-white dark__bg-1100" type="text" name="nombre" value="{{ old('nombre', $cuentaForm?->nombre) }}" placeholder="Tu nombre *" required maxlength="120" aria-label="Nombre" />
     </div>
     <div class="col-sm-6">
-        <input class="form-control bg-white dark__bg-1100" type="text" name="empresa" value="{{ old('empresa') }}" placeholder="Empresa o negocio" maxlength="150" aria-label="Empresa" />
+        <input class="form-control bg-white dark__bg-1100" type="text" name="empresa" value="{{ old('empresa', $cuentaForm?->cliente?->empresa ?? $cuentaForm?->empresa) }}" placeholder="Empresa o negocio" maxlength="150" aria-label="Empresa" />
     </div>
     <div class="col-sm-6">
-        <input class="form-control bg-white dark__bg-1100" type="email" name="correo" value="{{ old('correo') }}" placeholder="Correo *" required maxlength="150" aria-label="Correo" />
+        <input class="form-control bg-white dark__bg-1100" type="email" name="correo" value="{{ old('correo', $cuentaForm?->correo) }}" placeholder="Correo *" required maxlength="150" aria-label="Correo" />
     </div>
     <div class="col-sm-6">
-        <input class="form-control bg-white dark__bg-1100" type="tel" name="telefono" value="{{ old('telefono') }}" placeholder="Teléfono / WhatsApp" maxlength="30" aria-label="Teléfono" />
+        <input class="form-control bg-white dark__bg-1100" type="tel" name="telefono" value="{{ old('telefono', $cuentaForm?->telefono) }}" placeholder="Teléfono / WhatsApp" maxlength="30" aria-label="Teléfono" />
     </div>
     @if ($fijo)
         <input type="hidden" name="sistema_id" value="{{ $fijo->id }}" />

@@ -164,7 +164,7 @@ class CorreoController extends Controller
         $valores = [
             'nombre' => 'María López', 'enlace' => url('/'), 'minutos' => '60', 'correo' => 'maria@ejemplo.com', 'empresa' => 'Café Central', 'telefono' => '5555 5555', 'sistema_interes' => 'Sistema para Restaurantes',
             'mensaje' => 'Me interesa una demostración del sistema.', 'fecha' => now()->format('d/m/Y H:i'),
-            'error' => 'mysqldump falló: Access denied for user (ejemplo).',
+            'error' => 'mysqldump falló: Access denied for user (ejemplo).', 'dias' => '7',
         ] + $this->correos->base();
 
         return collect($p->variables ?? [])->mapWithKeys(fn ($v) => [$v => $valores[$v] ?? "[{$v}]"])->all() + $this->correos->base();

@@ -64,6 +64,7 @@ En Solutions GT respetamos tu privacidad. Aquí explicamos, en palabras sencilla
 
 - **Formulario de contacto, demostraciones y pruebas:** tu nombre, empresa, correo, teléfono, el sistema que te interesa y tu mensaje.
 - **Chat:** tu nombre, correo y los mensajes que escribes, además de la página desde donde empezaste la conversación.
+- **Cuenta de cliente (si creas una):** nombre, correo, teléfono, empresa y tu contraseña, que se guarda cifrada (ni nosotros podemos verla). Ahí guardamos tus solicitudes, pruebas, sistemas y conversaciones para que las consultes cuando quieras.
 - **Datos técnicos:** la dirección IP y el tipo de navegador, que usamos solo para proteger el sitio contra abusos y envíos automáticos (spam).
 - **Estadísticas de visitas:** contamos qué páginas se visitan, desde qué tipo de equipo y de qué sitio llegaste, sin cookies y sin guardar tu dirección IP. Esos datos son anónimos y no permiten identificarte.
 

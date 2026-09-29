@@ -6,6 +6,7 @@ use App\Models\Concerns\RegistraCambios;
 use App\Support\Imagenes;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Cliente extends Model
 {
@@ -26,6 +27,12 @@ class Cliente extends Model
     public function sistema(): BelongsTo
     {
         return $this->belongsTo(Sistema::class);
+    }
+
+    /** Cuentas de clientes (personas) de esta empresa. */
+    public function cuentas(): HasMany
+    {
+        return $this->hasMany(Cuenta::class)->orderBy('nombre');
     }
 
     public function url(string $campo = 'logo'): ?string

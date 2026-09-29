@@ -17,6 +17,7 @@ use App\Support\Sitio;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -57,9 +58,17 @@ class SitioController extends Controller
         ]);
     }
 
-    public function manual(Manual $manual): View
+    public function manual(Manual $manual): View|RedirectResponse
     {
         abort_unless($manual->visible, 404);
+        // Manual «solo para clientes»: hay que entrar con una cuenta que tenga ese sistema vigente.
+        if ($manual->solo_clientes) {
+            $cuenta = Auth::guard('cliente')->user();
+            if (! $cuenta) {
+                return redirect()->guest(route('cuenta.entrar'))->with('status', 'Este manual es exclusivo para clientes. Entra con tu cuenta para verlo.');
+            }
+            abort_unless($cuenta->puedeVerManual($manual), 403, 'Este manual es solo para clientes con ese sistema contratado.');
+        }
         $manual->increment('visitas');
 
         return view('publico.manual', [
@@ -124,7 +133,11 @@ class SitioController extends Controller
             return $volver()->with('contacto_ok', $datos['tipo']);
         }
 
-        $mensaje = MensajeContacto::query()->create($datos + ['ip' => $request->ip()]);
+        // Cliente con sesión y correo confirmado: la solicitud queda en su cuenta.
+        $cuenta = Auth::guard('cliente')->user();
+        $cuentaId = $cuenta?->verificada() && $cuenta->activa ? $cuenta->id : null;
+
+        $mensaje = MensajeContacto::query()->create($datos + ['ip' => $request->ip(), 'cuenta_id' => $cuentaId]);
 
         // Correos con plantilla (Panel → Correos): aviso a «Avisos a» y confirmación al visitante.
         // Si el servidor está apagado o falla, la solicitud igual queda en el panel y el intento en la bitácora.

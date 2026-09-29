@@ -42,6 +42,12 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        // Portal de clientes (/mi-cuenta). Otro guard: una sesión de cliente no abre el panel.
+        'cliente' => [
+            'driver' => 'session',
+            'provider' => 'cuentas',
+        ],
     ],
 
     /*
@@ -65,6 +71,12 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', User::class),
+        ],
+
+        // Cuentas de clientes del portal «Mi cuenta» (nunca entran al panel).
+        'cuentas' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Cuenta::class,
         ],
 
         // 'users' => [

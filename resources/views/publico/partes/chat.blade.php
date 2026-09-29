@@ -42,8 +42,15 @@
                     <form class="mt-auto" id="sgtChatInicio" novalidate>
                         <div style="position:absolute; left:-10000px;" aria-hidden="true"><input type="text" name="empresa_web" tabindex="-1" autocomplete="off" /></div>
                         <input type="hidden" name="llegada" value="{{ \App\Support\Antispam::marca() }}" />
-                        <input class="form-control form-control-sm mb-2" name="nombre" placeholder="Tu nombre *" maxlength="120" required aria-label="Nombre" />
-                        <input class="form-control form-control-sm mb-2" name="correo" type="email" placeholder="Tu correo *" maxlength="150" required aria-label="Correo" />
+                        @if ($cuentaChat = auth('cliente')->user()?->verificada() ? auth('cliente')->user() : null)
+                            {{-- Con sesión de cliente: ya sabemos quién es y la conversación queda en «Mi cuenta». --}}
+                            <input type="hidden" name="nombre" value="{{ $cuentaChat->nombre }}" />
+                            <input type="hidden" name="correo" value="{{ $cuentaChat->correo }}" />
+                            <p class="fs--1 text-700 mb-2"><span class="fa-solid fa-circle-user me-1"></span>Chateas como <strong>{{ $cuentaChat->nombre }}</strong>. La conversación queda guardada en <a href="{{ route('cuenta.conversaciones') }}">Mi cuenta</a>.</p>
+                        @else
+                            <input class="form-control form-control-sm mb-2" name="nombre" placeholder="Tu nombre *" maxlength="120" required aria-label="Nombre" />
+                            <input class="form-control form-control-sm mb-2" name="correo" type="email" placeholder="Tu correo *" maxlength="150" required aria-label="Correo" />
+                        @endif
                         <textarea class="form-control form-control-sm mb-2" name="mensaje" rows="3" placeholder="¿En qué te ayudamos? *" maxlength="2000" required aria-label="Mensaje"></textarea>
                         <div class="text-danger fs--1 mb-2 d-none" id="sgtChatError"></div>
                         <button class="btn btn-primary btn-sm w-100" type="submit"><span class="fa-solid fa-paper-plane me-2"></span>Empezar chat</button>
@@ -56,7 +63,11 @@
                     {{-- Aviso de conversación cerrada por soporte --}}
                     <div class="border border-300 rounded-3 p-3 mt-3 text-center d-none" id="sgtChatCerrada">
                         <p class="fw-bold mb-1"><span class="fa-solid fa-circle-check text-success me-2"></span>La conversación fue cerrada</p>
-                        <p class="fs--1 text-700 mb-3">Gracias por escribirnos. Como no tienes una cuenta, esta conversación no se guardará en este navegador. ¿Quieres una copia por correo?</p>
+                        @if ($cuentaChat)
+                            <p class="fs--1 text-700 mb-3">Gracias por escribirnos. La conversación queda guardada en <a href="{{ route('cuenta.conversaciones') }}">Mi cuenta</a>; también puedes pedir una copia por correo.</p>
+                        @else
+                            <p class="fs--1 text-700 mb-3">Gracias por escribirnos. Esta conversación no se guardará en este navegador; si <a href="{{ route('cuenta.registro') }}">creas una cuenta</a> con este correo, la verás ahí. ¿Quieres una copia por correo?</p>
+                        @endif
                         <div class="d-grid gap-2">
                             <button class="btn btn-phoenix-primary btn-sm" type="button" id="sgtChatCopia"><span class="fa-solid fa-envelope me-2"></span>Enviarme una copia por correo</button>
                             <button class="btn btn-primary btn-sm" type="button" id="sgtChatNuevo"><span class="fa-solid fa-comment-medical me-2"></span>Empezar un chat nuevo</button>

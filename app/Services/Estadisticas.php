@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\BitacoraCambio;
 use App\Models\Cliente;
+use App\Models\Contrato;
+use App\Models\Cuenta;
 use App\Models\Manual;
 use App\Models\MensajeContacto;
 use App\Models\Pagina;
@@ -230,6 +232,8 @@ class Estadisticas
             'clientes' => Cliente::query()->count(),
             'testimonios' => Cliente::query()->where('mostrar_testimonio', true)->whereNotNull('testimonio')->count(),
             'planes' => Servicio::query()->count(),
+            'cuentas' => [Cuenta::query()->where('activa', true)->whereNotNull('correo_verificado_en')->count(), Cuenta::query()->count()],
+            'contratos' => Contrato::query()->where(fn ($q) => $q->whereNull('hasta')->orWhere('hasta', '>=', now()->toDateString()))->count(),
             'masVistos' => Sistema::query()->orderByDesc('visitas')->limit(5)->get(['id', 'nombre', 'visitas']),
         ];
     }

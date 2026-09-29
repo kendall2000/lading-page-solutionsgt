@@ -12,6 +12,7 @@ use Illuminate\Broadcasting\BroadcastManager;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -61,12 +62,17 @@ class ChatController extends Controller
             throw ValidationException::withMessages(['llegada' => Antispam::MENSAJE_RAPIDO]);
         }
 
+        // Cliente con sesión (y correo confirmado): la conversación es de su cuenta, con sus datos.
+        $cuenta = Auth::guard('cliente')->user();
+        $cuenta = $cuenta?->verificada() && $cuenta->activa ? $cuenta : null;
+
         $token = Str::random(48);
         $conversacion = Conversacion::query()->create([
+            'cuenta_id' => $cuenta?->id,
             'token_hash' => Conversacion::hashToken($token),
-            'nombre' => $datos['nombre'],
-            'correo' => Str::lower($datos['correo']),
-            'telefono' => $datos['telefono'] ?? null,
+            'nombre' => $cuenta->nombre ?? $datos['nombre'],
+            'correo' => $cuenta->correo ?? Str::lower($datos['correo']),
+            'telefono' => $cuenta->telefono ?? $datos['telefono'] ?? null,
             'pagina' => $datos['pagina'] ?? null,
             'ip' => $request->ip(),
             'user_agent' => Str::limit((string) $request->userAgent(), 250, ''),

@@ -14,6 +14,7 @@
             ['admin.estadisticas', 'admin.estadisticas', 'bar-chart-2', 'Estadísticas'],
             ['admin.chat.index', 'admin.chat.*', 'message-circle', 'Chat en vivo'],
             ['admin.mensajes.index', 'admin.mensajes.*', 'inbox', 'Solicitudes y mensajes'],
+            ['admin.cuentas.index', 'admin.cuentas.*', 'user-check', 'Cuentas de clientes'],
         ],
         'Sitio web' => [
             ['admin.paginas.index', ['admin.paginas.*', 'admin.secciones.*'], 'layout', 'Páginas y menú'],

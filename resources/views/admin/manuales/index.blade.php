@@ -41,7 +41,7 @@
                                     @if ($m->video_url)<span class="badge badge-phoenix badge-phoenix-info">Video</span>@endif
                                 </td>
                                 <td class="text-center">{{ number_format($m->visitas) }}</td>
-                                <td><span class="badge badge-phoenix badge-phoenix-{{ $m->visible ? 'success' : 'secondary' }}">{{ $m->visible ? 'Publicado' : 'Oculto' }}</span></td>
+                                <td><span class="badge badge-phoenix badge-phoenix-{{ $m->visible ? 'success' : 'secondary' }}">{{ $m->visible ? 'Publicado' : 'Oculto' }}</span>@if ($m->solo_clientes)<span class="badge badge-phoenix badge-phoenix-warning ms-1"><span class="fa-solid fa-lock me-1"></span>Clientes</span>@endif</td>
                                 <td class="text-end pe-0 text-nowrap">
                                     @if ($m->visible)
                                         <a class="btn btn-phoenix-secondary btn-sm" href="{{ route('manual', $m->slug) }}" target="_blank" rel="noopener" title="Ver"><span class="fa-solid fa-eye"></span></a>

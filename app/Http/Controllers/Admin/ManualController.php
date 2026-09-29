@@ -112,6 +112,7 @@ class ManualController extends Controller
         return array_merge(collect($datos)->except('archivo')->all(), [
             'orden' => (int) ($datos['orden'] ?? $manual?->orden ?? 0),
             'visible' => $request->boolean('visible'),
+            'solo_clientes' => $request->boolean('solo_clientes'),
         ]);
     }
 }

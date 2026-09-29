@@ -18,7 +18,8 @@ class SeoController extends Controller
                 ->map(fn (Pagina $p) => ['loc' => $p->enlace(), 'lastmod' => $p->updated_at, 'priority' => '0.8']))
             ->concat(Sistema::query()->publicos()->get()
                 ->map(fn (Sistema $s) => ['loc' => route('sistema', $s->slug), 'lastmod' => $s->updated_at, 'priority' => '0.7']))
-            ->concat(Manual::query()->publicos()->get()
+            // Los manuales «solo clientes» no van al mapa (piden entrar con una cuenta).
+            ->concat(Manual::query()->publicos()->where('solo_clientes', false)->get()
                 ->map(fn (Manual $m) => ['loc' => route('manual', $m->slug), 'lastmod' => $m->updated_at, 'priority' => '0.5']));
 
         return response()->view('seo.sitemap', ['enlaces' => $enlaces], 200, ['Content-Type' => 'application/xml; charset=UTF-8']);
@@ -29,7 +30,7 @@ class SeoController extends Controller
         // Fuera de producción (pruebas, copia local) no se deja indexar nada.
         $lineas = app()->isProduction()
             ? ['User-agent: *', 'Disallow: /admin', 'Disallow: /login', 'Disallow: /forgot-password', 'Disallow: /reset-password',
-                'Disallow: /two-factor-challenge', 'Disallow: /chat/', 'Disallow: /broadcasting/', '', 'Sitemap: '.route('sitemap')]
+                'Disallow: /two-factor-challenge', 'Disallow: /chat/', 'Disallow: /broadcasting/', 'Disallow: /mi-cuenta', '', 'Sitemap: '.route('sitemap')]
             : ['User-agent: *', 'Disallow: /'];
 
         return response(implode("\n", $lineas)."\n", 200, ['Content-Type' => 'text/plain; charset=UTF-8']);

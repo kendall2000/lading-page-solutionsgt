@@ -161,6 +161,7 @@
                                     <div>
                                         <h5 class="text-1000 mb-1">{{ $m->titulo }}</h5>
                                         @if ($m->resumen)<p class="text-700 fs--1 mb-0">{{ \Illuminate\Support\Str::limit($m->resumen, 100) }}</p>@endif
+                                        @if ($m->solo_clientes)<span class="badge badge-phoenix badge-phoenix-warning mt-2"><span class="fa-solid fa-lock me-1"></span>Solo clientes</span>@endif
                                     </div>
                                 </div>
                             </a>

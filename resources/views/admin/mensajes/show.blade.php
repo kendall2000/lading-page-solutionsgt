@@ -3,7 +3,8 @@
 @section('contenido')
     @php [$textoTipo, $colorTipo, $tituloTipo] = $mensaje->tipoInfo(); @endphp
     <a class="fs--1 fw-bold" href="{{ route('admin.mensajes.index') }}"><span class="fa-solid fa-angle-left me-1"></span>Solicitudes y mensajes</a>
-    <h2 class="mt-2 mb-4 text-1100">{{ $tituloTipo }} de {{ $mensaje->nombre }} <span class="badge badge-phoenix badge-phoenix-{{ $colorTipo }} fs--1 align-middle">{{ $textoTipo }}</span></h2>
+    <h2 class="mt-2 mb-4 text-1100">{{ $tituloTipo }} de {{ $mensaje->nombre }} <span class="badge badge-phoenix badge-phoenix-{{ $colorTipo }} fs--1 align-middle">{{ $textoTipo }}</span>
+        @if ($mensaje->cuenta_id)<a class="badge badge-phoenix badge-phoenix-success fs--1 align-middle" href="{{ route('admin.cuentas.edit', $mensaje->cuenta_id) }}"><span class="fa-solid fa-user-check me-1"></span>Tiene cuenta</a>@endif</h2>
 
     <div class="row g-4">
         <div class="col-lg-8">

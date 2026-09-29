@@ -60,6 +60,7 @@
                             <div>
                                 <h5 class="mb-0 text-1000">{{ $actual->nombre }}
                                     @if ($actual->estado === 'cerrada')<span class="badge badge-phoenix badge-phoenix-secondary fs--2 ms-1">Cerrada</span>@endif
+                                    @if ($actual->cuenta_id)<a class="badge badge-phoenix badge-phoenix-success fs--2 ms-1" href="{{ route('admin.cuentas.edit', $actual->cuenta_id) }}" title="La ve en «Mi cuenta»">Tiene cuenta</a>@endif
                                 </h5>
                                 <p class="fs--1 text-700 mb-0">
                                     <a href="mailto:{{ $actual->correo }}">{{ $actual->correo }}</a>

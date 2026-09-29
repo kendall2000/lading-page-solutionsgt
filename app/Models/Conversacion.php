@@ -16,7 +16,7 @@ class Conversacion extends Model
     protected $table = 'conversaciones';
 
     protected $fillable = [
-        'token_hash', 'nombre', 'correo', 'telefono', 'pagina', 'ip', 'user_agent', 'estado', 'cerrada_en', 'atendida_por',
+        'cuenta_id', 'token_hash', 'nombre', 'correo', 'telefono', 'pagina', 'ip', 'user_agent', 'estado', 'cerrada_en', 'atendida_por',
         'no_leidos_admin', 'no_leidos_visitante', 'ultimo_mensaje_en',
     ];
 
@@ -35,6 +35,11 @@ class Conversacion extends Model
     public function ultimoMensaje(): HasOne
     {
         return $this->hasOne(MensajeChat::class)->latestOfMany();
+    }
+
+    public function cuenta(): BelongsTo
+    {
+        return $this->belongsTo(Cuenta::class);
     }
 
     public function atendidaPor(): BelongsTo

@@ -44,7 +44,7 @@ restaurante solo sirvió de modelo inicial (estructura, módulo de Correos, Dock
   El `.env` local apunta a esa BD real: `migrate` y `db:seed` escriben ahí.
 - Tablas: `users`, `configuracion_sitio` (una fila), `paginas`, `secciones`, `elementos`, `categorias_sistema`, `manuales`, `configuracion_correo`, `plantillas_correo`, `bitacora_correos`, `sistemas`, `sistema_imagenes`, `servicios` (planes), `clientes`
   (incluye logo y testimonio), `direcciones`, `mensajes_contacto`, `conversaciones`, `mensajes_chat`, `visitas`,
-  `bitacora_cambios` + las de Laravel (`sessions`, `cache`, `jobs`…).
+  `bitacora_cambios`, `cuentas`, `contratos` + las de Laravel (`sessions`, `cache`, `jobs`…).
 - `DatabaseSeeder` solo crea lo que falta (no pisa lo editado en el panel). El usuario inicial sale de
   `ADMIN_EMAIL` / `ADMIN_PASSWORD` o se genera y se muestra una sola vez.
 
@@ -80,9 +80,8 @@ restaurante solo sirvió de modelo inicial (estructura, módulo de Correos, Dock
   visitante con la ventana abierta (`POST /chat/leer`), panel al abrirla o consultando con `leer=1` (pestaña
   visible). `Chat::marcarLeidos()` transmite `MensajesLeidos`. Consultar mensajes nunca marca como leído.
 - **Cierre**: `Chat::cerrar()` deja un mensaje `autor=sistema`, transmite `ConversacionCerrada` y el widget ofrece
-  copia por correo (plantilla `copia_chat`) o chat nuevo. Sin cuentas de cliente, el navegador del visitante la
-  olvida (cookie borrada); el panel la conserva en «Cerradas» como solo lectura. Pendiente (pedido del usuario):
-  cuando existan cuentas de clientes, que puedan conservar y ver sus conversaciones.
+  copia por correo (plantilla `copia_chat`) o chat nuevo. El navegador del visitante la olvida (cookie borrada);
+  el panel la conserva en «Cerradas» como solo lectura, y si tiene `cuenta_id` el cliente la ve en «Mi cuenta».
 - En pruebas el broadcaster es `null`: las JSON con cookie necesitan `withCredentials()`.
 
 ## Estructura
@@ -153,6 +152,29 @@ restaurante solo sirvió de modelo inicial (estructura, módulo de Correos, Dock
   (plazos elegidos por el usuario el 2026-09-29) y visitas > 13 meses. La bitácora de cambios no se borra.
 - Restaurar (a mano, nunca automático): `php artisan respaldo:descargar` (lista) → `respaldo:descargar 1`
   deja el `.sql` en `storage/app/respaldos/` → importarlo con el cliente de MySQL y borrar el archivo.
+
+## Cuentas de clientes («Mi cuenta», pedido del usuario 2026-09-29)
+
+- **Separadas del panel**: modelo `Cuenta` (tabla `cuentas`), guard `cliente` (provider `cuentas`). El panel usa
+  `auth:web` explícito, `UsuarioActivo` y los canales de Reverb miran solo el guard `web`: una sesión de cliente nunca
+  abre `/admin`. Salir del portal solo cierra el guard `cliente` (no invalida la sesión: puede haber panel abierto).
+  `redirectGuestsTo`/`redirectUsersTo` eligen destino según la ruta (`mi-cuenta*`).
+- **Acceso** (`Cuenta\AccesoController`, `App\Services\Cuentas`): contraseña o enlace de un solo uso por correo
+  (plantilla `cuenta_enlace`, 20 min; también es el «olvidé mi contraseña»). Registro en el sitio con confirmación
+  (`cuenta_confirmar`, URL firmada 24 h, no inicia sesión) o invitación desde el panel (`cuenta_invitacion`, 7 días,
+  crea contraseña). Tokens: solo el sha256 en `cuentas.token_hash` (uno vigente a la vez). Los enlaces abren una
+  página con botón (POST): los antivirus del correo abren enlaces y gastarían el token. Nada revela si un correo tiene
+  cuenta (registro con correo existente → le llega un enlace). Al confirmar el correo se le unen chats y solicitudes
+  anteriores con ese correo (`Cuentas::vincular`) y avisa `nueva_cuenta`.
+- **Portal** (`Cuenta\PortalController`, vistas `publico/cuenta/*`, diseño `apps/e-commerce/landing/profile.html`):
+  resumen, sistemas contratados, solicitudes y pruebas (con clave de prueba), conversaciones (responder desde el
+  portal con consulta cada 5 s; nueva conversación deja la cookie del widget), manuales y perfil. Con sesión, el
+  widget y el formulario usan los datos de la cuenta y guardan `cuenta_id`.
+- **Contratos** (`contratos`): sistema contratado de una cuenta o de toda la empresa (`cliente_id` = ficha de
+  Clientes); `hasta` vacío = sin vencimiento. Se administran en Panel → Cuentas de clientes.
+- **Manuales `solo_clientes`**: los ve una cuenta con el sistema del manual vigente (sin sistema: cualquier contrato
+  vigente). Invitado → a entrar; sin contrato → 403. Fuera del sitemap y con `noindex`. Ojo: el PDF está en el bucket
+  público de Contabo con nombre aleatorio (no es secreto si alguien comparte el enlace).
 
 ## Despliegue (Docker)
 

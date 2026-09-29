@@ -1,4 +1,4 @@
-@extends('layouts.publico', ['titulo' => $manual->titulo, 'descripcion' => $manual->resumen])
+@extends('layouts.publico', ['titulo' => $manual->titulo, 'descripcion' => $manual->resumen, 'noIndexar' => $manual->solo_clientes])
 
 @section('contenido')
     <section class="py-9 sgt-encabezado">
@@ -50,7 +50,7 @@
                                 <h5 class="mb-3">Otros manuales</h5>
                                 <ul class="list-unstyled mb-0">
                                     @foreach ($otros as $o)
-                                        <li class="mb-2"><a class="fs--1" href="{{ route('manual', $o->slug) }}"><span class="fa-solid fa-book me-2 text-600"></span>{{ $o->titulo }}</a></li>
+                                        <li class="mb-2"><a class="fs--1" href="{{ route('manual', $o->slug) }}"><span class="fa-solid {{ $o->solo_clientes ? 'fa-lock' : 'fa-book' }} me-2 text-600"></span>{{ $o->titulo }}</a></li>
                                     @endforeach
                                 </ul>
                             </div>

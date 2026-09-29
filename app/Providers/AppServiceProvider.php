@@ -32,7 +32,7 @@ class AppServiceProvider extends ServiceProvider
             && app(Bitacora::class)->anotar('entrar', 'Acceso', 'Inició sesión', $e->user));
         Event::listen(Logout::class, fn (Logout $e) => $e->user instanceof User
             && app(Bitacora::class)->anotar('salir', 'Acceso', 'Cerró sesión', $e->user));
-        Event::listen(Failed::class, fn (Failed $e) => app(Bitacora::class)->anotar(
+        Event::listen(Failed::class, fn (Failed $e) => $e->guard === 'web' && app(Bitacora::class)->anotar(
             'fallido', 'Acceso', 'Contraseña incorrecta, usuario inexistente o desactivado',
             // Si el correo es de un usuario, se liga a él (para ver intentos contra cuentas reales).
             $e->user instanceof User ? $e->user : User::query()->where('email', mb_strtolower((string) ($e->credentials['email'] ?? '')))->first(),

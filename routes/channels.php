@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Conversacion;
+use App\Models\User;
 use Illuminate\Support\Facades\Broadcast;
 
 /*
@@ -9,9 +10,10 @@ use Illuminate\Support\Facades\Broadcast;
  * comprobando el token de su cookie contra la conversación.
  */
 
-// Cualquier usuario activo del panel atiende el chat (no hay roles).
-Broadcast::channel('chat.panel', fn ($user) => (bool) $user?->is_active);
+// Cualquier usuario activo del panel atiende el chat (no hay roles). Solo usuarios del panel (User),
+// nunca una cuenta de cliente del portal.
+Broadcast::channel('chat.panel', fn ($user) => $user instanceof User && $user->is_active, ['guards' => ['web']]);
 
 Broadcast::channel('chat.conversacion.{conversacion}', function ($user, Conversacion $conversacion) {
-    return (bool) $user?->is_active;
-});
+    return $user instanceof User && $user->is_active;
+}, ['guards' => ['web']]);

@@ -29,7 +29,7 @@ class MensajeContacto extends Model
     ];
 
     protected $fillable = [
-        'tipo', 'nombre', 'empresa', 'correo', 'telefono', 'sistema_id', 'mensaje', 'estado', 'notas', 'ip',
+        'cuenta_id', 'tipo', 'nombre', 'empresa', 'correo', 'telefono', 'sistema_id', 'mensaje', 'estado', 'notas', 'ip',
         'url_acceso', 'usuario_prueba', 'clave_prueba', 'vence_el', 'credenciales_enviadas_en',
     ];
 
@@ -43,6 +43,20 @@ class MensajeContacto extends Model
     public function sistema(): BelongsTo
     {
         return $this->belongsTo(Sistema::class);
+    }
+
+    public function cuenta(): BelongsTo
+    {
+        return $this->belongsTo(Cuenta::class);
+    }
+
+    /** Cómo ve el cliente el estado en su cuenta: [texto, color]. */
+    public function estadoCliente(): array
+    {
+        return [
+            'nuevo' => ['Recibida', 'primary'], 'atendido' => ['En atención', 'info'],
+            'cliente' => ['Completada', 'success'], 'descartado' => ['Cerrada', 'secondary'],
+        ][$this->estado] ?? ['Recibida', 'primary'];
     }
 
     /** @return array{0:string,1:string,2:string} */

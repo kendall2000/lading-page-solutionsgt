@@ -12,7 +12,8 @@ class UsuarioActivo
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $user = $request->user();
+        // Siempre el usuario del panel («web»): las cuentas de clientes tienen su propio control (CuentaVerificada).
+        $user = Auth::guard('web')->user();
         if ($user && ! $user->is_active) {
             Auth::guard('web')->logout();
             $request->session()->invalidate();

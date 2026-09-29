@@ -25,6 +25,10 @@
         ]);
     @endphp
     <meta name="description" content="{{ $descripcion }}">
+    @if ($noIndexar ?? false)
+        {{-- Portal de clientes y páginas privadas: no van a Google. --}}
+        <meta name="robots" content="noindex, nofollow">
+    @endif
     <link rel="canonical" href="{{ $actual }}">
     <meta property="og:type" content="website">
     <meta property="og:locale" content="es_GT">
@@ -107,6 +111,11 @@
                             <label class="mb-0 theme-control-toggle-label theme-control-toggle-dark" for="themeControlToggle" title="Modo claro"><span class="icon" data-feather="sun"></span></label>
                         </div>
                     </div>
+                    @if ($cuentaSesion = auth('cliente')->user())
+                        <a class="btn btn-link text-900 fs--1 fw-bold px-lg-3 mt-3 mt-lg-0" href="{{ route('cuenta.inicio') }}"><span class="fa-solid fa-circle-user me-1"></span>Mi cuenta</a>
+                    @else
+                        <a class="btn btn-link text-900 fs--1 fw-bold px-lg-3 mt-3 mt-lg-0" href="{{ route('cuenta.entrar') }}"><span class="fa-solid fa-right-to-bracket me-1"></span>Entrar</a>
+                    @endif
                     <a class="btn btn-phoenix-primary order-0 my-3 my-lg-0" href="{{ $enlaceContacto }}"><span class="fw-bold">Solicitar una demo</span></a>
                 </div>
             </div>

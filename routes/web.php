@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\ChatController as AdminChatController;
 use App\Http\Controllers\Admin\ClienteController;
 use App\Http\Controllers\Admin\ConfiguracionController;
 use App\Http\Controllers\Admin\CorreoController;
+use App\Http\Controllers\Admin\CuentaClienteController;
 use App\Http\Controllers\Admin\CuentaController;
 use App\Http\Controllers\Admin\DireccionController;
 use App\Http\Controllers\Admin\ElementoController;
@@ -19,6 +20,8 @@ use App\Http\Controllers\Admin\ServicioController;
 use App\Http\Controllers\Admin\SistemaController;
 use App\Http\Controllers\Admin\UsuarioController;
 use App\Http\Controllers\ChatController;
+use App\Http\Controllers\Cuenta\AccesoController;
+use App\Http\Controllers\Cuenta\PortalController;
 use App\Http\Controllers\SeoController;
 use App\Http\Controllers\SitioController;
 use Illuminate\Support\Facades\Route;
@@ -46,8 +49,46 @@ Route::prefix('chat')->name('chat.')->group(function () {
     Route::post('salir', [ChatController::class, 'salir'])->middleware('throttle:20,1')->name('salir');
 });
 
+// Portal de clientes «Mi cuenta» (guard «cliente», separado del panel).
+Route::prefix('mi-cuenta')->name('cuenta.')->middleware('sin-cache')->group(function () {
+    Route::middleware('guest:cliente')->group(function () {
+        Route::get('entrar', [AccesoController::class, 'entrar'])->name('entrar');
+        Route::post('entrar', [AccesoController::class, 'login'])->middleware('throttle:20,1')->name('login');
+        Route::post('enlace', [AccesoController::class, 'pedirEnlace'])->middleware('throttle:4,10')->name('enlace');
+        Route::get('acceso/{token}', [AccesoController::class, 'acceso'])->where('token', '[A-Za-z0-9]{64}')->name('acceso');
+        Route::post('acceso/{token}', [AccesoController::class, 'usarAcceso'])->where('token', '[A-Za-z0-9]{64}')->middleware('throttle:10,1')->name('acceso.usar');
+        Route::get('registro', [AccesoController::class, 'registro'])->name('registro');
+        Route::post('registro', [AccesoController::class, 'registrar'])->middleware('throttle:4,10')->name('registrar');
+        Route::get('invitacion/{token}', [AccesoController::class, 'invitacion'])->where('token', '[A-Za-z0-9]{64}')->name('invitacion');
+        Route::post('invitacion/{token}', [AccesoController::class, 'aceptarInvitacion'])->where('token', '[A-Za-z0-9]{64}')->middleware('throttle:10,1')->name('invitacion.aceptar');
+    });
+    Route::get('verificar/{cuenta}/{hash}', [AccesoController::class, 'verificar'])->middleware(['signed', 'throttle:10,1'])->name('verificar');
+
+    Route::middleware('auth:cliente')->group(function () {
+        Route::post('salir', [AccesoController::class, 'salir'])->name('salir');
+        Route::get('confirma-tu-correo', [AccesoController::class, 'pendiente'])->name('pendiente');
+        Route::post('confirma-tu-correo', [AccesoController::class, 'reenviar'])->middleware('throttle:3,10')->name('reenviar');
+
+        Route::middleware('cuenta.verificada')->group(function () {
+            Route::get('/', [PortalController::class, 'inicio'])->name('inicio');
+            Route::get('sistemas', [PortalController::class, 'sistemas'])->name('sistemas');
+            Route::get('solicitudes', [PortalController::class, 'solicitudes'])->name('solicitudes');
+            Route::get('conversaciones', [PortalController::class, 'conversaciones'])->name('conversaciones');
+            Route::post('conversaciones', [PortalController::class, 'nueva'])->middleware('throttle:5,10')->name('conversaciones.nueva');
+            Route::get('conversaciones/{conversacion}', [PortalController::class, 'conversacion'])->name('conversacion');
+            Route::get('conversaciones/{conversacion}/mensajes', [PortalController::class, 'mensajes'])->middleware('throttle:120,1')->name('conversacion.mensajes');
+            Route::post('conversaciones/{conversacion}/mensajes', [PortalController::class, 'responder'])->middleware('throttle:30,1')->name('conversacion.responder');
+            Route::get('manuales', [PortalController::class, 'manualesVista'])->name('manuales');
+            Route::get('perfil', [PortalController::class, 'perfil'])->name('perfil');
+            Route::put('perfil', [PortalController::class, 'actualizarPerfil'])->name('perfil.actualizar');
+            Route::put('clave', [PortalController::class, 'cambiarClave'])->middleware('throttle:6,1')->name('clave');
+        });
+    });
+});
+
 // Panel de administración.
-Route::middleware(['auth', 'sin-cache'])->prefix('admin')->name('admin.')->group(function () {
+// «auth:web» explícito: una sesión de cliente («cliente») nunca abre el panel.
+Route::middleware(['auth:web', 'sin-cache'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', InicioController::class)->name('inicio');
     Route::get('estadisticas', EstadisticaController::class)->name('estadisticas');
     Route::get('bitacora', [BitacoraController::class, 'index'])->name('bitacora.index');
@@ -82,6 +123,11 @@ Route::middleware(['auth', 'sin-cache'])->prefix('admin')->name('admin.')->group
 
     Route::resource('servicios', ServicioController::class)->except('show')->parameters(['servicios' => 'servicio']);
     Route::resource('clientes', ClienteController::class)->except('show')->parameters(['clientes' => 'cliente']);
+    Route::resource('cuentas', CuentaClienteController::class)->except('show')->parameters(['cuentas' => 'cuenta']);
+    Route::post('cuentas/{cuenta}/invitacion', [CuentaClienteController::class, 'invitar'])->middleware('throttle:10,1')->name('cuentas.invitar');
+    Route::post('cuentas/{cuenta}/contratos', [CuentaClienteController::class, 'agregarContrato'])->name('cuentas.contratos.store');
+    Route::put('contratos/{contrato}', [CuentaClienteController::class, 'actualizarContrato'])->name('contratos.update');
+    Route::delete('contratos/{contrato}', [CuentaClienteController::class, 'quitarContrato'])->name('contratos.destroy');
     Route::resource('direcciones', DireccionController::class)->except('show')->parameters(['direcciones' => 'direccion']);
     Route::resource('mensajes', MensajeController::class)->only(['index', 'show', 'update', 'destroy'])->parameters(['mensajes' => 'mensaje']);
     Route::resource('usuarios', UsuarioController::class)->except(['show', 'destroy'])->parameters(['usuarios' => 'usuario']);
