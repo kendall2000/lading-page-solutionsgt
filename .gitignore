@@ -25,3 +25,6 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Plantilla Phoenix comprada (pesada y con CONFIG de otro sistema): solo referencia local, nunca al repositorio.
+/public/Plantilla
