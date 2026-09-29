@@ -9,7 +9,7 @@ set -e
 #  3. Cachear config / rutas / vistas / eventos para producción.
 #  4. (Opcional) correr migraciones si RUN_MIGRATIONS=true.
 #  5. Ceder el control al CMD (apache2-foreground).
-# No hay cron: el sitio no tiene tareas programadas.
+# Tareas programadas: contenedor aparte (solutionsgt-tareas, schedule:work), sin cron.
 # ==========================================================================
 
 cd /var/www/html

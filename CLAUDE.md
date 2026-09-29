@@ -118,6 +118,17 @@ restaurante solo sirvió de modelo inicial (estructura, módulo de Correos, Dock
   deserializa objetos de la caché); llamar `Sitio::olvidar()` al guardarla.
 - En Blade, las variables de la vista hija pasan al layout: no usar `$titulo`, `$cfg`, `$base` como variables de ciclo.
 
+## Tareas programadas (respaldo y limpieza)
+
+- `routes/console.php`; las corre el contenedor `solutionsgt-tareas` (`schedule:work`, usuario www-data), sin cron.
+- **3:00 `respaldo:crear`**: `mariadb-dump` (paquete `mariadb-client` de la imagen) → gzip → cifrado con APP_KEY →
+  Contabo `respaldos/<bd>-<fecha>-<aleatorio>.sql.gz.enc` (privado). Conserva los **30** más nuevos
+  (`Respaldos::CONSERVAR`). Si falla, avisa con la plantilla `respaldo_fallido`. Sin APP_KEY no se pueden leer.
+- **3:30 `sitio:limpiar`**: bitácora de correos > 90 días y chats **cerrados** sin actividad > 6 meses
+  (plazos elegidos por el usuario el 2026-09-29).
+- Restaurar (a mano, nunca automático): `php artisan respaldo:descargar` (lista) → `respaldo:descargar 1`
+  deja el `.sql` en `storage/app/respaldos/` → importarlo con el cliente de MySQL y borrar el archivo.
+
 ## Despliegue (Docker)
 
 - `Dockerfile`, `docker-compose.yml`, `docker-entrypoint.sh` adaptados del restaurante: contenedor

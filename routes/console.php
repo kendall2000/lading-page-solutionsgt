@@ -1,8 +1,7 @@
 <?php
 
-use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 
-Artisan::command('inspire', function () {
-    $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote');
+// Tareas programadas: las corre el contenedor «solutionsgt-tareas» (php artisan schedule:work).
+Schedule::command('respaldo:crear')->dailyAt('03:00')->withoutOverlapping();
+Schedule::command('sitio:limpiar')->dailyAt('03:30')->withoutOverlapping();

@@ -45,6 +45,26 @@ services:
       timeout: 5s
       retries: 3
 
+  # Tareas programadas (routes/console.php): respaldo de la base a las 3:00 y limpieza a las 3:30.
+  # Corre como www-data para que los logs que escriba los pueda seguir escribiendo Apache.
+  solutionsgt-tareas:
+    image: solutionsgt-php
+    container_name: solutionsgt-tareas
+    depends_on:
+      - solutionsgt-php
+    user: www-data
+    command: ["php", "artisan", "schedule:work"]
+    networks:
+      - red-external-network
+    restart: always
+    env_file:
+      - .env
+    environment:
+      RUN_MIGRATIONS: "false"
+    volumes:
+      - ./.env:/var/www/html/.env
+      - solutionsgt-storage:/var/www/html/storage
+
 volumes:
   solutionsgt-storage:
 
