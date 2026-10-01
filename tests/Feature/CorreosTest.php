@@ -75,6 +75,12 @@ class CorreosTest extends TestCase
         ])->assertSessionHasErrors('remitente_correo');
     }
 
+    public function test_la_prueba_pide_activar_el_servidor_antes(): void
+    {
+        $this->actingAs($this->admin)->post('/admin/correos/probar', ['destinatario' => 'yo@ejemplo.com'])->assertSessionHas('aviso');
+        $this->assertDatabaseMissing('bitacora_correos', ['plantilla' => '_prueba']);
+    }
+
     public function test_avisos_a_valida_cada_correo(): void
     {
         $this->actingAs($this->admin)->post('/admin/correos/servidor', ['avisos_a' => 'bien@ejemplo.com, malo'])

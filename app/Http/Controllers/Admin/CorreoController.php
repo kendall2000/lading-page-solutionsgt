@@ -79,6 +79,11 @@ class CorreoController extends Controller
     public function probar(Request $request): RedirectResponse
     {
         $request->validate(['destinatario' => ['required', 'email']]);
+        // Apagado, Laravel usaría el correo del .env (en local, solo el log): la prueba diría «enviado» sin probar este servidor.
+        if (! ConfiguracionCorreo::actual()->is_active) {
+            return redirect()->route('admin.correos.index', ['ver' => 'servidor'])
+                ->with('aviso', 'Activa «Usar este servidor» y guarda antes de enviar la prueba.');
+        }
         $html = view('correos.prueba')->render();
         $ok = $this->correos->mandar(['asunto' => 'Correo de prueba · '.Sitio::nombre(), 'html' => $html], $request->input('destinatario'), '_prueba', $request->user()->id);
         if ($ok) {
