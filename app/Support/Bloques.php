@@ -93,6 +93,12 @@ class Bloques
             'campos' => ['etiqueta', 'titulo', 'contenido'],
             'opciones' => [],
         ],
+        'tienda' => [
+            'nombre' => 'Productos en venta', 'icono' => 'shopping-cart',
+            'descripcion' => 'Lo que vendes (de «Productos y precios») con botones para comprar o suscribirse con PayPal.',
+            'campos' => ['etiqueta', 'titulo', 'contenido'],
+            'opciones' => ['tipo_producto', 'limite'],
+        ],
         'testimonios' => [
             'nombre' => 'Testimonios', 'icono' => 'message-circle',
             'descripcion' => 'Lo que dicen tus clientes (de «Clientes», los que tienen testimonio visible).',

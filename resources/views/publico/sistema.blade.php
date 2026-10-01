@@ -26,6 +26,9 @@
                                 @endforeach
                             </div>
                         @endif
+                        @if ($productos->isNotEmpty())
+                            <a class="btn btn-lg btn-primary rounded-pill me-2 mb-2" href="#precios"><span class="fa-solid fa-tag me-2"></span>Ver precios</a>
+                        @endif
                         @if ($sistema->ofrecePrueba())
                             <a class="btn btn-lg btn-success rounded-pill me-2 mb-2" href="?tipo=prueba#solicitar"><span class="fa-solid fa-flask me-2"></span>Probar {{ $sistema->dias_prueba }} días gratis</a>
                         @endif
@@ -82,6 +85,19 @@
             </div>
         </div>
     </section>
+
+    {{-- Precios (productos de Ventas ligados a este sistema) --}}
+    @if ($productos->isNotEmpty())
+        <section class="pt-0 pb-10" id="precios">
+            <div class="container-small px-lg-7 px-xxl-3">
+                <div class="text-center mb-7">
+                    <h5 class="text-info mb-3">Precios</h5>
+                    <h2 class="mb-2">Elige cómo quieres pagarlo</h2>
+                </div>
+                @include('publico.partes.productos', ['productos' => $productos])
+            </div>
+        </section>
+    @endif
 
     {{-- Capturas --}}
     @if ($sistema->imagenes->isNotEmpty())

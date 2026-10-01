@@ -8,6 +8,7 @@ use App\Models\Direccion;
 use App\Models\Manual;
 use App\Models\MensajeContacto;
 use App\Models\Pagina;
+use App\Models\Producto;
 use App\Models\Servicio;
 use App\Models\Sistema;
 use App\Rules\PocosEnlaces;
@@ -53,6 +54,7 @@ class SitioController extends Controller
             'cfg' => Sitio::config(),
             'sistema' => $sistema->load(['imagenes', 'categoria', 'manuales' => fn ($q) => $q->where('visible', true)]),
             'clientes' => $sistema->clientes()->where('mostrar_testimonio', true)->whereNotNull('testimonio')->get(),
+            'productos' => $sistema->proximamente ? collect() : Producto::query()->enVenta()->where('sistema_id', $sistema->id)->get(),
             'otros' => Sistema::query()->publicos()->whereKeyNot($sistema->id)
                 ->orderByRaw('categoria_id = ? desc', [$sistema->categoria_id ?? 0])->limit(3)->get(),
         ]);
@@ -183,6 +185,7 @@ class SitioController extends Controller
             'logos' => $clientes->where('mostrar_logo', true)->filter(fn ($c) => $c->logo)->values(),
             'direcciones' => $usa('contacto') ? Direccion::query()->publicas()->get() : collect(),
             'manuales' => $usa('manuales') ? Manual::query()->publicos()->with('sistema')->get() : collect(),
+            'productos' => $usa('tienda') ? Producto::query()->enVenta()->get() : collect(),
         ];
     }
 }

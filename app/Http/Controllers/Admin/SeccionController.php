@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\CategoriaSistema;
 use App\Models\Pagina;
+use App\Models\Producto;
 use App\Models\Seccion;
 use App\Models\Sistema;
 use App\Support\Bloques;
@@ -72,6 +73,7 @@ class SeccionController extends Controller
             'opciones.categoria_id' => ['nullable', 'integer', 'exists:categorias_sistema,id'],
             'opciones.sistema_id' => ['nullable', 'integer', 'exists:sistemas,id'],
             'opciones.limite' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'opciones.tipo_producto' => ['nullable', Rule::in(array_keys(Producto::TIPOS))],
             'imagen' => Imagenes::regla(),
             'imagen_oscura' => Imagenes::regla(),
         ], [

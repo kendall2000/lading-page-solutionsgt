@@ -16,6 +16,10 @@
             ['admin.mensajes.index', 'admin.mensajes.*', 'inbox', 'Solicitudes y mensajes'],
             ['admin.cuentas.index', 'admin.cuentas.*', 'user-check', 'Cuentas de clientes'],
         ],
+        'Ventas' => [
+            ['admin.ventas.index', ['admin.ventas.*', 'admin.suscripciones.*'], 'shopping-cart', 'Suscripciones y pagos'],
+            ['admin.productos.index', 'admin.productos.*', 'shopping-bag', 'Productos y precios'],
+        ],
         'Sitio web' => [
             ['admin.paginas.index', ['admin.paginas.*', 'admin.secciones.*'], 'layout', 'Páginas y menú'],
             ['admin.sistemas.index', 'admin.sistemas.*', 'package', 'Software'],

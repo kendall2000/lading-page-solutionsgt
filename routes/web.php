@@ -15,12 +15,16 @@ use App\Http\Controllers\Admin\InicioController;
 use App\Http\Controllers\Admin\ManualController;
 use App\Http\Controllers\Admin\MensajeController;
 use App\Http\Controllers\Admin\PaginaController;
+use App\Http\Controllers\Admin\ProductoController;
 use App\Http\Controllers\Admin\SeccionController;
 use App\Http\Controllers\Admin\ServicioController;
 use App\Http\Controllers\Admin\SistemaController;
 use App\Http\Controllers\Admin\UsuarioController;
+use App\Http\Controllers\Admin\VentaController;
+use App\Http\Controllers\AvisoPayPalController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\Cuenta\AccesoController;
+use App\Http\Controllers\Cuenta\PagoController;
 use App\Http\Controllers\Cuenta\PortalController;
 use App\Http\Controllers\SeoController;
 use App\Http\Controllers\SitioController;
@@ -36,6 +40,9 @@ Route::post('contacto', [SitioController::class, 'contacto'])->middleware('throt
 // Para buscadores (se arman solos con lo publicado).
 Route::get('sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
 Route::get('robots.txt', [SeoController::class, 'robots'])->name('robots');
+
+// Avisos de PayPal (webhook): sin CSRF (bootstrap/app.php); el estado se vuelve a pedir a PayPal.
+Route::post('paypal/aviso', AvisoPayPalController::class)->middleware('throttle:120,1')->name('paypal.aviso');
 
 // Chat en vivo del visitante (widget). Se identifica con una cookie; ver ChatController.
 Route::prefix('chat')->name('chat.')->group(function () {
@@ -82,6 +89,15 @@ Route::prefix('mi-cuenta')->name('cuenta.')->middleware('sin-cache')->group(func
             Route::get('perfil', [PortalController::class, 'perfil'])->name('perfil');
             Route::put('perfil', [PortalController::class, 'actualizarPerfil'])->name('perfil.actualizar');
             Route::put('clave', [PortalController::class, 'cambiarClave'])->middleware('throttle:6,1')->name('clave');
+
+            // Compras con PayPal: resumen → PayPal → vuelve aquí (App\Services\Pagos).
+            Route::get('comprar/{precio}', [PagoController::class, 'confirmar'])->name('comprar');
+            Route::post('comprar/{precio}', [PagoController::class, 'comprar'])->middleware('throttle:10,10')->name('comprar.pagar');
+            Route::get('pagos', [PagoController::class, 'index'])->name('pagos');
+            Route::get('pagos/suscripcion', [PagoController::class, 'volverSuscripcion'])->middleware('throttle:20,1')->name('pagos.suscripcion');
+            Route::get('pagos/orden', [PagoController::class, 'volverOrden'])->middleware('throttle:20,1')->name('pagos.orden');
+            Route::get('pagos/cancelado', [PagoController::class, 'cancelado'])->name('pagos.cancelado');
+            Route::post('pagos/suscripciones/{suscripcion}/cancelar', [PagoController::class, 'cancelar'])->middleware('throttle:6,1')->name('pagos.cancelar');
         });
     });
 });
@@ -120,6 +136,15 @@ Route::middleware(['auth:web', 'sin-cache'])->prefix('admin')->name('admin.')->g
     Route::resource('manuales', ManualController::class)->except('show')->parameters(['manuales' => 'manual']);
     Route::get('mensajes/exportar', [MensajeController::class, 'exportar'])->name('mensajes.exportar');
     Route::post('mensajes/{mensaje}/credenciales', [MensajeController::class, 'credenciales'])->middleware('throttle:20,1')->name('mensajes.credenciales');
+
+    // Ventas con PayPal: productos y precios, suscripciones, pagos y conexión.
+    Route::resource('productos', ProductoController::class)->except('show')->parameters(['productos' => 'producto']);
+    Route::get('ventas', [VentaController::class, 'index'])->name('ventas.index');
+    Route::get('ventas/exportar', [VentaController::class, 'exportar'])->name('ventas.exportar');
+    Route::post('ventas/paypal', [VentaController::class, 'guardar'])->name('ventas.paypal');
+    Route::post('ventas/paypal/probar', [VentaController::class, 'probar'])->middleware('throttle:10,1')->name('ventas.probar');
+    Route::post('suscripciones/{suscripcion}/sincronizar', [VentaController::class, 'sincronizar'])->middleware('throttle:30,1')->name('suscripciones.sincronizar');
+    Route::post('suscripciones/{suscripcion}/cancelar', [VentaController::class, 'cancelar'])->middleware('throttle:10,1')->name('suscripciones.cancelar');
 
     Route::resource('servicios', ServicioController::class)->except('show')->parameters(['servicios' => 'servicio']);
     Route::resource('clientes', ClienteController::class)->except('show')->parameters(['clientes' => 'cliente']);

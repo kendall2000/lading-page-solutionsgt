@@ -44,7 +44,8 @@ restaurante solo sirvió de modelo inicial (estructura, módulo de Correos, Dock
   El `.env` local apunta a esa BD real: `migrate` y `db:seed` escriben ahí.
 - Tablas: `users`, `configuracion_sitio` (una fila), `paginas`, `secciones`, `elementos`, `categorias_sistema`, `manuales`, `configuracion_correo`, `plantillas_correo`, `bitacora_correos`, `sistemas`, `sistema_imagenes`, `servicios` (planes), `clientes`
   (incluye logo y testimonio), `direcciones`, `mensajes_contacto`, `conversaciones`, `mensajes_chat`, `visitas`,
-  `bitacora_cambios`, `cuentas`, `contratos` + las de Laravel (`sessions`, `cache`, `jobs`…).
+  `bitacora_cambios`, `cuentas`, `contratos`, `configuracion_pagos`, `productos`, `precios`, `suscripciones`, `pagos`
+  + las de Laravel (`sessions`, `cache`, `jobs`…).
 - `DatabaseSeeder` solo crea lo que falta (no pisa lo editado en el panel). El usuario inicial sale de
   `ADMIN_EMAIL` / `ADMIN_PASSWORD` o se genera y se muestra una sola vez.
 
@@ -148,6 +149,7 @@ restaurante solo sirvió de modelo inicial (estructura, módulo de Correos, Dock
 - **3:00 `respaldo:crear`**: `mariadb-dump` (paquete `mariadb-client` de la imagen) → gzip → cifrado con APP_KEY →
   Contabo `respaldos/<bd>-<fecha>-<aleatorio>.sql.gz.enc` (privado). Conserva los **30** más nuevos
   (`Respaldos::CONSERVAR`). Si falla, avisa con la plantilla `respaldo_fallido`. Sin APP_KEY no se pueden leer.
+- **Cada 6 h `pagos:sincronizar`**: respaldo de los avisos de PayPal (ver «Ventas con PayPal»).
 - **3:30 `sitio:limpiar`**: bitácora de correos > 90 días, chats **cerrados** sin actividad > 6 meses
   (plazos elegidos por el usuario el 2026-09-29) y visitas > 13 meses. La bitácora de cambios no se borra.
 - Restaurar (a mano, nunca automático): `php artisan respaldo:descargar` (lista) → `respaldo:descargar 1`
@@ -175,6 +177,28 @@ restaurante solo sirvió de modelo inicial (estructura, módulo de Correos, Dock
 - **Manuales `solo_clientes`**: los ve una cuenta con el sistema del manual vigente (sin sistema: cualquier contrato
   vigente). Invitado → a entrar; sin contrato → 403. Fuera del sitemap y con `noindex`. Ojo: el PDF está en el bucket
   público de Contabo con nombre aleatorio (no es secreto si alguien comparte el enlace).
+
+## Ventas con PayPal (pedido del usuario 2026-10-01)
+
+- Decisiones del usuario: suscripciones con **cobro automático** de PayPal, compra **solo con «Mi cuenta»**, al pagar se crea
+  o extiende el **contrato automáticamente** y se avisa (`nueva_venta`) para preparar el acceso, moneda **USD** (PayPal no acepta GTQ).
+- Credenciales en Panel → Ventas → Suscripciones y pagos → Conexión con PayPal (`configuracion_pagos`, Secret cifrado,
+  **nada en el .env**), con modo pruebas (sandbox) o real e interruptor «Cobrar en línea». Apagado: el sitio muestra los
+  precios con «Me interesa» (contacto).
+- Catálogo: `productos` (tipo sistema/servicio/otro; tipo sistema lleva `sistema_id`) → `precios` (uno por periodo: `unico`,
+  `semanal`, `mensual`, `trimestral`, `anual`, `de_por_vida`; cada uno se activa aparte). El software no se vende con pago único;
+  `de_por_vida` no se cobra en línea: botón a WhatsApp/contacto con un asesor (`Producto::enlaceAsesor`, mensaje editable).
+  Se muestran en el bloque `tienda` («Productos en venta») y en la ficha del sistema (`#precios`).
+- Todo con `App\Services\Pagos` (negocio) y `App\Services\PayPal` (API REST con `Http`, sin SDK ni JS de PayPal). **Nunca se cree
+  al navegador ni al webhook**: el estado y los montos se vuelven a pedir a PayPal (`sincronizar`, `revisarOrden`).
+- Planes de PayPal: se crean al primer cobro; al cambiar un monto el plan viejo se desactiva y se crea otro (los suscriptores
+  conservan su precio). `Precio::periodoTexto()` (no `nombre()`: la bitácora lee `->nombre` y lo tomaría como relación).
+- Contrato: hasta = próximo cobro + `dias_gracia`; nunca se acorta; cancelar deja el acceso hasta el final de lo pagado.
+- Flujo: `/mi-cuenta/comprar/{precio}` (resumen + «acepto») → PayPal → vuelve a `/mi-cuenta/pagos/suscripcion` u `/orden`.
+  Webhook `POST /paypal/aviso` (sin CSRF; firma verificada si hay Webhook ID). Respaldo: `pagos:sincronizar` cada 6 h
+  (cobros cercanos, pagos a medias y borra intentos sin aprobar > 3 días). Plantillas `pago_recibido`, `nueva_venta`,
+  `suscripcion_cancelada`. «Mi cuenta» → Pagos: suscripciones (cancelar) e historial. Excel en `/admin/ventas/exportar`.
+- En pruebas PayPal se simula con `Http::fake` (`tests/Feature/VentasTest.php`).
 
 ## Despliegue (Docker)
 

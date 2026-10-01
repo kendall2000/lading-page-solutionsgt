@@ -187,6 +187,18 @@
                                         </select>
                                     </div>
                                     @break
+                                @case('tipo_producto')
+                                    <div class="mb-3">
+                                        <label class="form-label" for="op_tipo_producto">Mostrar</label>
+                                        <select class="form-select" id="op_tipo_producto" name="opciones[tipo_producto]">
+                                            <option value="">Todos los productos</option>
+                                            @foreach (\App\Models\Producto::TIPOS as $claveTipo => [$textoTipo])
+                                                <option value="{{ $claveTipo }}" @selected($op('tipo_producto') === $claveTipo)>Solo {{ mb_strtolower($textoTipo) }}</option>
+                                            @endforeach
+                                        </select>
+                                        <div class="form-text">Los productos y precios se administran en Ventas → Productos y precios.</div>
+                                    </div>
+                                    @break
                                 @case('limite')
                                     <div class="mb-3">
                                         <label class="form-label" for="op_limite">Máximo a mostrar</label>

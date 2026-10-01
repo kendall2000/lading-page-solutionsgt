@@ -12,6 +12,7 @@
             ['cuenta.solicitudes', 'fa-inbox', 'Solicitudes y pruebas', $conteo['solicitudes']],
             ['cuenta.conversaciones', 'fa-comments', 'Conversaciones', $conteo['conversaciones']],
             ['cuenta.manuales', 'fa-book', 'Manuales', null],
+            ['cuenta.pagos', 'fa-credit-card', 'Pagos', null],
             ['cuenta.perfil', 'fa-user', 'Mi perfil', null],
         ];
     @endphp

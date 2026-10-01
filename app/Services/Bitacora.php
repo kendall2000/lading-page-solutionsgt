@@ -6,6 +6,7 @@ use App\Models\BitacoraCambio;
 use App\Models\CategoriaSistema;
 use App\Models\Cliente;
 use App\Models\ConfiguracionCorreo;
+use App\Models\ConfiguracionPagos;
 use App\Models\ConfiguracionSitio;
 use App\Models\Contrato;
 use App\Models\Conversacion;
@@ -16,10 +17,13 @@ use App\Models\Manual;
 use App\Models\MensajeContacto;
 use App\Models\Pagina;
 use App\Models\PlantillaCorreo;
+use App\Models\Precio;
+use App\Models\Producto;
 use App\Models\Seccion;
 use App\Models\Servicio;
 use App\Models\Sistema;
 use App\Models\SistemaImagen;
+use App\Models\Suscripcion;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
@@ -40,16 +44,19 @@ class Bitacora
         User::class => ['Usuarios', 'Usuario'], ConfiguracionSitio::class => ['Configuración', 'Configuración del sistema'],
         ConfiguracionCorreo::class => ['Correos', 'Servidor de correo'], PlantillaCorreo::class => ['Correos', 'Plantilla'],
         Cuenta::class => ['Cuentas de clientes', 'Cuenta'], Contrato::class => ['Cuentas de clientes', 'Sistema contratado'],
+        Producto::class => ['Ventas', 'Producto'], Precio::class => ['Ventas', 'Precio'], Suscripcion::class => ['Ventas', 'Suscripción'],
+        ConfiguracionPagos::class => ['Ventas', 'Conexión con PayPal'],
     ];
 
     /** Campos que cambian solos (contadores, marcas de tiempo): no son un cambio de nadie. */
     private const IGNORAR = [
         'created_at', 'updated_at', 'visitas', 'remember_token', 'ultimo_acceso', 'no_leidos_admin', 'no_leidos_visitante',
         'ultimo_mensaje_en', 'probado_en', 'leido_en', 'token_hash', 'token_tipo', 'token_vence', 'invitada_en',
+        'paypal_id', 'paypal_modo', 'paypal_plan_id', 'sincronizada_en', 'siguiente_cobro',
     ];
 
     /** Secretos aunque el modelo no los oculte. */
-    private const SECRETOS = ['password', 'clave', 'clave_prueba', 'token_hash', 'two_factor_secret', 'two_factor_recovery_codes'];
+    private const SECRETOS = ['password', 'clave', 'client_secret', 'clave_prueba', 'token_hash', 'two_factor_secret', 'two_factor_recovery_codes'];
 
     public function modelo(string $accion, Model $modelo): void
     {

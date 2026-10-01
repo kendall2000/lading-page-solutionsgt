@@ -42,7 +42,7 @@ class PortalController extends Controller
             'solicitudes' => $cuenta->solicitudes()->with('sistema')->limit(5)->get(),
             'conversaciones' => $cuenta->conversaciones()->with('ultimoMensaje')->limit(4)->get(),
             'manuales' => $this->manuales($cuenta)->count(),
-        ] + $this->contadores($cuenta));
+        ] + self::contadores($cuenta));
     }
 
     public function sistemas(): View
@@ -52,7 +52,7 @@ class PortalController extends Controller
         $manuales = Manual::query()->publicos()->whereIn('sistema_id', $contratos->pluck('sistema_id'))->get()
             ->filter(fn (Manual $m) => $cuenta->puedeVerManual($m))->groupBy('sistema_id');
 
-        return view('publico.cuenta.sistemas', ['cuenta' => $cuenta, 'contratos' => $contratos, 'manuales' => $manuales] + $this->contadores($cuenta));
+        return view('publico.cuenta.sistemas', ['cuenta' => $cuenta, 'contratos' => $contratos, 'manuales' => $manuales] + self::contadores($cuenta));
     }
 
     public function solicitudes(): View
@@ -63,7 +63,7 @@ class PortalController extends Controller
             'cuenta' => $cuenta,
             'pruebas' => $this->pruebasActivas($cuenta),
             'solicitudes' => $cuenta->solicitudes()->with('sistema')->paginate(15),
-        ] + $this->contadores($cuenta));
+        ] + self::contadores($cuenta));
     }
 
     public function conversaciones(): View
@@ -74,7 +74,7 @@ class PortalController extends Controller
             'cuenta' => $cuenta,
             'conversaciones' => $cuenta->conversaciones()->with('ultimoMensaje')->withCount('mensajes')->paginate(15),
             'chatActivo' => (bool) Sitio::config()->chat_activo,
-        ] + $this->contadores($cuenta));
+        ] + self::contadores($cuenta));
     }
 
     public function conversacion(Conversacion $conversacion): View
@@ -87,7 +87,7 @@ class PortalController extends Controller
             'cuenta' => $cuenta,
             'conversacion' => $conversacion,
             'mensajes' => $this->chat->historial($conversacion),
-        ] + $this->contadores($cuenta));
+        ] + self::contadores($cuenta));
     }
 
     /** Mensajes nuevos (el portal consulta cada pocos segundos). leer=1: la página está a la vista. */
@@ -143,7 +143,7 @@ class PortalController extends Controller
     {
         $cuenta = $this->cuenta();
 
-        return view('publico.cuenta.manuales', ['cuenta' => $cuenta, 'manuales' => $this->manuales($cuenta)->groupBy(fn ($m) => $m->sistema?->nombre ?? 'Generales')] + $this->contadores($cuenta));
+        return view('publico.cuenta.manuales', ['cuenta' => $cuenta, 'manuales' => $this->manuales($cuenta)->groupBy(fn ($m) => $m->sistema?->nombre ?? 'Generales')] + self::contadores($cuenta));
     }
 
     public function perfil(Request $request): View
@@ -153,7 +153,7 @@ class PortalController extends Controller
         return view('publico.cuenta.perfil', [
             'cuenta' => $cuenta,
             'pideActual' => $this->pideClaveActual($request, $cuenta),
-        ] + $this->contadores($cuenta));
+        ] + self::contadores($cuenta));
     }
 
     public function actualizarPerfil(Request $request): RedirectResponse
@@ -210,7 +210,7 @@ class PortalController extends Controller
     }
 
     /** Números del encabezado del portal (pestañas). */
-    private function contadores(Cuenta $cuenta): array
+    public static function contadores(Cuenta $cuenta): array
     {
         return ['conteo' => [
             'sistemas' => $cuenta->contratosVigentes()->count(),
