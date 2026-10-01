@@ -64,6 +64,13 @@ services:
     volumes:
       - ./.env:/var/www/html/.env
       - solutionsgt-storage:/var/www/html/storage
+    # Aquí no corre Apache: el chequeo de la imagen (curl a /up) siempre fallaría y lo marcaría «unhealthy».
+    # Se revisa que el proceso principal (PID 1) siga siendo schedule:work.
+    healthcheck:
+      test: ["CMD-SHELL", "grep -qa 'schedule:work' /proc/1/cmdline"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
 
 volumes:
   solutionsgt-storage:
