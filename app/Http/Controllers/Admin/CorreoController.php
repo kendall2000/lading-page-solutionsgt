@@ -43,6 +43,10 @@ class CorreoController extends Controller
 
     public function guardar(Request $request): RedirectResponse
     {
+        // Remitente vacío: se usa el usuario SMTP si es un correo (Gmail y Outlook exigen que sean el mismo).
+        if (blank($request->input('remitente_correo')) && filter_var(trim((string) $request->input('usuario')), FILTER_VALIDATE_EMAIL)) {
+            $request->merge(['remitente_correo' => trim((string) $request->input('usuario'))]);
+        }
         $datos = $request->validate([
             'host' => ['nullable', 'required_if:is_active,1', 'string', 'max:150'],
             'puerto' => ['nullable', 'required_if:is_active,1', 'integer', 'between:1,65535'],

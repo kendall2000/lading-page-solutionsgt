@@ -62,6 +62,19 @@ class CorreosTest extends TestCase
         $this->assertSame('smtp.office365.com', ConfiguracionCorreo::actual()->host);
     }
 
+    public function test_sin_remitente_se_usa_el_correo_del_usuario(): void
+    {
+        $this->actingAs($this->admin)->post('/admin/correos/servidor', [
+            'host' => 'smtp.gmail.com', 'puerto' => 587, 'cifrado' => 'tls', 'usuario' => 'yo@gmail.com', 'clave' => 'clave-app', 'is_active' => '1',
+        ])->assertSessionHasNoErrors();
+        $this->assertSame('yo@gmail.com', ConfiguracionCorreo::actual()->remitente_correo);
+
+        // Si el usuario no es un correo, el remitente sigue siendo obligatorio.
+        $this->actingAs($this->admin)->post('/admin/correos/servidor', [
+            'host' => 'mail.ejemplo.com', 'puerto' => 587, 'usuario' => 'usuario123', 'remitente_correo' => '', 'is_active' => '1',
+        ])->assertSessionHasErrors('remitente_correo');
+    }
+
     public function test_avisos_a_valida_cada_correo(): void
     {
         $this->actingAs($this->admin)->post('/admin/correos/servidor', ['avisos_a' => 'bien@ejemplo.com, malo'])

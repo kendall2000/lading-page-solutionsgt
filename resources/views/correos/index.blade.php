@@ -74,7 +74,8 @@
                                 </div>
                                 <div class="col-12 col-md-6">
                                     <label class="form-label" for="remitente_correo">Correo del remitente</label>
-                                    <input class="form-control" id="remitente_correo" name="remitente_correo" type="email" maxlength="150" value="{{ old('remitente_correo', $cfg->remitente_correo) }}" placeholder="no-responder@solutionsgt.com" />
+                                    <input class="form-control" id="remitente_correo" name="remitente_correo" type="email" maxlength="150" value="{{ old('remitente_correo', $cfg->remitente_correo) }}" placeholder="Vacío = el mismo correo del usuario" />
+                                    <div class="form-text">Con Gmail u Outlook debe ser el mismo correo del usuario.</div>
                                 </div>
                                 <div class="col-12 col-md-6">
                                     <label class="form-label" for="remitente_nombre">Nombre del remitente</label>
