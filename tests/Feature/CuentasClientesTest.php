@@ -93,6 +93,22 @@ class CuentasClientesTest extends TestCase
         $this->assertSame(1, Cuenta::query()->count());
     }
 
+    public function test_las_consultas_del_chat_no_gastan_los_intentos_de_registro(): void
+    {
+        // El widget consulta el chat en cada página: eso no debe contar para el límite del registro (4 en 10 min).
+        for ($i = 0; $i < 10; $i++) {
+            $this->getJson('/chat/estado')->assertOk();
+        }
+
+        $datos = ['nombre' => 'Ana López', 'password' => 'ClaveSegura123', 'password_confirmation' => 'ClaveSegura123'];
+        for ($i = 1; $i <= 4; $i++) {
+            $this->post('/mi-cuenta/registro', $this->antispam() + $datos + ['correo' => "ana{$i}@ejemplo.com"])->assertSessionHas('registrado');
+        }
+        // El límite propio del registro sigue funcionando.
+        $this->post('/mi-cuenta/registro', $this->antispam() + $datos + ['correo' => 'ana5@ejemplo.com'])->assertStatus(429);
+        $this->assertSame(4, Cuenta::query()->count());
+    }
+
     public function test_entrar_con_contrasena(): void
     {
         $this->cuenta();

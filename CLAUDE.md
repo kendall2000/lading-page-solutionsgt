@@ -108,6 +108,9 @@ restaurante solo sirvió de modelo inicial (estructura, módulo de Correos, Dock
   marca de llegada cifrada `llegada` (`App\Support\Antispam`: sin marca o < 3 s = robot), regla
   `PocosEnlaces` (0 en nombre/empresa, máx. 3 en mensajes) y contacto repetido en 10 min no se duplica.
   En pruebas, los envíos llevan `$this->antispam() + [...]`.
+- Límites de intentos: `throttle:N,min` apunta a `App\Http\Middleware\LimitePorRuta` (alias en `bootstrap/app.php`),
+  que cuenta **por ruta**. El de Laravel comparte un solo contador por visitante entre todas las rutas: las consultas
+  del chat gastaban los intentos del registro (429 al primer intento).
 - Páginas de error propias en `resources/views/errors` (403, 404, 419, 429, 500, 503) con `errors/plantilla`
   (diseño `pages/errors/*.html` de Phoenix, sin menú ni consultas: debe verse aunque la base falle).
 - Privacidad (elegido por el usuario): página `privacidad` (`Pagina::PRIVACIDAD`, fuera del menú, la crea

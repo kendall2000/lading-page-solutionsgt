@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\CuentaVerificada;
 use App\Http\Middleware\EncabezadosSeguridad;
+use App\Http\Middleware\LimitePorRuta;
 use App\Http\Middleware\PreventBackHistory;
 use App\Http\Middleware\RegistrarVisita;
 use App\Http\Middleware\UsuarioActivo;
@@ -26,6 +27,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [EncabezadosSeguridad::class, UsuarioActivo::class]);
         $middleware->alias([
             'sin-cache' => PreventBackHistory::class, 'visita' => RegistrarVisita::class, 'cuenta.verificada' => CuentaVerificada::class,
+            // Cada ruta lleva su propia cuenta de intentos (ver LimitePorRuta).
+            'throttle' => LimitePorRuta::class,
         ]);
         // El portal de clientes (/mi-cuenta) tiene su propio acceso, separado del panel.
         $middleware->redirectGuestsTo(fn (Request $request) => $request->is('mi-cuenta', 'mi-cuenta/*') ? route('cuenta.entrar') : route('login'));
