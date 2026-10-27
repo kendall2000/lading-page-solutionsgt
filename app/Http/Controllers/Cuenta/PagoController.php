@@ -9,6 +9,7 @@ use App\Models\Pago;
 use App\Models\Precio;
 use App\Models\Suscripcion;
 use App\Services\Pagos;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -37,16 +38,33 @@ class PagoController extends Controller
         return view('publico.cuenta.comprar', ['cuenta' => $cuenta, 'precio' => $precio, 'producto' => $precio->producto] + PortalController::contadores($cuenta));
     }
 
+    /** Respaldo sin los botones: crea el cobro y envía al cliente a la página de PayPal. */
     public function comprar(Request $request, Precio $precio): RedirectResponse
     {
         $request->validate(['acepto' => ['accepted']], ['acepto.accepted' => 'Marca que estás de acuerdo con el cobro para continuar.']);
         try {
-            $url = $this->pagos->iniciar($precio->load('producto'), $this->cuenta());
+            $r = $this->pagos->iniciar($precio->load('producto'), $this->cuenta());
         } catch (ErrorPayPal $e) {
             return back()->withErrors(['pago' => $e->getMessage()]);
         }
 
-        return redirect()->away($url);
+        return redirect()->away($r['aprobar']);
+    }
+
+    /**
+     * Para los botones de PayPal de la página (PayPal o tarjeta): crea el cobro aquí y solo entrega su ID.
+     * Al aprobarlo, el navegador va a volverSuscripcion/volverOrden, que lo confirman con PayPal.
+     */
+    public function iniciar(Request $request, Precio $precio): JsonResponse
+    {
+        $request->validate(['acepto' => ['accepted']], ['acepto.accepted' => 'Marca que estás de acuerdo con el cobro para continuar.']);
+        try {
+            $r = $this->pagos->iniciar($precio->load('producto'), $this->cuenta(), true);
+        } catch (ErrorPayPal $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+
+        return response()->json(['id' => $r['id']]);
     }
 
     /** PayPal devuelve al cliente aquí tras aprobar la suscripción (?subscription_id=…). */

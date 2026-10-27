@@ -192,12 +192,17 @@ restaurante solo sirvió de modelo inicial (estructura, módulo de Correos, Dock
   `semanal`, `mensual`, `trimestral`, `anual`, `de_por_vida`; cada uno se activa aparte). El software no se vende con pago único;
   `de_por_vida` no se cobra en línea: botón a WhatsApp/contacto con un asesor (`Producto::enlaceAsesor`, mensaje editable).
   Se muestran en el bloque `tienda` («Productos en venta») y en la ficha del sistema (`#precios`).
-- Todo con `App\Services\Pagos` (negocio) y `App\Services\PayPal` (API REST con `Http`, sin SDK ni JS de PayPal). **Nunca se cree
+- Todo con `App\Services\Pagos` (negocio) y `App\Services\PayPal` (API REST con `Http`, sin SDK de PHP). **Nunca se cree
   al navegador ni al webhook**: el estado y los montos se vuelven a pedir a PayPal (`sincronizar`, `revisarOrden`).
 - Planes de PayPal: se crean al primer cobro; al cambiar un monto el plan viejo se desactiva y se crea otro (los suscriptores
   conservan su precio). `Precio::periodoTexto()` (no `nombre()`: la bitácora lee `->nombre` y lo tomaría como relación).
 - Contrato: hasta = próximo cobro + `dias_gracia`; nunca se acorta; cancelar deja el acceso hasta el final de lo pagado.
-- Flujo: `/mi-cuenta/comprar/{precio}` (resumen + «acepto») → PayPal → vuelve a `/mi-cuenta/pagos/suscripcion` u `/orden`.
+- Pago con tarjeta (pedido del usuario 2026-10-01): la página de compra carga los **botones oficiales de PayPal** (JS SDK,
+  `PayPal::urlBotones`, solo el Client ID) con «PayPal» y «Tarjeta de débito o crédito». El cobro se crea en el servidor
+  (`POST /mi-cuenta/comprar/{precio}/iniciar` → solo devuelve el ID); la orden va **sin `payment_source`** para no atarla a
+  la cuenta PayPal. Al aprobar, el navegador va a las mismas páginas de regreso, que lo confirman con PayPal. Respaldo:
+  «Continuar en la página de PayPal» (envío directo). Que aparezca la tarjeta depende de PayPal (país, cuenta Business).
+- Flujo: `/mi-cuenta/comprar/{precio}` (resumen + «acepto») → botones o PayPal → vuelve a `/mi-cuenta/pagos/suscripcion` u `/orden`.
   Webhook `POST /paypal/aviso` (sin CSRF; firma verificada si hay Webhook ID). Respaldo: `pagos:sincronizar` cada 6 h
   (cobros cercanos, pagos a medias y borra intentos sin aprobar > 3 días). Plantillas `pago_recibido`, `nueva_venta`,
   `suscripcion_cancelada`. «Mi cuenta» → Pagos: suscripciones (cancelar) e historial. Excel en `/admin/ventas/exportar`.

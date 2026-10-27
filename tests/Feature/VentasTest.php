@@ -216,7 +216,8 @@ class VentasTest extends TestCase
         [$software, $mensual] = $this->catalogo();
         $cuenta = $this->cuenta();
 
-        $this->actingAs($cuenta, 'cliente')->get(route('cuenta.comprar', $mensual))->assertOk()->assertSee('Continuar a PayPal');
+        $this->actingAs($cuenta, 'cliente')->get(route('cuenta.comprar', $mensual))->assertOk()->assertSee('Continuar en la página de PayPal')
+            ->assertSee('paypal.com/sdk/js?client-id=cliente-prueba', false)->assertSee('intent=subscription', false);
         $this->actingAs($cuenta, 'cliente')->post(route('cuenta.comprar.pagar', $mensual))->assertSessionHasErrors('acepto');
         $this->actingAs($cuenta, 'cliente')->post(route('cuenta.comprar.pagar', $mensual), ['acepto' => '1'])
             ->assertRedirect('https://www.sandbox.paypal.com/webapps/billing/subscriptions?ba_token=BA-1');
@@ -325,6 +326,38 @@ class VentasTest extends TestCase
         $this->actingAs($cuenta, 'cliente')->post(route('cuenta.comprar.pagar', $unico), ['acepto' => '1']);
         $this->actingAs($cuenta, 'cliente')->get(route('cuenta.pagos.orden', ['token' => 'ORD-1']))->assertSessionHasErrors('pago');
         $this->assertDatabaseHas('pagos', ['paypal_orden_id' => 'ORD-1', 'estado' => 'fallido']);
+    }
+
+    public function test_los_botones_de_paypal_y_tarjeta_crean_el_cobro_en_el_servidor(): void
+    {
+        $this->conectarPayPal();
+        [, $mensual, , $unico] = $this->catalogo();
+        $cuenta = $this->cuenta();
+
+        // Sin aceptar el cobro no se crea nada.
+        $this->actingAs($cuenta, 'cliente')->postJson(route('cuenta.comprar.iniciar', $mensual))->assertUnprocessable();
+        $this->assertSame(0, Suscripcion::query()->count());
+
+        // Suscripción: el botón solo recibe el ID; queda pendiente hasta confirmarla con PayPal.
+        $this->actingAs($cuenta, 'cliente')->postJson(route('cuenta.comprar.iniciar', $mensual), ['acepto' => '1'])
+            ->assertOk()->assertExactJson(['id' => 'I-SUB1']);
+        $this->assertDatabaseHas('suscripciones', ['paypal_id' => 'I-SUB1', 'estado' => 'pendiente', 'cuenta_id' => $cuenta->id]);
+
+        // Pago único: la orden no se ata a la cuenta PayPal, para que se pueda pagar con tarjeta.
+        $this->actingAs($cuenta, 'cliente')->get(route('cuenta.comprar', $unico))->assertOk()->assertSee('intent=capture', false);
+        $this->actingAs($cuenta, 'cliente')->postJson(route('cuenta.comprar.iniciar', $unico), ['acepto' => '1'])
+            ->assertOk()->assertExactJson(['id' => 'ORD-1']);
+        Http::assertSent(fn (Peticion $r) => str_ends_with($r->url(), '/v2/checkout/orders') && ! isset($r['payment_source']) && $r['application_context']['shipping_preference'] === 'NO_SHIPPING');
+        $this->assertDatabaseHas('pagos', ['paypal_orden_id' => 'ORD-1', 'estado' => 'pendiente']);
+
+        // Al aprobar, la página de regreso lo confirma con PayPal como siempre.
+        $this->actingAs($cuenta, 'cliente')->get(route('cuenta.pagos.orden', ['token' => 'ORD-1']))->assertSessionHas('status');
+        $this->assertDatabaseHas('pagos', ['paypal_orden_id' => 'ORD-1', 'estado' => 'completado']);
+
+        // Con los cobros apagados, el botón recibe el motivo.
+        ConfiguracionPagos::actual()->update(['activo' => false]);
+        $this->actingAs($cuenta, 'cliente')->postJson(route('cuenta.comprar.iniciar', $unico), ['acepto' => '1'])
+            ->assertUnprocessable()->assertJsonPath('message', 'Los pagos en línea no están disponibles en este momento.');
     }
 
     public function test_con_los_cobros_apagados_o_de_por_vida_no_se_puede_pagar(): void

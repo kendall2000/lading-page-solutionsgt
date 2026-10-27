@@ -93,6 +93,7 @@ Route::prefix('mi-cuenta')->name('cuenta.')->middleware('sin-cache')->group(func
             // Compras con PayPal: resumen → PayPal → vuelve aquí (App\Services\Pagos).
             Route::get('comprar/{precio}', [PagoController::class, 'confirmar'])->name('comprar');
             Route::post('comprar/{precio}', [PagoController::class, 'comprar'])->middleware('throttle:10,10')->name('comprar.pagar');
+            Route::post('comprar/{precio}/iniciar', [PagoController::class, 'iniciar'])->middleware('throttle:10,10')->name('comprar.iniciar');
             Route::get('pagos', [PagoController::class, 'index'])->name('pagos');
             Route::get('pagos/suscripcion', [PagoController::class, 'volverSuscripcion'])->middleware('throttle:20,1')->name('pagos.suscripcion');
             Route::get('pagos/orden', [PagoController::class, 'volverOrden'])->middleware('throttle:20,1')->name('pagos.orden');

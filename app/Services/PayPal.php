@@ -16,8 +16,9 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
 /**
- * Llamadas a la API REST de PayPal (sin SDK ni JavaScript de PayPal: todo desde el servidor).
- * Usa las credenciales de Panel → Ventas → PayPal. Si PayPal falla, lanza ErrorPayPal.
+ * Llamadas a la API REST de PayPal (sin SDK de PHP). Las órdenes y suscripciones se crean siempre aquí;
+ * los botones de PayPal del navegador (con «Tarjeta de débito o crédito») solo reciben su ID para que el
+ * cliente apruebe. Usa las credenciales de Panel → Ventas → PayPal. Si PayPal falla, lanza ErrorPayPal.
  */
 class PayPal
 {
@@ -31,6 +32,23 @@ class PayPal
     public function modo(): string
     {
         return $this->cfg->modo;
+    }
+
+    /**
+     * Script de los botones de PayPal (incluye «Tarjeta de débito o crédito» donde PayPal lo ofrece).
+     * El Client ID es público; el Secret nunca sale del servidor.
+     */
+    public static function urlBotones(bool $suscripcion): string
+    {
+        $cfg = ConfiguracionPagos::actual();
+
+        return 'https://www.paypal.com/sdk/js?'.http_build_query([
+            'client-id' => $cfg->client_id,
+            'currency' => $cfg->moneda,
+            'locale' => 'es_XC',
+            'components' => 'buttons',
+            'disable-funding' => 'paylater',
+        ] + ($suscripcion ? ['vault' => 'true', 'intent' => 'subscription'] : ['intent' => 'capture']));
     }
 
     /** Pide un token de acceso (en caché mientras vale). Sirve también para «Probar conexión». */
@@ -97,7 +115,7 @@ class PayPal
         $this->llamar('post', "/v1/billing/plans/{$planId}/deactivate");
     }
 
-    /** @return array{id:string, aprobar:string} */
+    /** @return array{id:string, aprobar:string} (el ID sirve también para los botones de PayPal) */
     public function crearSuscripcion(string $planId, string $referencia, string $nombre, string $correo, string $volver, string $cancelar): array
     {
         $r = $this->llamar('post', '/v1/billing/subscriptions', [
@@ -136,9 +154,22 @@ class PayPal
         $this->llamar('post', '/v1/billing/subscriptions/'.rawurlencode($id).'/cancel', ['reason' => Str::limit($motivo, 120, '')]);
     }
 
-    /** @return array{id:string, aprobar:string} */
-    public function crearOrden(string $monto, string $descripcion, string $referencia, string $volver, string $cancelar): array
+    /**
+     * Con $botones la aprueban los botones de PayPal de la página (PayPal o tarjeta): la orden no se ata
+     * a «pagar con cuenta PayPal» y no hace falta el enlace. Sin $botones se envía al cliente al enlace.
+     *
+     * @return array{id:string, aprobar:?string}
+     */
+    public function crearOrden(string $monto, string $descripcion, string $referencia, string $volver, string $cancelar, bool $botones = false): array
     {
+        $experiencia = [
+            'brand_name' => Str::limit(Sitio::nombre(), 127, ''),
+            'locale' => 'es-XC',
+            'shipping_preference' => 'NO_SHIPPING',
+            'user_action' => 'PAY_NOW',
+            'return_url' => $volver,
+            'cancel_url' => $cancelar,
+        ];
         $r = $this->llamar('post', '/v2/checkout/orders', [
             'intent' => 'CAPTURE',
             'purchase_units' => [[
@@ -147,17 +178,15 @@ class PayPal
                 'description' => Str::limit($descripcion, 127, ''),
                 'amount' => ['currency_code' => $this->cfg->moneda, 'value' => $monto],
             ]],
-            'payment_source' => ['paypal' => ['experience_context' => [
-                'brand_name' => Str::limit(Sitio::nombre(), 127, ''),
-                'locale' => 'es-XC',
-                'shipping_preference' => 'NO_SHIPPING',
-                'user_action' => 'PAY_NOW',
-                'return_url' => $volver,
-                'cancel_url' => $cancelar,
-            ]]],
-        ]);
+        ] + ($botones
+            ? ['application_context' => $experiencia]
+            : ['payment_source' => ['paypal' => ['experience_context' => $experiencia]]]));
 
-        return ['id' => $r->json('id'), 'aprobar' => $this->enlace($r, ['payer-action', 'approve'])];
+        if (! $r->json('id')) {
+            throw new ErrorPayPal('PayPal no devolvió la orden.');
+        }
+
+        return ['id' => $r->json('id'), 'aprobar' => $botones ? null : $this->enlace($r, ['payer-action', 'approve'])];
     }
 
     public function orden(string $id): array

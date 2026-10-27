@@ -28,8 +28,13 @@ class Pagos
         return ConfiguracionPagos::actual()->cobrando();
     }
 
-    /** Crea la suscripción u orden en PayPal y devuelve el enlace donde el cliente aprueba el pago. */
-    public function iniciar(Precio $precio, Cuenta $cuenta): string
+    /**
+     * Crea la suscripción u orden en PayPal y la deja pendiente. Devuelve su ID (para los botones de
+     * PayPal de la página) y el enlace donde aprobarla (para ir directo a PayPal; null con $botones en órdenes).
+     *
+     * @return array{id:string, aprobar:?string}
+     */
+    public function iniciar(Precio $precio, Cuenta $cuenta, bool $botones = false): array
     {
         if (! self::cobrando()) {
             throw new ErrorPayPal('Los pagos en línea no están disponibles en este momento.');
@@ -55,14 +60,14 @@ class Pagos
                 route('cuenta.pagos.suscripcion'), route('cuenta.pagos.cancelado'));
             Suscripcion::query()->create($base + ['paypal_id' => $r['id'], 'estado' => 'pendiente']);
 
-            return $r['aprobar'];
+            return $r;
         }
 
         $r = $this->paypal->crearOrden(number_format((float) $precio->monto, 2, '.', ''), $descripcion, "cuenta-{$cuenta->id}",
-            route('cuenta.pagos.orden'), route('cuenta.pagos.cancelado'));
+            route('cuenta.pagos.orden'), route('cuenta.pagos.cancelado'), $botones);
         Pago::query()->create($base + ['paypal_orden_id' => $r['id'], 'estado' => 'pendiente']);
 
-        return $r['aprobar'];
+        return $r;
     }
 
     /**
