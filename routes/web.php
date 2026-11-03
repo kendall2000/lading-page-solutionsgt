@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\ChatController as AdminChatController;
 use App\Http\Controllers\Admin\ClienteController;
 use App\Http\Controllers\Admin\ConfiguracionController;
 use App\Http\Controllers\Admin\CorreoController;
+use App\Http\Controllers\Admin\CotizacionController;
 use App\Http\Controllers\Admin\CuentaClienteController;
 use App\Http\Controllers\Admin\CuentaController;
 use App\Http\Controllers\Admin\DireccionController;
@@ -140,6 +141,10 @@ Route::middleware(['auth:web', 'sin-cache'])->prefix('admin')->name('admin.')->g
 
     // Ventas con PayPal: productos y precios, suscripciones, pagos y conexión.
     Route::resource('productos', ProductoController::class)->except('show')->parameters(['productos' => 'producto']);
+    Route::resource('cotizaciones', CotizacionController::class)->parameters(['cotizaciones' => 'cotizacion']);
+    Route::get('cotizaciones/{cotizacion}/preview', [CotizacionController::class, 'preview'])->name('cotizaciones.preview');
+    Route::get('cotizaciones/{cotizacion}/descargar', [CotizacionController::class, 'descargarPdf'])->name('cotizaciones.descargar');
+    Route::post('cotizaciones/{cotizacion}/enviar', [CotizacionController::class, 'enviarCorreo'])->name('cotizaciones.enviar');
     Route::get('ventas', [VentaController::class, 'index'])->name('ventas.index');
     Route::get('ventas/exportar', [VentaController::class, 'exportar'])->name('ventas.exportar');
     Route::post('ventas/paypal', [VentaController::class, 'guardar'])->name('ventas.paypal');

@@ -51,6 +51,11 @@ class Sistema extends Model
         return $this->hasMany(Cliente::class);
     }
 
+    public function cotizaciones(): HasMany
+    {
+        return $this->hasMany(Cotizacion::class)->latest('fecha');
+    }
+
     public function manuales(): HasMany
     {
         return $this->hasMany(Manual::class)->orderBy('orden')->orderBy('titulo');

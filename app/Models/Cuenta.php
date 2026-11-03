@@ -36,6 +36,11 @@ class Cuenta extends Authenticatable
         return $this->belongsTo(Cliente::class);
     }
 
+    public function cotizaciones(): HasMany
+    {
+        return $this->hasMany(Cotizacion::class)->latest('fecha');
+    }
+
     public function conversaciones(): HasMany
     {
         return $this->hasMany(Conversacion::class)->orderByDesc('ultimo_mensaje_en')->orderByDesc('id');

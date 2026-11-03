@@ -35,6 +35,11 @@ class Cliente extends Model
         return $this->hasMany(Cuenta::class)->orderBy('nombre');
     }
 
+    public function cotizaciones(): HasMany
+    {
+        return $this->hasMany(Cotizacion::class)->latest('fecha');
+    }
+
     public function url(string $campo = 'logo'): ?string
     {
         return Imagenes::url($this->{$campo});

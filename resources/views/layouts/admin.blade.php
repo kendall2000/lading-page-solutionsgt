@@ -17,6 +17,7 @@
             ['admin.cuentas.index', 'admin.cuentas.*', 'user-check', 'Cuentas de clientes'],
         ],
         'Ventas' => [
+            ['admin.cotizaciones.index', 'admin.cotizaciones.*', 'file-text', 'Cotizaciones'],
             ['admin.ventas.index', ['admin.ventas.*', 'admin.suscripciones.*'], 'shopping-cart', 'Suscripciones y pagos'],
             ['admin.productos.index', 'admin.productos.*', 'shopping-bag', 'Productos y precios'],
         ],
