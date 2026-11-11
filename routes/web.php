@@ -164,6 +164,9 @@ Route::middleware(['auth:web', 'sin-cache'])->prefix('admin')->name('admin.')->g
     Route::post('facturas', [FacturaLibreController::class, 'store'])->name('facturas.store');
     Route::get('facturas/{documento}', [FacturaLibreController::class, 'show'])->name('facturas.show');
     Route::post('facturas/{documento}/certificar-sat', [FacturaLibreController::class, 'certificarSat'])->name('facturas.certificar-sat');
+    Route::post('facturas/{documento}/anular', [FacturaLibreController::class, 'anular'])->middleware('throttle:10,1')->name('facturas.anular');
+    Route::post('facturas/{documento}/notas', [FacturaLibreController::class, 'emitirNota'])->middleware('throttle:10,1')->name('facturas.notas');
+    Route::get('facturas/{documento}/xml/{cual}', [FacturaLibreController::class, 'xml'])->whereIn('cual', ['generado', 'firmado', 'certificado', 'anulacion'])->name('facturas.xml');
     Route::get('facturas/{documento}/imprimir', [FacturaLibreController::class, 'imprimir'])->name('facturas.documento.imprimir');
     Route::get('facturas/{documento}/descargar-pdf', [FacturaLibreController::class, 'descargarPdf'])->name('facturas.documento.descargar-pdf');
 

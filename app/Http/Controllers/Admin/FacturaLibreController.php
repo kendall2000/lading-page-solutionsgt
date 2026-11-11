@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ConfiguracionDTE;
 use App\Models\Cotizacion;
 use App\Models\DocumentoTributario;
 use App\Models\DocumentoTributarioItem;
@@ -11,6 +12,7 @@ use App\Models\Sistema;
 use App\Services\ConsultaNitService;
 use App\Services\DTEService;
 use App\Services\QrService;
+use App\Support\Imagenes;
 use App\Support\Sitio;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
@@ -18,7 +20,11 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use RuntimeException;
 
 class FacturaLibreController extends Controller
 {
@@ -41,8 +47,13 @@ class FacturaLibreController extends Controller
      */
     public function show(DocumentoTributario $documento): View
     {
-        $documento->loadMissing(['items', 'logs']);
-        return view('admin.facturas.show', ['doc' => $documento]);
+        $documento->loadMissing(['items', 'logs', 'origen', 'complementarios']);
+
+        return view('admin.facturas.show', [
+            'doc' => $documento,
+            'cfgDte' => ConfiguracionDTE::actual(),
+            'saldo' => $documento->esFactura() ? $documento->saldoAcreditable() : 0.0,
+        ]);
     }
 
     /**
@@ -50,13 +61,105 @@ class FacturaLibreController extends Controller
      */
     public function certificarSat(DocumentoTributario $documento, DTEService $dteService): RedirectResponse
     {
-        $resultado = $dteService->certificar($documento);
-
-        if ($resultado['exito']) {
-            return back()->with('exito', "Factura certificada exitosamente ante la SAT (UUID: {$resultado['uuid']}).");
+        try {
+            $resultado = $dteService->certificar($documento);
+        } catch (RuntimeException $e) {
+            return back()->with('error_sat', $e->getMessage());
         }
 
-        return back()->with('error_sat', "INFILE / SAT rechazó la factura: {$resultado['error']}");
+        $nombre = $documento->nombreTipo();
+
+        if ($resultado['exito']) {
+            return back()->with('exito', "{$nombre} certificada exitosamente ante la SAT (UUID: {$resultado['uuid']}).");
+        }
+
+        return back()->with('error_sat', "INFILE / SAT rechazó el documento: {$resultado['error']}");
+    }
+
+    /**
+     * Anula ante la SAT un documento certificado.
+     */
+    public function anular(Request $request, DocumentoTributario $documento, DTEService $dteService): RedirectResponse
+    {
+        $datos = $request->validate([
+            'motivo' => 'required|string|min:5|max:255',
+        ], [], ['motivo' => 'motivo de anulación']);
+
+        try {
+            $dteService->anular($documento, $datos['motivo']);
+        } catch (RuntimeException $e) {
+            return back()->with('error_sat', 'No se pudo anular: ' . $e->getMessage());
+        }
+
+        return back()->with('exito', "{$documento->nombreTipo()} {$documento->numero_interno} anulada ante la SAT.");
+    }
+
+    /**
+     * Emite una nota de crédito, débito o abono sobre una factura certificada.
+     */
+    public function emitirNota(Request $request, DocumentoTributario $documento, DTEService $dteService): RedirectResponse
+    {
+        $datos = $request->validate([
+            'tipo' => ['required', Rule::in(array_keys(DocumentoTributario::NOTAS))],
+            'monto' => 'required|numeric|min:0.01|max:9999999999',
+            'motivo' => 'required|string|min:5|max:255',
+            'descripcion' => 'nullable|string|max:500',
+        ], [], ['motivo' => 'motivo del ajuste', 'descripcion' => 'descripción']);
+
+        try {
+            $resultado = $dteService->emitirNota(
+                $documento,
+                $datos['tipo'],
+                (float) $datos['monto'],
+                $datos['motivo'],
+                $datos['descripcion'] ?? null
+            );
+        } catch (RuntimeException $e) {
+            return back()->withInput()->with('error_sat', $e->getMessage());
+        }
+
+        $nota = $resultado['nota'];
+
+        if ($resultado['exito']) {
+            return redirect()->route('admin.facturas.show', $nota)
+                ->with('exito', "{$nota->nombreTipo()} {$nota->numero_interno} certificada ante la SAT (UUID: {$resultado['uuid']}).");
+        }
+
+        return redirect()->route('admin.facturas.show', $nota)
+            ->with('error_sat', "La nota quedó guardada, pero INFILE / SAT la rechazó: {$resultado['error']}");
+    }
+
+    /**
+     * Muestra o descarga el XML guardado: generado, firmado, certificado o de anulación.
+     */
+    public function xml(Request $request, DocumentoTributario $documento, string $cual): Response
+    {
+        $contenido = match ($cual) {
+            'generado' => $documento->xml_generado,
+            'firmado' => $documento->xml_firmado,
+            'certificado' => $documento->xml_certificado,
+            'anulacion' => $documento->xml_anulacion,
+            default => null,
+        };
+
+        abort_if(empty($contenido), 404);
+
+        // INFILE puede devolver el XML certificado en base64
+        if ($cual === 'certificado' && !str_starts_with(ltrim($contenido), '<')) {
+            $decodificado = base64_decode($contenido, true);
+            if ($decodificado !== false && str_starts_with(ltrim($decodificado), '<')) {
+                $contenido = $decodificado;
+            }
+        }
+
+        $archivo = "{$documento->tipo}-{$documento->numero_interno}-{$cual}.xml";
+        $disposicion = $request->boolean('descargar') ? 'attachment' : 'inline';
+
+        return response($contenido, 200, [
+            'Content-Type' => 'application/xml; charset=UTF-8',
+            'Content-Disposition' => "{$disposicion}; filename=\"{$archivo}\"",
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
     }
 
     /**
@@ -170,23 +273,7 @@ class FacturaLibreController extends Controller
      */
     public function imprimir(Request $request, DocumentoTributario $documento): View
     {
-        $documento->loadMissing('items');
-        $documento->asegurarToken();
-
-        $formato = in_array($request->query('formato'), ['ticket', 'factura'], true)
-            ? $request->query('formato')
-            : 'factura';
-
-        $urlVerificar = route('comprobantes.documento.verificar', ['token' => $documento->token_publico]);
-        $qrUri = QrService::generarDataUri($urlVerificar, 180);
-        $sitio = Sitio::config();
-
-        return view('facturas.documento_imprimir', [
-            'doc' => $documento,
-            'formato' => $formato,
-            'qrUri' => $qrUri,
-            'sitio' => $sitio,
-        ]);
+        return view('facturas.documento_imprimir', $this->datosDocumento($request, $documento));
     }
 
     /**
@@ -194,33 +281,96 @@ class FacturaLibreController extends Controller
      */
     public function descargarPdf(Request $request, DocumentoTributario $documento): Response
     {
-        $documento->loadMissing('items');
+        $datos = $this->datosDocumento($request, $documento);
+        $formato = $datos['formato'];
+
+        // Ticket de 80 mm (226.77 pt) con alto según las líneas, para que no se corte
+        $papel = $formato === 'ticket'
+            ? [0, 0, 226.77, 430 + 34 * max(1, $documento->items->count()) + ($documento->uuid_sat ? 70 : 0) + ($documento->notas ? 30 : 0)]
+            : 'letter';
+
+        $pdf = Pdf::loadView('facturas.documento_pdf', $datos)
+        ->setPaper($papel, 'portrait')
+        ->setOption([
+            'isHtml5ParserEnabled' => true,
+            'isRemoteEnabled' => false,
+            'defaultFont' => 'DejaVu Sans',
+        ]);
+
+        $nombre = $formato === 'ticket' ? 'Ticket' : str_replace(' ', '-', ucfirst($documento->nombreTipo()));
+
+        return $pdf->download($nombre . '-' . $documento->numero_interno . '.pdf');
+    }
+
+    /**
+     * Datos de la plantilla facturas/partes/documento (pantalla y PDF).
+     * Documento certificado: el QR lleva al verificador oficial de la SAT (como sistema-inventario);
+     * sin certificar: a la verificación pública propia.
+     */
+    private function datosDocumento(Request $request, DocumentoTributario $documento): array
+    {
+        $documento->loadMissing(['items', 'origen']);
         $documento->asegurarToken();
+        $cfgDte = ConfiguracionDTE::actual();
+        $sitio = Sitio::config();
 
         $formato = in_array($request->query('formato'), ['ticket', 'factura'], true)
             ? $request->query('formato')
             : 'factura';
 
-        $urlVerificar = route('comprobantes.documento.verificar', ['token' => $documento->token_publico]);
-        $qrUri = QrService::generarDataUri($urlVerificar, 180);
-        $sitio = Sitio::config();
+        $urlQr = $documento->uuid_sat
+            ? 'https://felpub.c.sat.gob.gt/verificador-web/publico/vistas/verificacionDte.jsf?' . http_build_query([
+                'tipo' => 'autorizacion',
+                'numero' => $documento->uuid_sat,
+                'emisor' => $cfgDte->nit_emisor,
+                'receptor' => $documento->nit_receptor ?: 'CF',
+                'monto' => number_format((float) $documento->total, 2, '.', ''),
+            ])
+            : route('comprobantes.documento.verificar', ['token' => $documento->token_publico]);
 
-        $papel = $formato === 'ticket' ? [0, 0, 226.77, 650] : 'letter';
-
-        $pdf = Pdf::loadView('facturas.documento_imprimir', [
+        return [
             'doc' => $documento,
             'formato' => $formato,
-            'qrUri' => $qrUri,
+            'qrUri' => QrService::generarDataUri($urlQr, 180),
             'sitio' => $sitio,
-        ])
-        ->setPaper($papel, 'portrait')
-        ->setOption([
-            'isHtml5ParserEnabled' => true,
-            'isRemoteEnabled' => true,
-            'defaultFont' => 'DejaVu Sans',
-        ]);
+            'logoUri' => $this->logoDataUri($sitio),
+            'cfgDte' => $cfgDte,
+        ];
+    }
 
-        return $pdf->download(($formato === 'ticket' ? 'Ticket-' : 'Factura-') . $documento->numero_interno . '.pdf');
+    /**
+     * Logo del sitio incrustado como data URI: DomPDF no siempre puede descargar
+     * imágenes remotas (Contabo o el dominio local con certificado propio).
+     */
+    private function logoDataUri(mixed $sitio): ?string
+    {
+        $ruta = $sitio->logo ?? null;
+        if (blank($ruta)) {
+            return null;
+        }
+
+        $contenido = rescue(function () use ($ruta) {
+            if (str_starts_with($ruta, 'http')) {
+                return Http::timeout(5)->get($ruta)->throw()->body();
+            }
+            if (str_starts_with($ruta, 'assets/')) {
+                return is_file(public_path($ruta)) ? file_get_contents(public_path($ruta)) : null;
+            }
+
+            return Storage::disk(Imagenes::DISCO)->get($ruta);
+        }, null, false);
+
+        if (! $contenido) {
+            return null;
+        }
+
+        $tipo = (new \finfo(FILEINFO_MIME_TYPE))->buffer($contenido) ?: 'image/png';
+        // DomPDF no dibuja WEBP de forma fiable
+        if (! in_array($tipo, ['image/png', 'image/jpeg', 'image/gif', 'image/svg+xml'], true)) {
+            return null;
+        }
+
+        return 'data:' . $tipo . ';base64,' . base64_encode($contenido);
     }
 
     /**

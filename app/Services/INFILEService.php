@@ -15,7 +15,7 @@ class INFILEService
     /**
      * Paso 1: Firma electrónica del XML mediante WebService de INFILE.
      */
-    public function firmar(string $xml, ConfiguracionDTE $cfg, ?DocumentoTributario $dte = null): string
+    public function firmar(string $xml, ConfiguracionDTE $cfg, ?DocumentoTributario $dte = null, bool $esAnulacion = false): string
     {
         $url = $cfg->url_firma . '?alias=' . urlencode($cfg->alias_ws);
 
@@ -24,14 +24,14 @@ class INFILEService
             'llave'   => $cfg->token_signer,
             'archivo' => base64_encode($xml),
             'codigo'  => (string) ($dte?->id ?? uniqid('dte-')),
-            'es_anulacion' => 'N',
+            'es_anulacion' => $esAnulacion ? 'S' : 'N',
         ];
 
         $ini = microtime(true);
         $response = Http::timeout(30)->asJson()->post($url, $payload);
         $ms = (int) ((microtime(true) - $ini) * 1000);
 
-        $this->guardarLog('firmar', $url, json_encode($payload, JSON_UNESCAPED_UNICODE), $response, $ms, $dte?->id);
+        $this->guardarLog($esAnulacion ? 'firmar_anulacion' : 'firmar', $url, json_encode($payload, JSON_UNESCAPED_UNICODE), $response, $ms, $dte?->id);
 
         if (!$response->successful()) {
             throw new RuntimeException('Error HTTP ' . $response->status() . ' al firmar: ' . $response->body());
@@ -106,6 +106,51 @@ class INFILEService
             'fecha'           => $json['fecha'] ?? null,
             'xml_certificado' => $json['xml_certificado'] ?? null,
         ];
+    }
+
+    /**
+     * Paso 2 de la anulación: envía el XML de anulación firmado.
+     * Mismo formato que la certificación (headers usuario/llave/identificador).
+     */
+    public function anular(string $xmlFirmado, ConfiguracionDTE $cfg, ?DocumentoTributario $dte = null): void
+    {
+        $codigo = 'anul-'.($dte?->id ?? uniqid());
+
+        $payload = [
+            'nit_emisor'   => $cfg->nit_emisor,
+            'correo_copia' => $cfg->correo_emisor ?? '',
+            'xml_dte'      => base64_encode($xmlFirmado),
+        ];
+
+        $ini = microtime(true);
+        $response = Http::timeout(30)
+            ->withHeaders([
+                'usuario'       => $cfg->alias_ws,
+                'llave'         => $cfg->llave_ws,
+                'identificador' => $codigo,
+                'Content-Type'  => 'application/json',
+            ])
+            ->asJson()
+            ->post($cfg->url_anulacion, $payload);
+
+        $ms = (int) ((microtime(true) - $ini) * 1000);
+        $this->guardarLog('anular', $cfg->url_anulacion, json_encode($payload, JSON_UNESCAPED_UNICODE), $response, $ms, $dte?->id);
+
+        if (!$response->successful()) {
+            throw new RuntimeException('Error HTTP ' . $response->status() . ' al anular: ' . $response->body());
+        }
+
+        $json = $response->json();
+        if (!is_array($json)) {
+            throw new RuntimeException('Respuesta de anulación no es válida: ' . substr($response->body(), 0, 500));
+        }
+
+        if (!($json['resultado'] ?? false)) {
+            $desc = $json['descripcion'] ?? '';
+            $errores = $json['descripcion_errores'] ?? [];
+            $detalle = !empty($errores) ? implode(' | ', array_column($errores, 'mensaje_error')) : '';
+            throw new RuntimeException('SAT / INFILE rechazó la anulación: ' . $desc . ($detalle ? ' — ' . $detalle : ''));
+        }
     }
 
     /**

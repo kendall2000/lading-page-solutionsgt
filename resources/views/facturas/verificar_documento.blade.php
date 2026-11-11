@@ -65,14 +65,21 @@
     </div>
 
     <div class="cert-body text-center">
-        <div class="badge-verified">
-            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
-            DOCUMENTO OFICIAL VERIFICADO
-        </div>
+        @if ($doc->estado === 'anulado')
+            <div class="badge-verified" style="background:#fee2e2; color:#b91c1c; border-color:#fecaca;">
+                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                DOCUMENTO ANULADO ANTE LA SAT
+            </div>
+        @else
+            <div class="badge-verified">
+                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                DOCUMENTO OFICIAL VERIFICADO
+            </div>
+        @endif
 
         <div class="text-start mt-2">
             <div class="cert-row">
-                <span class="cert-label">No. Factura:</span>
+                <span class="cert-label">No. {{ $doc->nombreTipo() }}:</span>
                 <span class="cert-value text-primary font-monospace">{{ $doc->numero_interno }}</span>
             </div>
             <div class="cert-row">

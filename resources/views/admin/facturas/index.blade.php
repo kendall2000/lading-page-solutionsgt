@@ -114,6 +114,9 @@
                                         <a href="{{ route('admin.facturas.show', $f) }}" class="text-primary text-decoration-none">
                                             {{ $f->numero_interno }}
                                         </a>
+                                        @if (! $f->esFactura())
+                                            <div class="fs--2 text-600 fw-normal font-sans-serif">{{ $f->nombreTipo() }}</div>
+                                        @endif
                                     </td>
                                     <td>{{ $f->fecha_emision ? $f->fecha_emision->format('d/m/Y') : $f->created_at->format('d/m/Y') }}</td>
                                     <td>
@@ -136,7 +139,7 @@
                                     <td class="text-end fw-bolder font-monospace">
                                         {{ $f->moneda === 'GTQ' ? 'Q' : '$' }}{{ number_format($f->total, 2) }} {{ $f->moneda }}
                                     </td>
-                                    <td><span class="badge badge-phoenix badge-phoenix-success">Emitida</span></td>
+                                    <td>@include('admin.facturas.partes.estado', ['d' => $f])</td>
                                     <td class="pe-3 text-end text-nowrap">
                                         <div class="btn-group">
                                             {{-- Botón para ver el detalle de lo que consumió --}}

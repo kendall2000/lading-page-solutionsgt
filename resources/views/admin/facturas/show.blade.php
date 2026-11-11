@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['titulo' => 'Factura ' . $doc->numero_interno])
+@extends('layouts.admin', ['titulo' => $doc->nombreTipo() . ' ' . $doc->numero_interno])
 
 @section('contenido')
     @php $ventaReciente = session('venta_exitosa'); @endphp
@@ -44,12 +44,19 @@
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb mb-1">
                     <li class="breadcrumb-item"><a href="{{ route('admin.facturas.index') }}">Facturas</a></li>
+                    @if ($doc->origen)
+                        <li class="breadcrumb-item"><a href="{{ route('admin.facturas.show', $doc->origen) }}">{{ $doc->origen->numero_interno }}</a></li>
+                    @endif
                     <li class="breadcrumb-item active">{{ $doc->numero_interno }}</li>
                 </ol>
             </nav>
             <div class="d-flex align-items-center gap-2">
-                <h2 class="mb-0 text-1100">Factura {{ $doc->numero_interno }}</h2>
-                @if ($doc->estado === 'certificado')
+                <h2 class="mb-0 text-1100">{{ $doc->nombreTipo() }} {{ $doc->numero_interno }}</h2>
+                @if ($doc->estado === 'anulado')
+                    <span class="badge badge-phoenix badge-phoenix-secondary fs--1">
+                        <span class="fa-solid fa-ban me-1"></span>Anulada SAT
+                    </span>
+                @elseif ($doc->estado === 'certificado')
                     <span class="badge badge-phoenix badge-phoenix-success fs--1">
                         <span class="fa-solid fa-circle-check me-1"></span>Certificada SAT
                     </span>
@@ -67,13 +74,77 @@
             <p class="text-700 mb-0">Receptor: <strong>{{ $doc->nombre_receptor }}</strong> &middot; NIT: {{ $doc->nit_receptor ?: 'CF' }}</p>
         </div>
         <div class="d-flex flex-wrap gap-2">
-            @if ($doc->estado !== 'certificado')
+            @if (! in_array($doc->estado, ['certificado', 'anulado'], true))
                 <form method="POST" action="{{ route('admin.facturas.certificar-sat', $doc) }}" onsubmit="return confirm('¿Enviar este documento a certificar ante la SAT / INFILE?')">
                     @csrf
                     <button type="submit" class="btn btn-phoenix-warning">
                         <span class="fa-solid fa-stamp me-1"></span>{{ $doc->estado === 'error' ? 'Reintentar Certificación' : 'Certificar en SAT' }}
                     </button>
                 </form>
+            @endif
+            @php
+                $puedeAnular = $doc->estaCertificado() && $cfgDte->permite_anulacion_directa;
+                $notasHabilitadas = array_filter([
+                    'NCRE' => $cfgDte->habilitar_notas_credito,
+                    'NDEB' => $cfgDte->habilitar_notas_debito,
+                    'NABN' => $cfgDte->habilitar_notas_abono,
+                ]);
+                $puedeNotas = $doc->esFactura() && $doc->estaCertificado() && $notasHabilitadas;
+                $xmls = array_filter([
+                    'generado' => $doc->xml_generado ? 'XML generado (enviado a firmar)' : null,
+                    'firmado' => $doc->xml_firmado ? 'XML firmado' : null,
+                    'certificado' => $doc->xml_certificado ? 'XML certificado por SAT' : null,
+                    'anulacion' => $doc->xml_anulacion ? 'XML de anulación (firmado)' : null,
+                ]);
+            @endphp
+            @if ($puedeNotas || $puedeAnular)
+                <div class="btn-group">
+                    <button type="button" class="btn btn-phoenix-danger dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <span class="fa-solid fa-scale-balanced me-1"></span>Ajustes SAT
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        @if ($puedeNotas)
+                            @foreach (\App\Models\DocumentoTributario::NOTAS as $tipoNota => $infoNota)
+                                @if (isset($notasHabilitadas[$tipoNota]))
+                                    <li>
+                                        <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#modalNota" data-tipo="{{ $tipoNota }}">
+                                            <span class="fa-solid fa-file-circle-plus me-2"></span>{{ $infoNota['nombre'] }} ({{ $tipoNota }})
+                                        </button>
+                                    </li>
+                                @endif
+                            @endforeach
+                        @endif
+                        @if ($puedeNotas && $puedeAnular)
+                            <li><hr class="dropdown-divider"></li>
+                        @endif
+                        @if ($puedeAnular)
+                            <li>
+                                <button type="button" class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#modalAnular">
+                                    <span class="fa-solid fa-ban me-2"></span>Anular ante SAT
+                                </button>
+                            </li>
+                        @endif
+                    </ul>
+                </div>
+            @endif
+            @if ($xmls)
+                <div class="btn-group">
+                    <button type="button" class="btn btn-phoenix-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <span class="fa-solid fa-code me-1"></span>XML
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        @foreach ($xmls as $cual => $etiqueta)
+                            <li class="d-flex align-items-center">
+                                <a class="dropdown-item" href="{{ route('admin.facturas.xml', [$doc, $cual]) }}" target="_blank">
+                                    <span class="fa-solid fa-eye me-2"></span>{{ $etiqueta }}
+                                </a>
+                                <a class="btn btn-link btn-sm me-2" href="{{ route('admin.facturas.xml', [$doc, $cual]) }}?descargar=1" title="Descargar">
+                                    <span class="fa-solid fa-download"></span>
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
             @endif
             <a href="{{ route('admin.facturas.documento.imprimir', $doc) }}?formato=factura" target="_blank" class="btn btn-phoenix-primary">
                 <span class="fa-solid fa-file-invoice me-1"></span>Ver A4
@@ -102,16 +173,63 @@
             <div class="d-flex align-items-start gap-2">
                 <span class="fa-solid fa-triangle-exclamation text-danger fs-1 mt-1"></span>
                 <div class="flex-grow-1">
-                    <h6 class="text-danger fw-bold mb-1">Error de Certificación FEL (INFILE / SAT):</h6>
-                    <div class="text-900 font-monospace fs--1 bg-white p-2 rounded border border-danger-subtle">
-                        {{ session('error_sat') ?? $doc->error_mensaje }}
-                    </div>
-                    <div class="mt-2 fs--2 text-700">
-                        Puede corregir los datos o credenciales y presionar el botón <strong>"Reintentar Certificación"</strong> arriba.
-                    </div>
+                    <h6 class="text-danger fw-bold mb-1">Respuesta de FEL (INFILE / SAT):</h6>
+                    @php
+                        $textoError = (string) (session('error_sat') ?? $doc->error_mensaje);
+                        $partes = preg_split('/\s+—\s+/u', $textoError, 2);
+                        $detalles = isset($partes[1]) ? array_filter(array_map('trim', explode(' | ', $partes[1]))) : [];
+                    @endphp
+                    <div class="text-1000 fw-semi-bold">{{ $partes[0] }}</div>
+                    @if ($detalles)
+                        <ol class="mt-2 mb-0 ps-3 fs--1">
+                            @foreach ($detalles as $detalle)
+                                <li class="mb-1 text-break">{{ $detalle }}</li>
+                            @endforeach
+                        </ol>
+                    @endif
+                    @if (! $doc->estaCertificado() && ! $doc->estaAnulado())
+                        <div class="mt-2 fs--2 text-700">
+                            Puede corregir los datos o credenciales y presionar el botón <strong>"Reintentar Certificación"</strong> arriba.
+                        </div>
+                    @endif
                 </div>
             </div>
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
+    @if ($errors->any())
+        <div class="alert alert-subtle-danger mb-4 border-danger" role="alert">
+            @foreach ($errors->all() as $mensaje)
+                <div><span class="fa-solid fa-circle-exclamation me-2"></span>{{ $mensaje }}</div>
+            @endforeach
+        </div>
+    @endif
+
+    @if ($doc->estado === 'anulado')
+        <div class="alert alert-subtle-secondary mb-4 border-secondary">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                <div>
+                    <span class="fa-solid fa-ban text-secondary me-2 fs-1"></span>
+                    <strong>Documento anulado ante la SAT</strong>
+                    <span class="font-monospace ms-2">UUID: {{ $doc->uuid_sat }}</span>
+                </div>
+                <span class="fs--2 text-muted">Anulado el {{ $doc->fecha_anulacion ? $doc->fecha_anulacion->format('d/m/Y H:i') : '' }}</span>
+            </div>
+            @if ($doc->motivo_anulacion)
+                <div class="mt-2 fs--1"><strong>Motivo:</strong> {{ $doc->motivo_anulacion }}</div>
+            @endif
+        </div>
+    @endif
+
+    @if ($doc->origen)
+        <div class="alert alert-subtle-info mb-4 border-info fs--1">
+            <span class="fa-solid fa-link me-2"></span>
+            {{ $doc->nombreTipo() }} sobre la factura
+            <a href="{{ route('admin.facturas.show', $doc->origen) }}" class="fw-bold">{{ $doc->origen->numero_interno }}</a>
+            @if ($doc->origen->uuid_sat)
+                <span class="ms-2 text-700">(Serie {{ $doc->origen->serie_sat }} · No. {{ $doc->origen->numero_sat }} · UUID <span class="font-monospace">{{ $doc->origen->uuid_sat }}</span>)</span>
+            @endif
         </div>
     @endif
 
@@ -181,6 +299,41 @@
                 @endif
             </div>
 
+            @if ($doc->esFactura() && $doc->complementarios->isNotEmpty())
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-body-highlight py-3 d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 text-1100"><span class="fa-solid fa-file-circle-plus me-2 text-danger"></span>Notas emitidas sobre esta factura ({{ $doc->complementarios->count() }})</h5>
+                        <span class="fs--2 text-600">Saldo acreditable: <strong class="font-monospace">{{ $doc->moneda === 'GTQ' ? 'Q' : '$' }}{{ number_format($saldo, 2) }}</strong></span>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead class="bg-body-secondary">
+                                    <tr>
+                                        <th class="ps-3">Documento</th>
+                                        <th>Tipo</th>
+                                        <th>Motivo</th>
+                                        <th class="text-end">Monto</th>
+                                        <th class="pe-3">Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($doc->complementarios as $nota)
+                                        <tr>
+                                            <td class="ps-3 font-monospace fw-bold"><a href="{{ route('admin.facturas.show', $nota) }}">{{ $nota->numero_interno }}</a></td>
+                                            <td>{{ $nota->nombreTipo() }}</td>
+                                            <td class="text-700 fs--1">{{ $nota->notas }}</td>
+                                            <td class="text-end font-monospace">{{ $nota->moneda === 'GTQ' ? 'Q' : '$' }}{{ number_format($nota->total, 2) }}</td>
+                                            <td class="pe-3">@include('admin.facturas.partes.estado', ['d' => $nota])</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             {{-- Historial de Logs y Auditoría SAT / INFILE para este Documento --}}
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-body-highlight py-3 d-flex justify-content-between align-items-center">
@@ -205,34 +358,18 @@
                                                 <span class="badge {{ $l->exito ? 'bg-success' : 'bg-danger' }}">
                                                     {{ $l->exito ? 'ÉXITO' : 'RECHAZO' }} (HTTP {{ $l->codigo_http ?: 'ERR' }})
                                                 </span>
-                                                <span class="badge bg-secondary font-monospace">{{ strtoupper($l->accion) }}</span>
+                                                <span class="badge badge-phoenix badge-phoenix-secondary">{{ $l->nombreAccion() }}</span>
+                                                @if ($l->resumenError())
+                                                    <span class="text-danger fs--2 text-truncate" style="max-width: 420px;" title="{{ $l->resumenError() }}">{{ $l->resumenError() }}</span>
+                                                @endif
                                                 <span class="text-600 font-monospace">{{ $l->created_at ? $l->created_at->format('d/m/Y H:i:s') : '—' }}</span>
                                                 <span class="text-muted ms-auto pe-3 font-monospace fs--2">{{ $l->duracion_ms ? $l->duracion_ms . ' ms' : '' }}</span>
                                             </div>
                                         </button>
                                     </h2>
                                     <div id="collapseLog{{ $l->id }}" class="accordion-collapse collapse" data-bs-parent="#accordionLogsDoc">
-                                        <div class="accordion-body bg-body-tertiary p-3 fs--1">
-                                            <div class="mb-2">
-                                                <strong>Endpoint:</strong>
-                                                <code class="text-break bg-light p-1 rounded d-block">{{ $l->url }}</code>
-                                            </div>
-                                            @if($l->error_mensaje)
-                                                <div class="alert alert-danger py-2 px-3 fs--2 mb-3">
-                                                    <strong>Error devuelto por SAT:</strong>
-                                                    <div class="mt-1">{{ $l->error_mensaje }}</div>
-                                                </div>
-                                            @endif
-                                            <div class="row g-2">
-                                                <div class="col-12 col-lg-6">
-                                                    <span class="fw-bold fs--2 text-700 mb-1 d-block">Petición Enviada (Request Payload):</span>
-                                                    <pre class="bg-dark text-light p-2 rounded fs--2 mb-0" style="max-height: 250px; overflow-y: auto;"><code>{{ is_array($l->request_body) ? json_encode($l->request_body, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : ($l->request_body ?: '(Sin contenido)') }}</code></pre>
-                                                </div>
-                                                <div class="col-12 col-lg-6">
-                                                    <span class="fw-bold fs--2 text-700 mb-1 d-block">Respuesta Recibida (Response JSON/XML):</span>
-                                                    <pre class="bg-dark text-light p-2 rounded fs--2 mb-0" style="max-height: 250px; overflow-y: auto;"><code>{{ is_array($l->response_body) ? json_encode($l->response_body, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : ($l->response_body ?: '(Sin contenido)') }}</code></pre>
-                                                </div>
-                                            </div>
+                                        <div class="accordion-body p-3">
+                                            @include('admin.facturacion.partes.log-detalle', ['log' => $l])
                                         </div>
                                     </div>
                                 </div>
@@ -313,4 +450,101 @@
             </div>
         </div>
     </div>
+
+    @if ($puedeAnular)
+        <div class="modal fade" id="modalAnular" tabindex="-1" aria-labelledby="modalAnularTitulo" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <form method="POST" action="{{ route('admin.facturas.anular', $doc) }}" class="modal-content" onsubmit="this.querySelector('[type=submit]').disabled = true">
+                    @csrf
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalAnularTitulo"><span class="fa-solid fa-ban text-danger me-2"></span>Anular {{ $doc->nombreTipo() }} {{ $doc->numero_interno }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-subtle-warning fs--1 mb-3">
+                            La anulación se envía a la SAT y <strong>no se puede deshacer</strong>. El UUID
+                            <span class="font-monospace">{{ $doc->uuid_sat }}</span> quedará sin validez.
+                        </div>
+                        <label class="form-label" for="motivoAnulacion">Motivo de la anulación</label>
+                        <textarea class="form-control" id="motivoAnulacion" name="motivo" rows="3" minlength="5" maxlength="255" required placeholder="Ej.: Error en los datos del receptor">{{ old('motivo') }}</textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-phoenix-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-danger"><span class="fa-solid fa-ban me-1"></span>Anular ante SAT</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    @endif
+
+    @if ($puedeNotas)
+        @php $simbolo = $doc->moneda === 'GTQ' ? 'Q' : '$'; @endphp
+        <div class="modal fade" id="modalNota" tabindex="-1" aria-labelledby="modalNotaTitulo" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <form method="POST" action="{{ route('admin.facturas.notas', $doc) }}" class="modal-content" onsubmit="this.querySelector('[type=submit]').disabled = true">
+                    @csrf
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalNotaTitulo"><span class="fa-solid fa-file-circle-plus text-primary me-2"></span>Nueva nota sobre {{ $doc->numero_interno }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label" for="tipoNota">Tipo de documento</label>
+                            <select class="form-select" id="tipoNota" name="tipo" required>
+                                @foreach (\App\Models\DocumentoTributario::NOTAS as $tipoNota => $infoNota)
+                                    @if (isset($notasHabilitadas[$tipoNota]))
+                                        <option value="{{ $tipoNota }}" @selected(old('tipo') === $tipoNota)>{{ $infoNota['nombre'] }} ({{ $tipoNota }})</option>
+                                    @endif
+                                @endforeach
+                            </select>
+                            <div class="form-text" id="ayudaNota"></div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="montoNota">Monto ({{ $doc->moneda }})</label>
+                            <div class="input-group">
+                                <span class="input-group-text">{{ $simbolo }}</span>
+                                <input type="number" class="form-control font-monospace" id="montoNota" name="monto" step="0.01" min="0.01" required value="{{ old('monto', number_format($saldo, 2, '.', '')) }}" data-saldo="{{ number_format($saldo, 2, '.', '') }}">
+                            </div>
+                            <div class="form-text">Total de la factura: {{ $simbolo }}{{ number_format($doc->total, 2) }} · saldo que aún se puede rebajar: {{ $simbolo }}{{ number_format($saldo, 2) }}</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="motivoNota">Motivo del ajuste</label>
+                            <input type="text" class="form-control" id="motivoNota" name="motivo" minlength="5" maxlength="255" required value="{{ old('motivo') }}" placeholder="Ej.: Descuento acordado con el cliente">
+                        </div>
+                        <div>
+                            <label class="form-label" for="descripcionNota">Descripción de la línea <span class="text-muted">(opcional)</span></label>
+                            <input type="text" class="form-control" id="descripcionNota" name="descripcion" maxlength="500" value="{{ old('descripcion') }}" placeholder="Por defecto: «Nota de … - Factura serie número»">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-phoenix-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary"><span class="fa-solid fa-stamp me-1"></span>Emitir y certificar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <script>
+            (function () {
+                var modal = document.getElementById('modalNota');
+                var tipo = document.getElementById('tipoNota');
+                var monto = document.getElementById('montoNota');
+                var ayuda = document.getElementById('ayudaNota');
+                var textos = {
+                    NCRE: 'Rebaja o devuelve parte del valor de la factura. No puede superar el saldo.',
+                    NDEB: 'Cargo adicional al cliente sobre la misma factura (aumenta lo que debe).',
+                    NABN: 'Abono sin IVA ni frases. No puede superar el saldo.'
+                };
+                function actualizar() {
+                    ayuda.textContent = textos[tipo.value] || '';
+                    if (tipo.value === 'NDEB') { monto.removeAttribute('max'); } else { monto.max = monto.dataset.saldo; }
+                }
+                modal.addEventListener('show.bs.modal', function (e) {
+                    var boton = e.relatedTarget;
+                    if (boton && boton.dataset.tipo) { tipo.value = boton.dataset.tipo; }
+                    actualizar();
+                });
+                tipo.addEventListener('change', actualizar);
+            })();
+        </script>
+    @endif
 @endsection

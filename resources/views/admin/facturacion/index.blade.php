@@ -202,15 +202,7 @@
                                                 {{ $log->created_at ? $log->created_at->format('d/m/Y H:i:s') : '—' }}
                                             </td>
                                             <td>
-                                                @if($log->accion === 'firmar')
-                                                    <span class="badge bg-secondary">Firma XML</span>
-                                                @elseif($log->accion === 'certificar')
-                                                    <span class="badge bg-info">Certificar SAT</span>
-                                                @elseif($log->accion === 'anular')
-                                                    <span class="badge bg-warning text-dark">Anular SAT</span>
-                                                @else
-                                                    <span class="badge bg-light text-dark">{{ $log->accion }}</span>
-                                                @endif
+                                                <span class="badge badge-phoenix {{ $log->accion === 'anular' ? 'badge-phoenix-warning' : ($log->accion === 'certificar' ? 'badge-phoenix-info' : 'badge-phoenix-secondary') }}">{{ $log->nombreAccion() }}</span>
                                             </td>
                                             <td>
                                                 @if($log->documento)
@@ -237,12 +229,12 @@
                                                     <span class="text-600 fs--2 text-truncate d-inline-block align-middle" style="max-width: 380px;">Transacción completada satisfactoriamente</span>
                                                 @else
                                                     <span class="badge badge-subtle-danger me-1"><span class="fa-solid fa-circle-exclamation me-1"></span>Rechazo</span>
-                                                    <span class="text-danger fs--2 fw-semi-bold">{{ Str::limit($log->error_mensaje, 95) }}</span>
+                                                    <span class="text-danger fs--2 fw-semi-bold d-inline-block text-truncate align-middle" style="max-width: 460px;" title="{{ $log->resumenError() }}">{{ $log->resumenError() }}</span>
                                                 @endif
                                             </td>
                                             <td class="text-end pe-3">
-                                                <button type="button" class="btn btn-falcon-default btn-xs" data-bs-toggle="modal" data-bs-target="#modalLog{{ $log->id }}">
-                                                    <span class="fa-solid fa-code me-1"></span>JSON
+                                                <button type="button" class="btn btn-phoenix-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#modalLog{{ $log->id }}">
+                                                    <span class="fa-solid fa-magnifying-glass me-1"></span>Ver detalle
                                                 </button>
                                             </td>
                                         </tr>
@@ -255,7 +247,7 @@
                         {{-- Modales para ver Payload / Response JSON --}}
                         @foreach($logs as $log)
                             <div class="modal fade" id="modalLog{{ $log->id }}" tabindex="-1" aria-hidden="true">
-                                <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+                                <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
                                     <div class="modal-content">
                                         <div class="modal-header">
                                             <h6 class="modal-title">
@@ -267,38 +259,10 @@
                                             <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Close"></button>
                                         </div>
                                         <div class="modal-body p-3">
-                                            <div class="mb-2">
-                                                <strong>URL invocada:</strong>
-                                                <code class="d-block p-1 bg-light rounded text-break">{{ $log->url }}</code>
-                                            </div>
-
-                                            @if($log->error_mensaje)
-                                                <div class="alert alert-danger p-2 fs--1 mb-3">
-                                                    <strong>Mensaje de Error SAT:</strong>
-                                                    <div>{{ $log->error_mensaje }}</div>
-                                                </div>
-                                            @endif
-
-                                            <ul class="nav nav-pills mb-2" id="pillLog{{ $log->id }}" role="tablist">
-                                                <li class="nav-item">
-                                                    <button class="nav-link active btn-sm py-1 px-3" data-bs-toggle="pill" data-bs-target="#tabResp{{ $log->id }}">Respuesta Recibida (JSON / Error)</button>
-                                                </li>
-                                                <li class="nav-item">
-                                                    <button class="nav-link btn-sm py-1 px-3" data-bs-toggle="pill" data-bs-target="#tabReq{{ $log->id }}">Petición Enviada (Payload)</button>
-                                                </li>
-                                            </ul>
-                                            <div class="tab-content">
-                                                <div class="tab-pane fade show active" id="tabResp{{ $log->id }}">
-                                                    <pre class="bg-dark text-light p-3 rounded fs--2 mb-0" style="max-height: 380px; overflow-y: auto;"><code>{{ is_array($log->response_body) ? json_encode($log->response_body, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : ($log->response_body ?: '(Vacío)') }}</code></pre>
-                                                </div>
-                                                <div class="tab-pane fade" id="tabReq{{ $log->id }}">
-                                                    <pre class="bg-dark text-light p-3 rounded fs--2 mb-0" style="max-height: 380px; overflow-y: auto;"><code>{{ is_array($log->request_body) ? json_encode($log->request_body, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : ($log->request_body ?: '(Vacío)') }}</code></pre>
-                                                </div>
-                                            </div>
+                                            @include('admin.facturacion.partes.log-detalle', ['log' => $log])
                                         </div>
                                         <div class="modal-footer py-2">
-                                            <small class="text-muted me-auto">Duración: {{ $log->duracion_ms }}ms | Fecha: {{ $log->created_at }}</small>
-                                            <button class="btn btn-sm btn-secondary" type="button" data-bs-dismiss="modal">Cerrar</button>
+                                                                                        <button class="btn btn-sm btn-secondary" type="button" data-bs-dismiss="modal">Cerrar</button>
                                         </div>
                                     </div>
                                 </div>
@@ -393,7 +357,16 @@
                                         <span class="fa-solid fa-plus me-1"></span>Añadir Frase
                                     </button>
                                 </div>
-                                <p class="text-700 fs--2 mb-3">Defina los códigos de TipoFrase y CodigoEscenario según la normativa de la SAT para no tocar código en el futuro.</p>
+                                <p class="text-700 fs--2 mb-2">Ponga solo las frases que aparecen en el RTU de su NIT (las ve en la constancia de inscripción de la SAT o se las confirma INFILE). Una frase que no corresponde hace que la SAT rechace la factura (error 2614).</p>
+                                <div class="alert alert-subtle-info fs--2 py-2 mb-3">
+                                    <strong>Frases más comunes (tipo · escenario):</strong>
+                                    <ul class="mb-1 ps-3">
+                                        @foreach (\App\Models\ConfiguracionDTE::CATALOGO_FRASES as $clave => $texto)
+                                            <li><span class="font-monospace">{{ str_replace(['-', '*'], [' · ', '?'], $clave) }}</span> — {{ $texto }}</li>
+                                        @endforeach
+                                    </ul>
+                                    Lo usual: <strong>Pequeño Contribuyente → 3 · 1</strong>. <strong>Régimen General → 1 · 1</strong> (o 1 · 2 si está en retención definitiva ISR), y 2 · 1 solo si la SAT lo calificó como agente de retención del IVA.
+                                </div>
                                 
                                 <div class="table-responsive">
                                     <table class="table table-sm align-middle table-bordered" id="tablaFrases">
@@ -417,6 +390,10 @@
                                                     </td>
                                                     <td>
                                                         <input type="text" class="form-control form-control-sm" name="frases[{{ $idx }}][descripcion]" value="{{ $fr['descripcion'] ?? '' }}" placeholder="Ej: No genera derecho a crédito fiscal">
+                                                        @php $textoSat = \App\Models\ConfiguracionDTE::textoFrase((string) ($fr['tipo_frase'] ?? ''), (string) ($fr['codigo_escenario'] ?? '')); @endphp
+                                                        @if ($textoSat)
+                                                            <div class="fs--2 text-600 mt-1">Según la SAT: <strong>{{ $textoSat }}</strong></div>
+                                                        @endif
                                                     </td>
                                                     <td class="text-center">
                                                         <button type="button" class="btn btn-link text-danger p-0" onclick="this.closest('tr').remove()">

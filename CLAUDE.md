@@ -40,11 +40,16 @@ restaurante solo sirvió de modelo inicial (estructura, módulo de Correos, Dock
 
 ## Base de datos
 
-- BD propia `solutionsgt` en `31.220.77.136` (mismo servidor que los otros sistemas; **no tocar** otras bases).
-  El `.env` local apunta a esa BD real: `migrate` y `db:seed` escriben ahí.
+- BD propia `solutionsgt`. En producción vive en `31.220.77.136` (mismo servidor que los otros sistemas;
+  **no tocar** otras bases). Desde el 2026-11-11 el `.env` de esta computadora apunta a una base **local** de lerd
+  (`DB_HOST=lerd-mariadb-11-8`); hay copia del `.env` anterior en `.env.bkp.20261111-142444`. Antes de `migrate`
+  o `db:seed`, revisar `DB_HOST`: si es la IP de producción, preguntar primero.
+- PHP corre en el contenedor de lerd: los comandos (`php artisan …`) funcionan desde **esta** carpeta; desde
+  otras rutas en `/run/media` lerd puede negarse («does not mount temporary system directories»).
 - Tablas: `users`, `configuracion_sitio` (una fila), `paginas`, `secciones`, `elementos`, `categorias_sistema`, `manuales`, `configuracion_correo`, `plantillas_correo`, `bitacora_correos`, `sistemas`, `sistema_imagenes`, `servicios` (planes), `clientes`
   (incluye logo y testimonio), `direcciones`, `mensajes_contacto`, `conversaciones`, `mensajes_chat`, `visitas`,
-  `bitacora_cambios`, `cuentas`, `contratos`, `configuracion_pagos`, `productos`, `precios`, `suscripciones`, `pagos`, `configuracion_licencias`, `instalaciones`, `pagos_licencia`
+  `bitacora_cambios`, `cuentas`, `contratos`, `configuracion_pagos`, `productos`, `precios`, `suscripciones`, `pagos`, `configuracion_licencias`, `instalaciones`, `pagos_licencia`, `documentos_tributarios`,
+  `documento_tributario_items`, `configuracion_dte`, `logs_dte`, `cotizaciones`
   + las de Laravel (`sessions`, `cache`, `jobs`…).
 - `DatabaseSeeder` solo crea lo que falta (no pisa lo editado en el panel). El usuario inicial sale de
   `ADMIN_EMAIL` / `ADMIN_PASSWORD` o se genera y se muestra una sola vez.
@@ -231,6 +236,61 @@ restaurante solo sirvió de modelo inicial (estructura, módulo de Correos, Dock
 - `licencias:revisar` (diario 8:00): plantilla `licencia_aviso` al `correo_cobro` al entrar en cada etapa y
   `licencia_estado` a «Avisos a» al entrar en mora o si deja de consultar más de 24 h. Cada aviso una vez.
 - Panel → Ventas → Licencias Nexus (`admin/licencias`). Pruebas: `tests/Feature/LicenciasNexusTest.php` (Nexus simulado con `Http::fake`).
+
+## Facturación FEL con INFILE (igual que sistema-inventario)
+
+> Explicación completa de cómo y por qué se hizo (sesión 2026-11-11): `docs/2026-11-11-facturacion-fel.md`.
+
+- Panel → Facturas (`FacturaLibreController`) y Panel → Facturación (configuración en `configuracion_dte`:
+  emisor, afiliación IVA PEQ/GEN/EXE, frases, credenciales INFILE y qué se permite: anulación directa y notas).
+- Tablas `documentos_tributarios` (+ `documento_tributario_items`) y `logs_dte` (cada llamada a INFILE con
+  petición, respuesta y duración). Estados: `emitido` → `pendiente` → `certificado` | `error`; `anulado`.
+- `App\Services\DTEService`: `certificar()` (factura o nota; el XML se rehace en cada intento), `emitirNota()`
+  y `anular()`. XML en `XMLGeneratorService`, llamadas en `INFILEService` (firmar → certificar / anular).
+- **Notas** (pedido del usuario 2026-11-11): NCRE, NDEB y NABN son otro `DocumentoTributario` con
+  `documento_origen_id` = factura certificada, una línea y el motivo en `notas`; número `NC-/ND-/NA-año-n`.
+  NCRE y NDEB llevan el complemento `ReferenciasNota`; NABN va sin frases ni IVA. NCRE + NABN no pueden pasar
+  del saldo (`saldoAcreditable()`). El IVA solo se desglosa con afiliación GEN (igual que la factura).
+- **Anulación**: XML `GTAnulacionDocumento` firmado con `es_anulacion = S`; la fecha del documento a anular sale
+  del `FechaHoraEmision` del XML certificado. No se anula una factura con notas certificadas (anularlas antes).
+  Si INFILE la rechaza, el documento sigue certificado y el motivo queda en `error_mensaje`.
+- XML guardados (generado, firmado, certificado, anulación) en `/admin/facturas/{id}/xml/{cual}` (`?descargar=1`).
+- La página pública del QR (`/validar/factura/{token}`) avisa si el documento está anulado.
+- **Frases SAT** (`configuracion_dte.frases_config`, editables en Facturación → Configuración FEL): la SAT valida
+  cada frase contra el RTU del NIT y rechaza con el **error 2614** si no corresponde. Catálogo y textos en
+  `ConfiguracionDTE::CATALOGO_FRASES` (el panel muestra «Según la SAT: …» junto a cada frase). Lo usual:
+  PEQ → 3·1; GEN → 1·1 (o 1·2 si es retención definitiva ISR); 2·1 (agente de retención del IVA) **solo** si el NIT
+  está calificado. Los valores por defecto anteriores (1·2 + 2·1 para PEQ, con descripciones cruzadas) estaban mal.
+- **Logs legibles**: `LogDTE::erroresSat()`, `resumenError()`, `respuestaLegible()` / `peticionLegible()` (JSON con
+  sangría y el base64 reemplazado por un aviso) y `xmls()` (XML decodificados). Vista compartida
+  `admin/facturacion/partes/log-detalle` (+ `partes/codigo`, con botón Copiar), usada en `/admin/facturas/{id}`
+  (historial) y en el modal de `/admin/facturacion?ver=logs`. El aviso de error de la factura separa
+  `error_mensaje` («… — A | B») en lista.
+- **Formato de factura/nota (A4 y ticket)**, pedido del usuario: igual que los documentos de sistema-inventario
+  (encabezado con color de marca, título centrado con serie/número, recuadros Cliente/Detalles, tabla con
+  encabezado de color, base imponible + IVA si es GEN, recuadro verde FEL con QR al **verificador de la SAT**,
+  pie «Empresa — documento · Generado el…»). Una sola plantilla `facturas/partes/documento` para pantalla
+  (`documento_imprimir`, con barra de botones) y PDF (`documento_pdf`); datos en
+  `FacturaLibreController::datosDocumento()`. Empresa: `configuracion_dte` (nombre comercial, razón social, NIT,
+  dirección) + `configuracion_sitio` (`nombre`, `telefono`, `correo`, `color_primario`, `logo`).
+  DomPDF no entiende flexbox, grid, variables CSS, `gap` ni degradados: la plantilla va con tablas y colores fijos.
+  El logo se incrusta como data URI (`logoDataUri()`); el ticket calcula su alto según las líneas.
+- Pruebas: `tests/Feature/FacturacionDteTest.php` con INFILE simulado (`Http::fake`).
+
+### Sesión 2026-11-11 (traspaso)
+
+- El usuario pidió que la certificación funcione «igual que sistema-inventario»: se agregaron notas NCRE/NDEB/NABN,
+  anulación ante SAT, ver/descargar XML, datos SAT (serie, número, UUID, certificador INFILE NIT 12521337) en el
+  PDF/ticket y aviso de anulado en la página pública del QR. Migración
+  `2026_11_11_180000_add_anulacion_y_notas_a_documentos_tributarios` (ya corrida en la base local).
+- Rechazo real visto: FAC-2026-00002 con error 2614 por la frase 2·1 guardada en la configuración (afiliación GEN).
+  **Pendiente del usuario**: quitar la fila 2·1 en Configuración FEL y reintentar; confirmar en su RTU si la frase
+  ISR es 1·1 o 1·2.
+- Rediseño de los logs (ver «Logs legibles»); al usuario le gustó.
+- Pendientes: probar notas y anulación contra INFILE en ambiente de pruebas; confirmar el NIT del certificador;
+  los cambios **no están en git** (falta commit). En `sistema-inventario` los valores por defecto de frases PEQ
+  tienen el mismo error (1·2 + 2·1); se le avisó al usuario, no se tocó.
+- 144 pruebas pasan. Pint marca estilo en archivos que ya existían (no se reformatearon para no mezclar cambios).
 
 ## Despliegue (Docker)
 
