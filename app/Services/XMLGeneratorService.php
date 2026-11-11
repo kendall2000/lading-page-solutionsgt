@@ -8,7 +8,7 @@ use App\Models\DocumentoTributario;
 class XMLGeneratorService
 {
     /**
-     * Construye el XML DTE estándar de la SAT de Guatemala.
+     * Construye el XML DTE estándar de la SAT de Guatemala idéntico a sistema-inventario.
      */
     public function generarFactura(DocumentoTributario $doc, ConfiguracionDTE $cfg): string
     {
@@ -23,17 +23,26 @@ class XMLGeneratorService
         $moneda = $doc->moneda ?: 'USD';
         $granTotal = number_format((float) $doc->total, 2, '.', '');
 
-        // Construir Frases SAT desde la configuración dinámica del emisor
-        $frasesXml = '';
-        $frases = $cfg->obtenerFrases();
-        if (!empty($frases)) {
-            $frasesXml .= '<dte:Frases>';
-            foreach ($frases as $f) {
-                $tf = htmlspecialchars($f['tipo_frase'], ENT_XML1, 'UTF-8');
-                $ce = htmlspecialchars($f['codigo_escenario'], ENT_XML1, 'UTF-8');
+        // Validación de frases según Afiliación IVA del emisor (Regla SAT obligatoria):
+        // PEQ (Pequeño Contribuyente): TipoFrase="1" CodigoEscenario="2" + TipoFrase="2" CodigoEscenario="1"
+        // EXE (Exento): TipoFrase="1" CodigoEscenario="3"
+        // GEN (General 12%): TipoFrase="1" CodigoEscenario="1"
+        $afiliacionIva = strtoupper(trim($cfg->afiliacion_iva ?: 'PEQ'));
+
+        if (!empty($cfg->frases_config) && is_array($cfg->frases_config)) {
+            $frasesXml = '<dte:Frases>';
+            foreach ($cfg->frases_config as $f) {
+                $tf = htmlspecialchars((string)$f['tipo_frase'], ENT_XML1, 'UTF-8');
+                $ce = htmlspecialchars((string)$f['codigo_escenario'], ENT_XML1, 'UTF-8');
                 $frasesXml .= "<dte:Frase CodigoEscenario=\"{$ce}\" TipoFrase=\"{$tf}\"/>";
             }
             $frasesXml .= '</dte:Frases>';
+        } else {
+            $frasesXml = match ($afiliacionIva) {
+                'GEN' => '<dte:Frases><dte:Frase CodigoEscenario="1" TipoFrase="1"/></dte:Frases>',
+                'EXE' => '<dte:Frases><dte:Frase CodigoEscenario="3" TipoFrase="1"/></dte:Frases>',
+                default => '<dte:Frases><dte:Frase CodigoEscenario="2" TipoFrase="1"/><dte:Frase CodigoEscenario="1" TipoFrase="2"/></dte:Frases>', // PEQ
+            };
         }
 
         // Construir ítems XML
@@ -48,9 +57,8 @@ class XMLGeneratorService
             $pu = number_format((float) $item->precio_unitario, 2, '.', '');
             $subt = number_format((float) $item->subtotal, 2, '.', '');
 
-            // Régimen Pequeño Contribuyente no desglosa IVA por ítem
             $impuestosXml = '';
-            if ($cfg->afiliacion_iva === 'GEN') {
+            if ($afiliacionIva === 'GEN') {
                 $base = round((float)$item->subtotal / 1.12, 2);
                 $iva = round((float)$item->subtotal - $base, 2);
                 $totalIva += $iva;
@@ -58,6 +66,7 @@ class XMLGeneratorService
                 $ivaFmt = number_format($iva, 2, '.', '');
 
                 $impuestosXml = <<<XML
+
             <dte:Impuestos>
               <dte:Impuesto>
                 <dte:NombreCorto>IVA</dte:NombreCorto>
@@ -94,15 +103,17 @@ XML;
 XML;
         }
 
-        $codEstab = htmlspecialchars($cfg->codigo_establecimiento ?: '1', ENT_XML1, 'UTF-8');
-        $nitEmisor = htmlspecialchars($cfg->nit_emisor, ENT_XML1, 'UTF-8');
-        $nombreEmisor = htmlspecialchars($cfg->nombre_emisor, ENT_XML1, 'UTF-8');
-        $nombreComercial = htmlspecialchars($cfg->nombre_comercial, ENT_XML1, 'UTF-8');
-        $dirEmisor = htmlspecialchars($cfg->direccion, ENT_XML1, 'UTF-8');
-        $muniEmisor = htmlspecialchars($cfg->municipio ?: 'GUATEMALA', ENT_XML1, 'UTF-8');
-        $depEmisor = htmlspecialchars($cfg->departamento ?: 'GUATEMALA', ENT_XML1, 'UTF-8');
-        $cpEmisor = htmlspecialchars($cfg->codigo_postal ?: '01001', ENT_XML1, 'UTF-8');
-        $afiliacionIva = htmlspecialchars($cfg->afiliacion_iva ?: 'PEQ', ENT_XML1, 'UTF-8');
+        $codEstab = htmlspecialchars((string)($cfg->codigo_establecimiento ?: '1'), ENT_XML1, 'UTF-8');
+        $nitEmisor = htmlspecialchars(trim($cfg->nit_emisor), ENT_XML1, 'UTF-8');
+        $nombreEmisor = htmlspecialchars(trim($cfg->nombre_emisor), ENT_XML1, 'UTF-8');
+        $nombreComercial = htmlspecialchars(trim($cfg->nombre_comercial), ENT_XML1, 'UTF-8');
+        $dirEmisor = htmlspecialchars(trim($cfg->direccion), ENT_XML1, 'UTF-8');
+        $muniEmisor = htmlspecialchars(trim($cfg->municipio ?: 'GUATEMALA'), ENT_XML1, 'UTF-8');
+        $depEmisor = htmlspecialchars(trim($cfg->departamento ?: 'GUATEMALA'), ENT_XML1, 'UTF-8');
+        $cpEmisor = htmlspecialchars(trim($cfg->codigo_postal ?: '01001'), ENT_XML1, 'UTF-8');
+
+        $correoEmisorAttr = !empty($cfg->correo_emisor) ? ' CorreoEmisor="'.htmlspecialchars($cfg->correo_emisor, ENT_XML1, 'UTF-8').'"' : '';
+        $correoReceptorAttr = !empty($correoReceptor) ? ' CorreoReceptor="'.$correoReceptor.'"' : '';
 
         return <<<XML
 <?xml version="1.0" encoding="UTF-8"?>
@@ -120,8 +131,7 @@ XML;
           Tipo="FACT"/>
         <dte:Emisor
           AfiliacionIVA="{$afiliacionIva}"
-          CodigoEstablecimiento="{$codEstab}"
-          CorreoEmisor="{$cfg->correo_emisor}"
+          CodigoEstablecimiento="{$codEstab}"{$correoEmisorAttr}
           NITEmisor="{$nitEmisor}"
           NombreComercial="{$nombreComercial}"
           NombreEmisor="{$nombreEmisor}">
@@ -133,8 +143,7 @@ XML;
             <dte:Pais>GT</dte:Pais>
           </dte:DireccionEmisor>
         </dte:Emisor>
-        <dte:Receptor
-          CorreoReceptor="{$correoReceptor}"
+        <dte:Receptor{$correoReceptorAttr}
           IDReceptor="{$nitReceptor}"
           NombreReceptor="{$nombreReceptor}">
           <dte:DireccionReceptor>
