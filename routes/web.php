@@ -160,6 +160,7 @@ Route::middleware(['auth:web', 'sin-cache'])->prefix('admin')->name('admin.')->g
     // Módulo independiente: Emitir Factura Manual / Venta Libre
     Route::get('facturas', [FacturaLibreController::class, 'index'])->name('facturas.index');
     Route::get('facturas/nueva', [FacturaLibreController::class, 'create'])->name('facturas.create');
+    Route::get('facturas/consultar-nit', [FacturaLibreController::class, 'consultarNit'])->name('facturas.consultar-nit');
     Route::post('facturas', [FacturaLibreController::class, 'store'])->name('facturas.store');
     Route::get('facturas/{documento}/imprimir', [FacturaLibreController::class, 'imprimir'])->name('facturas.documento.imprimir');
     Route::get('facturas/{documento}/descargar-pdf', [FacturaLibreController::class, 'descargarPdf'])->name('facturas.documento.descargar-pdf');

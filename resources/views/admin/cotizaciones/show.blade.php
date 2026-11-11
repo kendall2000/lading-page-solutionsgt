@@ -13,6 +13,9 @@
             <p class="text-700 mb-0">{{ $cotizacion->cliente_empresa }} &middot; {{ $cotizacion->numero }}</p>
         </div>
         <div class="d-flex gap-2">
+            <a class="btn btn-phoenix-success" href="{{ route('admin.facturas.create', ['cotizacion' => $cotizacion->id]) }}" title="Generar Factura de esta Cotización">
+                <span class="fa-solid fa-file-invoice me-2"></span>Facturar
+            </a>
             <a class="btn btn-phoenix-secondary" href="{{ route('admin.cotizaciones.preview', $cotizacion) }}" target="_blank">
                 <span class="fa-solid fa-arrow-up-right-from-square me-2"></span>Vista previa / Imprimir
             </a>

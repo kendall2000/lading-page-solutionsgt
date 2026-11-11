@@ -87,6 +87,9 @@
                                 </td>
                                 <td class="text-end pe-0">
                                     <div class="btn-group btn-group-sm">
+                                        <a class="btn btn-subtle-success" href="{{ route('admin.facturas.create', ['cotizacion' => $c->id]) }}" title="Generar Factura">
+                                            <span class="fa-solid fa-file-invoice"></span>
+                                        </a>
                                         <a class="btn btn-subtle-primary" href="{{ route('admin.cotizaciones.show', $c) }}" title="Ver detalles">
                                             <span class="fa-solid fa-eye"></span>
                                         </a>

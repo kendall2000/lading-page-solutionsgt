@@ -3,11 +3,16 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Cotizacion;
 use App\Models\DocumentoTributario;
 use App\Models\DocumentoTributarioItem;
+use App\Models\Producto;
+use App\Models\Sistema;
+use App\Services\ConsultaNitService;
 use App\Services\QrService;
 use App\Support\Sitio;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -23,7 +28,7 @@ class FacturaLibreController extends Controller
     {
         $facturas = DocumentoTributario::query()
             ->with('items')
-            ->whereNull('pago_id') // Facturas libres emitidas manualmente
+            ->whereNull('pago_id')
             ->orderByDesc('id')
             ->paginate(20);
 
@@ -31,11 +36,32 @@ class FacturaLibreController extends Controller
     }
 
     /**
-     * Formulario para emitir una nueva factura libre con ítems.
+     * Formulario moderno para emitir factura:
+     * - Puede cargar desde una cotización existente (?cotizacion=ID)
+     * - Tiene catálogo de sistemas y productos para seleccionar con un clic
+     * - Búsqueda automática de NIT por API SAT / INFILE
      */
-    public function create(): View
+    public function create(Request $request): View
     {
-        return view('admin.facturas.create');
+        $sistemas = Sistema::where('visible', true)->orderBy('nombre')->get();
+        $productos = Producto::where('activo', true)->orderBy('nombre')->get();
+
+        $cotizacionOrigen = null;
+        if ($request->filled('cotizacion')) {
+            $cotizacionOrigen = Cotizacion::with('items')->find($request->query('cotizacion'));
+        }
+
+        return view('admin.facturas.create', compact('sistemas', 'productos', 'cotizacionOrigen'));
+    }
+
+    /**
+     * Endpoint AJAX para consultar NIT en tiempo real.
+     */
+    public function consultarNit(Request $request): JsonResponse
+    {
+        $nit = (string) $request->query('nit');
+        $resultado = ConsultaNitService::consultar($nit);
+        return response()->json($resultado);
     }
 
     /**
@@ -88,7 +114,7 @@ class FacturaLibreController extends Controller
                 'condicion_pago' => $datos['condicion_pago'],
                 'metodo_pago' => $datos['metodo_pago'],
                 'subtotal' => $subtotal,
-                'impuestos' => 0.00, // Pequeño Contribuyente no desglosa IVA
+                'impuestos' => 0.00,
                 'total' => $subtotal,
                 'nit_receptor' => trim(strtoupper($datos['nit_receptor'])),
                 'nombre_receptor' => trim($datos['nombre_receptor']),
