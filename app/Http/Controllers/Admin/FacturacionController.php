@@ -60,7 +60,7 @@ class FacturacionController extends Controller
     }
 
     /**
-     * Guarda la configuración de certificación INFILE (DTE / SAT).
+     * Guarda la configuración de certificación INFILE (DTE / SAT) con frases y establecimientos.
      */
     public function guardarConfiguracion(Request $request): RedirectResponse
     {
@@ -75,6 +75,7 @@ class FacturacionController extends Controller
             'codigo_postal' => 'required|string|max:15',
             'municipio' => 'required|string|max:100',
             'departamento' => 'required|string|max:100',
+            'codigo_establecimiento' => 'required|string|max:10',
             'afiliacion_iva' => 'required|in:GEN,PEQ,EXE',
             'alias_ws' => 'nullable|string|max:100',
             'token_signer' => 'nullable|string|max:255',
@@ -82,13 +83,40 @@ class FacturacionController extends Controller
             'url_firma' => 'required|url|max:255',
             'url_certificacion' => 'required|url|max:255',
             'url_anulacion' => 'required|url|max:255',
+            'permite_anulacion_directa' => 'nullable|boolean',
+            'habilitar_notas_credito' => 'nullable|boolean',
+            'habilitar_notas_debito' => 'nullable|boolean',
+            'habilitar_notas_abono' => 'nullable|boolean',
+            'frases' => 'nullable|array',
+            'frases.*.tipo_frase' => 'required_with:frases|string|max:10',
+            'frases.*.codigo_escenario' => 'required_with:frases|string|max:10',
+            'frases.*.descripcion' => 'nullable|string|max:255',
         ]);
 
         $datos['activo'] = $request->boolean('activo');
+        $datos['permite_anulacion_directa'] = $request->boolean('permite_anulacion_directa');
+        $datos['habilitar_notas_credito'] = $request->boolean('habilitar_notas_credito');
+        $datos['habilitar_notas_debito'] = $request->boolean('habilitar_notas_debito');
+        $datos['habilitar_notas_abono'] = $request->boolean('habilitar_notas_abono');
+
+        // Procesar frases configuradas
+        $frasesProcesadas = [];
+        if (!empty($request->input('frases')) && is_array($request->input('frases'))) {
+            foreach ($request->input('frases') as $f) {
+                if (!empty($f['tipo_frase']) && !empty($f['codigo_escenario'])) {
+                    $frasesProcesadas[] = [
+                        'tipo_frase' => trim($f['tipo_frase']),
+                        'codigo_escenario' => trim($f['codigo_escenario']),
+                        'descripcion' => trim($f['descripcion'] ?? ''),
+                    ];
+                }
+            }
+        }
+        $datos['frases_config'] = $frasesProcesadas;
 
         $cfg = ConfiguracionDTE::actual();
         $cfg->update($datos);
 
-        return back()->with('exito', 'Configuración de facturación electrónica (INFILE) actualizada correctamente.');
+        return back()->with('exito', 'Configuración de facturación electrónica (INFILE), frases SAT y establecimientos guardada exitosamente.');
     }
 }
