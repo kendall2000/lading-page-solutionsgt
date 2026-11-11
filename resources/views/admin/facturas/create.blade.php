@@ -379,7 +379,7 @@
                 agregarAlCarrito(
                     'S',
                     '{{ addslashes($it->titulo . ($it->descripcion ? " — " . $it->descripcion : "")) }}',
-                    {{ (int)($it->cantidad ?? 1) },
+                    {{ (int)($it->cantidad ?? 1) }},
                     {{ (float)($it->precio_unitario ?? 0) }}
                 );
             @endforeach
