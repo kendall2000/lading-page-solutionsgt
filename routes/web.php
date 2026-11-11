@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\CuentaController;
 use App\Http\Controllers\Admin\DireccionController;
 use App\Http\Controllers\Admin\ElementoController;
 use App\Http\Controllers\Admin\EstadisticaController;
+use App\Http\Controllers\Admin\FacturacionController;
 use App\Http\Controllers\Admin\InicioController;
 use App\Http\Controllers\Admin\LicenciaController;
 use App\Http\Controllers\Admin\ManualController;
@@ -149,6 +150,10 @@ Route::middleware(['auth:web', 'sin-cache'])->prefix('admin')->name('admin.')->g
     Route::resource('manuales', ManualController::class)->except('show')->parameters(['manuales' => 'manual']);
     Route::get('mensajes/exportar', [MensajeController::class, 'exportar'])->name('mensajes.exportar');
     Route::post('mensajes/{mensaje}/credenciales', [MensajeController::class, 'credenciales'])->middleware('throttle:20,1')->name('mensajes.credenciales');
+
+    // Módulo de Facturas y Comprobantes
+    Route::get('facturacion', [FacturacionController::class, 'index'])->name('facturacion.index');
+    Route::post('facturacion/configuracion', [FacturacionController::class, 'guardarConfiguracion'])->name('facturacion.configuracion');
 
     // Ventas con PayPal: productos y precios, suscripciones, pagos y conexión.
     Route::resource('productos', ProductoController::class)->except('show')->parameters(['productos' => 'producto']);
