@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ConfiguracionDTE;
 use App\Models\DocumentoTributario;
+use App\Models\LogDTE;
 use App\Models\Pago;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,7 +18,7 @@ class FacturacionController extends Controller
      */
     public function index(Request $request): View
     {
-        $pestana = in_array($request->query('ver'), ['comprobantes', 'dte', 'configuracion'], true)
+        $pestana = in_array($request->query('ver'), ['comprobantes', 'dte', 'logs', 'configuracion'], true)
             ? $request->query('ver')
             : 'comprobantes';
 
@@ -43,18 +44,27 @@ class FacturacionController extends Controller
             ->paginate(25, ['*'], 'pag_d')
             ->withQueryString();
 
+        $logs = LogDTE::query()
+            ->with('documento')
+            ->orderByDesc('id')
+            ->paginate(25, ['*'], 'pag_l')
+            ->withQueryString();
+
         $cfgDte = ConfiguracionDTE::actual();
 
         return view('admin.facturacion.index', [
             'pestana' => $pestana,
             'pagos' => $pagos,
             'dtes' => $dtes,
+            'logs' => $logs,
             'cfgDte' => $cfgDte,
             'buscar' => $buscar,
             'conteos' => [
                 'total_pagos' => Pago::count(),
                 'facturados' => Pago::whereNotNull('numero_comprobante')->count(),
                 'dtes_certificados' => DocumentoTributario::where('estado', 'certificado')->count(),
+                'total_logs' => LogDTE::count(),
+                'logs_error' => LogDTE::where('exito', false)->count(),
             ],
         ]);
     }

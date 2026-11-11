@@ -41,7 +41,7 @@ class FacturaLibreController extends Controller
      */
     public function show(DocumentoTributario $documento): View
     {
-        $documento->loadMissing('items');
+        $documento->loadMissing(['items', 'logs']);
         return view('admin.facturas.show', ['doc' => $documento]);
     }
 

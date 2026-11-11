@@ -180,6 +180,67 @@
                     </div>
                 @endif
             </div>
+
+            {{-- Historial de Logs y Auditoría SAT / INFILE para este Documento --}}
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-body-highlight py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 text-1100">
+                        <span class="fa-solid fa-clock-rotate-left me-2 text-info"></span>Historial de Comunicación SAT / INFILE ({{ $doc->logs->count() }})
+                    </h5>
+                    <span class="fs--2 text-muted">Auditoría JSON / XML</span>
+                </div>
+                <div class="card-body p-0">
+                    @if($doc->logs->isEmpty())
+                        <div class="p-4 text-center text-muted fs--1">
+                            <span class="fa-solid fa-file-circle-check fa-2x mb-2 text-300 d-block"></span>
+                            No hay registros de llamadas a INFILE / SAT aún para esta factura.
+                        </div>
+                    @else
+                        <div class="accordion accordion-flush" id="accordionLogsDoc">
+                            @foreach($doc->logs->sortByDesc('id') as $l)
+                                <div class="accordion-item border-bottom">
+                                    <h2 class="accordion-header" id="headingLog{{ $l->id }}">
+                                        <button class="accordion-button collapsed py-2 px-3 fs--1" type="button" data-bs-toggle="collapse" data-bs-target="#collapseLog{{ $l->id }}">
+                                            <div class="d-flex align-items-center flex-wrap gap-2 w-100">
+                                                <span class="badge {{ $l->exito ? 'bg-success' : 'bg-danger' }}">
+                                                    {{ $l->exito ? 'ÉXITO' : 'RECHAZO' }} (HTTP {{ $l->codigo_http ?: 'ERR' }})
+                                                </span>
+                                                <span class="badge bg-secondary font-monospace">{{ strtoupper($l->accion) }}</span>
+                                                <span class="text-600 font-monospace">{{ $l->created_at ? $l->created_at->format('d/m/Y H:i:s') : '—' }}</span>
+                                                <span class="text-muted ms-auto pe-3 font-monospace fs--2">{{ $l->duracion_ms ? $l->duracion_ms . ' ms' : '' }}</span>
+                                            </div>
+                                        </button>
+                                    </h2>
+                                    <div id="collapseLog{{ $l->id }}" class="accordion-collapse collapse" data-bs-parent="#accordionLogsDoc">
+                                        <div class="accordion-body bg-body-tertiary p-3 fs--1">
+                                            <div class="mb-2">
+                                                <strong>Endpoint:</strong>
+                                                <code class="text-break bg-light p-1 rounded d-block">{{ $l->url }}</code>
+                                            </div>
+                                            @if($l->error_mensaje)
+                                                <div class="alert alert-danger py-2 px-3 fs--2 mb-3">
+                                                    <strong>Error devuelto por SAT:</strong>
+                                                    <div class="mt-1">{{ $l->error_mensaje }}</div>
+                                                </div>
+                                            @endif
+                                            <div class="row g-2">
+                                                <div class="col-12 col-lg-6">
+                                                    <span class="fw-bold fs--2 text-700 mb-1 d-block">Petición Enviada (Request Payload):</span>
+                                                    <pre class="bg-dark text-light p-2 rounded fs--2 mb-0" style="max-height: 250px; overflow-y: auto;"><code>{{ is_array($l->request_body) ? json_encode($l->request_body, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : ($l->request_body ?: '(Sin contenido)') }}</code></pre>
+                                                </div>
+                                                <div class="col-12 col-lg-6">
+                                                    <span class="fw-bold fs--2 text-700 mb-1 d-block">Respuesta Recibida (Response JSON/XML):</span>
+                                                    <pre class="bg-dark text-light p-2 rounded fs--2 mb-0" style="max-height: 250px; overflow-y: auto;"><code>{{ is_array($l->response_body) ? json_encode($l->response_body, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : ($l->response_body ?: '(Sin contenido)') }}</code></pre>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+            </div>
         </div>
 
         {{-- Panel lateral: Datos del Cliente, Totales y QR --}}

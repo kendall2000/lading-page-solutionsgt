@@ -58,6 +58,11 @@ class DocumentoTributario extends Model
         return $this->hasMany(DocumentoTributarioItem::class, 'documento_id')->orderBy('numero_linea');
     }
 
+    public function logs(): HasMany
+    {
+        return $this->hasMany(LogDTE::class, 'documento_id')->orderByDesc('id');
+    }
+
     public function pago(): BelongsTo
     {
         return $this->belongsTo(Pago::class);

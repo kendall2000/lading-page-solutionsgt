@@ -76,8 +76,16 @@
             </a>
         </li>
         <li class="nav-item">
+            <a class="nav-link {{ $pestana === 'logs' ? 'active' : '' }}" href="{{ route('admin.facturacion.index', ['ver' => 'logs']) }}">
+                <span class="fa-solid fa-bug me-2"></span>Historial &amp; Logs SAT / INFILE
+                @if(($conteos['logs_error'] ?? 0) > 0)
+                    <span class="badge bg-danger ms-1">{{ $conteos['logs_error'] }}</span>
+                @endif
+            </a>
+        </li>
+        <li class="nav-item">
             <a class="nav-link {{ $pestana === 'configuracion' ? 'active' : '' }}" href="{{ route('admin.facturacion.index', ['ver' => 'configuracion']) }}">
-                <span class="fa-solid fa-sliders me-2"></span>Configuración FEL (INFILE & Frases SAT)
+                <span class="fa-solid fa-sliders me-2"></span>Configuración FEL (INFILE &amp; Frases SAT)
             </a>
         </li>
     </ul>
@@ -148,6 +156,154 @@
                             </table>
                         </div>
                         <div class="mt-3">{{ $pagos->links() }}</div>
+                    @endif
+                </div>
+            </div>
+
+        {{-- Pestaña: Logs & Auditoría SAT / INFILE --}}
+        @elseif ($pestana === 'logs')
+            <div class="card">
+                <div class="card-header bg-body-tertiary d-flex flex-between-center py-3">
+                    <div>
+                        <h5 class="mb-1 text-900"><span class="fa-solid fa-bug text-primary me-2"></span>Historial de Transacciones y Logs SAT / INFILE</h5>
+                        <p class="fs--2 text-600 mb-0">Auditoría completa de solicitudes y respuestas de firma y certificación DTE, incluyendo errores de validación SAT.</p>
+                    </div>
+                    <div>
+                        <span class="badge badge-subtle-primary me-1">Total: {{ $conteos['total_logs'] ?? 0 }}</span>
+                        @if(($conteos['logs_error'] ?? 0) > 0)
+                            <span class="badge badge-subtle-danger">Errores: {{ $conteos['logs_error'] }}</span>
+                        @endif
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    @if($logs->isEmpty())
+                        <div class="p-5 text-center text-500">
+                            <span class="fa-solid fa-clipboard-check fa-3x mb-3 text-300"></span>
+                            <p class="mb-0">No hay registros de llamadas a INFILE / SAT todavía.</p>
+                        </div>
+                    @else
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover align-middle mb-0 fs--1">
+                                <thead class="bg-200 text-800">
+                                    <tr>
+                                        <th class="ps-3" style="width: 140px;">Fecha y Hora</th>
+                                        <th style="width: 120px;">Acción</th>
+                                        <th style="width: 150px;">Documento</th>
+                                        <th style="width: 100px;">Código HTTP</th>
+                                        <th style="width: 90px;">Tiempo</th>
+                                        <th>Resultado / Mensaje</th>
+                                        <th class="text-end pe-3" style="width: 120px;">Inspeccionar</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($logs as $log)
+                                        <tr class="{{ !$log->exito ? 'table-danger-subtle' : '' }}">
+                                            <td class="ps-3 font-monospace text-nowrap">
+                                                {{ $log->created_at ? $log->created_at->format('d/m/Y H:i:s') : '—' }}
+                                            </td>
+                                            <td>
+                                                @if($log->accion === 'firmar')
+                                                    <span class="badge bg-secondary">Firma XML</span>
+                                                @elseif($log->accion === 'certificar')
+                                                    <span class="badge bg-info">Certificar SAT</span>
+                                                @elseif($log->accion === 'anular')
+                                                    <span class="badge bg-warning text-dark">Anular SAT</span>
+                                                @else
+                                                    <span class="badge bg-light text-dark">{{ $log->accion }}</span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if($log->documento)
+                                                    <a href="{{ route('admin.facturas.show', $log->documento_id) }}" class="fw-semi-bold">
+                                                        {{ $log->documento->numero_interno }}
+                                                    </a>
+                                                @else
+                                                    <span class="text-muted">Doc #{{ $log->documento_id ?? 'N/A' }}</span>
+                                                @endif
+                                            </td>
+                                            <td class="font-monospace">
+                                                @if($log->codigo_http >= 200 && $log->codigo_http < 300)
+                                                    <span class="text-success fw-bold">{{ $log->codigo_http }}</span>
+                                                @else
+                                                    <span class="text-danger fw-bold">{{ $log->codigo_http ?: 'ERR' }}</span>
+                                                @endif
+                                            </td>
+                                            <td class="text-muted font-monospace">
+                                                {{ $log->duracion_ms ? $log->duracion_ms . ' ms' : '—' }}
+                                            </td>
+                                            <td>
+                                                @if($log->exito)
+                                                    <span class="badge badge-subtle-success me-1"><span class="fa-solid fa-check me-1"></span>OK</span>
+                                                    <span class="text-600 fs--2 text-truncate d-inline-block align-middle" style="max-width: 380px;">Transacción completada satisfactoriamente</span>
+                                                @else
+                                                    <span class="badge badge-subtle-danger me-1"><span class="fa-solid fa-circle-exclamation me-1"></span>Rechazo</span>
+                                                    <span class="text-danger fs--2 fw-semi-bold">{{ Str::limit($log->error_mensaje, 95) }}</span>
+                                                @endif
+                                            </td>
+                                            <td class="text-end pe-3">
+                                                <button type="button" class="btn btn-falcon-default btn-xs" data-bs-toggle="modal" data-bs-target="#modalLog{{ $log->id }}">
+                                                    <span class="fa-solid fa-code me-1"></span>JSON
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="p-3">{{ $logs->links() }}</div>
+
+                        {{-- Modales para ver Payload / Response JSON --}}
+                        @foreach($logs as $log)
+                            <div class="modal fade" id="modalLog{{ $log->id }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h6 class="modal-title">
+                                                Log #{{ $log->id }} &bull; {{ strtoupper($log->accion) }} &bull; 
+                                                <span class="badge {{ $log->exito ? 'bg-success' : 'bg-danger' }}">
+                                                    HTTP {{ $log->codigo_http }} ({{ $log->exito ? 'Éxito' : 'Error' }})
+                                                </span>
+                                            </h6>
+                                            <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body p-3">
+                                            <div class="mb-2">
+                                                <strong>URL invocada:</strong>
+                                                <code class="d-block p-1 bg-light rounded text-break">{{ $log->url }}</code>
+                                            </div>
+
+                                            @if($log->error_mensaje)
+                                                <div class="alert alert-danger p-2 fs--1 mb-3">
+                                                    <strong>Mensaje de Error SAT:</strong>
+                                                    <div>{{ $log->error_mensaje }}</div>
+                                                </div>
+                                            @endif
+
+                                            <ul class="nav nav-pills mb-2" id="pillLog{{ $log->id }}" role="tablist">
+                                                <li class="nav-item">
+                                                    <button class="nav-link active btn-sm py-1 px-3" data-bs-toggle="pill" data-bs-target="#tabResp{{ $log->id }}">Respuesta Recibida (JSON / Error)</button>
+                                                </li>
+                                                <li class="nav-item">
+                                                    <button class="nav-link btn-sm py-1 px-3" data-bs-toggle="pill" data-bs-target="#tabReq{{ $log->id }}">Petición Enviada (Payload)</button>
+                                                </li>
+                                            </ul>
+                                            <div class="tab-content">
+                                                <div class="tab-pane fade show active" id="tabResp{{ $log->id }}">
+                                                    <pre class="bg-dark text-light p-3 rounded fs--2 mb-0" style="max-height: 380px; overflow-y: auto;"><code>{{ is_array($log->response_body) ? json_encode($log->response_body, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : ($log->response_body ?: '(Vacío)') }}</code></pre>
+                                                </div>
+                                                <div class="tab-pane fade" id="tabReq{{ $log->id }}">
+                                                    <pre class="bg-dark text-light p-3 rounded fs--2 mb-0" style="max-height: 380px; overflow-y: auto;"><code>{{ is_array($log->request_body) ? json_encode($log->request_body, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : ($log->request_body ?: '(Vacío)') }}</code></pre>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer py-2">
+                                            <small class="text-muted me-auto">Duración: {{ $log->duracion_ms }}ms | Fecha: {{ $log->created_at }}</small>
+                                            <button class="btn btn-sm btn-secondary" type="button" data-bs-dismiss="modal">Cerrar</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
                     @endif
                 </div>
             </div>

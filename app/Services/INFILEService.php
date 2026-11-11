@@ -4,8 +4,11 @@ namespace App\Services;
 
 use App\Models\ConfiguracionDTE;
 use App\Models\DocumentoTributario;
+use App\Models\LogDTE;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
+use Throwable;
 
 class INFILEService
 {
@@ -24,7 +27,11 @@ class INFILEService
             'es_anulacion' => 'N',
         ];
 
+        $ini = microtime(true);
         $response = Http::timeout(30)->asJson()->post($url, $payload);
+        $ms = (int) ((microtime(true) - $ini) * 1000);
+
+        $this->guardarLog('firmar', $url, json_encode($payload, JSON_UNESCAPED_UNICODE), $response, $ms, $dte?->id);
 
         if (!$response->successful()) {
             throw new RuntimeException('Error HTTP ' . $response->status() . ' al firmar: ' . $response->body());
@@ -62,6 +69,7 @@ class INFILEService
             'xml_dte'      => base64_encode($xmlFirmado),
         ];
 
+        $ini = microtime(true);
         $response = Http::timeout(30)
             ->withHeaders([
                 'usuario'       => $cfg->alias_ws,
@@ -71,6 +79,9 @@ class INFILEService
             ])
             ->asJson()
             ->post($cfg->url_certificacion, $payload);
+
+        $ms = (int) ((microtime(true) - $ini) * 1000);
+        $this->guardarLog('certificar', $cfg->url_certificacion, json_encode($payload, JSON_UNESCAPED_UNICODE), $response, $ms, $dte?->id);
 
         if (!$response->successful()) {
             throw new RuntimeException('Error HTTP ' . $response->status() . ' al certificar: ' . $response->body());
@@ -95,5 +106,49 @@ class INFILEService
             'fecha'           => $json['fecha'] ?? null,
             'xml_certificado' => $json['xml_certificado'] ?? null,
         ];
+    }
+
+    /**
+     * Registra auditoría completa de peticiones HTTP, respuestas JSON, duración y errores en logs_dte.
+     */
+    private function guardarLog(
+        string $accion,
+        string $url,
+        string $requestBody,
+        Response $response,
+        int $duracionMs,
+        ?int $documentoId
+    ): void {
+        try {
+            $json = $response->json();
+            $exito = $response->successful() && is_array($json) && ($json['resultado'] ?? false);
+            $errorMensaje = null;
+
+            if (!$exito) {
+                if (is_array($json)) {
+                    $desc = $json['descripcion'] ?? '';
+                    $errores = $json['descripcion_errores'] ?? [];
+                    $detalle = !empty($errores) ? implode(' | ', array_column($errores, 'mensaje_error')) : '';
+                    $errorMensaje = $desc . ($detalle ? ' — ' . $detalle : '');
+                } else {
+                    $errorMensaje = 'HTTP ' . $response->status() . ': ' . substr($response->body(), 0, 400);
+                }
+            }
+
+            LogDTE::create([
+                'documento_id'  => $documentoId,
+                'accion'        => $accion,
+                'url'           => $url,
+                'request_body'  => $requestBody,
+                'response_body' => $response->body(),
+                'codigo_http'   => $response->status(),
+                'exito'         => $exito,
+                'error_mensaje' => $errorMensaje,
+                'duracion_ms'   => $duracionMs,
+                'created_at'    => now(),
+            ]);
+        } catch (Throwable) {
+            // No interrumpir el flujo principal si el logging falla
+        }
     }
 }
