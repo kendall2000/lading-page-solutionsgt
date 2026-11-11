@@ -19,6 +19,7 @@
         ],
         'Ventas' => [
             ['admin.cotizaciones.index', 'admin.cotizaciones.*', 'file-text', 'Cotizaciones'],
+            ['admin.facturas.index', 'admin.facturas.*', 'edit', 'Emitir factura'],
             ['admin.facturacion.index', 'admin.facturacion.*', 'file', 'Facturas y comprobantes'],
             ['admin.ventas.index', ['admin.ventas.*', 'admin.suscripciones.*'], 'shopping-cart', 'Suscripciones y pagos'],
             ['admin.productos.index', 'admin.productos.*', 'shopping-bag', 'Productos y precios'],

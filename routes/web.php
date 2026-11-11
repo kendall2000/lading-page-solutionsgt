@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\DireccionController;
 use App\Http\Controllers\Admin\ElementoController;
 use App\Http\Controllers\Admin\EstadisticaController;
 use App\Http\Controllers\Admin\FacturacionController;
+use App\Http\Controllers\Admin\FacturaLibreController;
 use App\Http\Controllers\Admin\InicioController;
 use App\Http\Controllers\Admin\LicenciaController;
 use App\Http\Controllers\Admin\ManualController;
@@ -37,6 +38,7 @@ use Illuminate\Support\Facades\Route;
 
 // Verificación pública de comprobante mediante QR
 Route::get('validar/comprobante/{token}', [ComprobanteController::class, 'verificar'])->name('comprobantes.verificar');
+Route::get('validar/factura/{token}', [FacturaLibreController::class, 'verificar'])->name('comprobantes.documento.verificar');
 
 // Sitio público.
 // «visita»: contador de visitas propio (App\Services\Visitas).
@@ -154,6 +156,13 @@ Route::middleware(['auth:web', 'sin-cache'])->prefix('admin')->name('admin.')->g
     // Módulo de Facturas y Comprobantes
     Route::get('facturacion', [FacturacionController::class, 'index'])->name('facturacion.index');
     Route::post('facturacion/configuracion', [FacturacionController::class, 'guardarConfiguracion'])->name('facturacion.configuracion');
+
+    // Módulo independiente: Emitir Factura Manual / Venta Libre
+    Route::get('facturas', [FacturaLibreController::class, 'index'])->name('facturas.index');
+    Route::get('facturas/nueva', [FacturaLibreController::class, 'create'])->name('facturas.create');
+    Route::post('facturas', [FacturaLibreController::class, 'store'])->name('facturas.store');
+    Route::get('facturas/{documento}/imprimir', [FacturaLibreController::class, 'imprimir'])->name('facturas.documento.imprimir');
+    Route::get('facturas/{documento}/descargar-pdf', [FacturaLibreController::class, 'descargarPdf'])->name('facturas.documento.descargar-pdf');
 
     // Ventas con PayPal: productos y precios, suscripciones, pagos y conexión.
     Route::resource('productos', ProductoController::class)->except('show')->parameters(['productos' => 'producto']);
