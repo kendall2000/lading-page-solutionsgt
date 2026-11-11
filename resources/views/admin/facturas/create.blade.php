@@ -2,7 +2,7 @@
 
 @section('contenido')
 <style>
-    /* Estilos inspirados en el diseño POS Ejecutivo de sistema-inventario */
+    /* Estilos inspirados en el diseño POS Ejecutivo de sistema-inventario con adaptación Responsive Completa */
     .pos-container {
         font-family: inherit;
     }
@@ -33,12 +33,12 @@
         box-shadow: 0 4px 12px rgba(0,0,0,0.03);
     }
     .pos-qty-btn {
-        width: 28px;
-        height: 28px;
+        width: 32px;
+        height: 32px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        border-radius: 6px;
+        border-radius: 8px;
         border: 1px solid #cbd5e1;
         background: #ffffff;
         color: #334155;
@@ -50,14 +50,14 @@
         color: #0f172a;
     }
     .pos-qty-input {
-        width: 44px;
-        height: 28px;
+        width: 48px;
+        height: 32px;
         text-align: center;
         font-family: monospace;
         font-weight: 700;
         font-size: 13px;
         border: 1px solid #cbd5e1;
-        border-radius: 6px;
+        border-radius: 8px;
         background: #ffffff;
     }
     .pos-search-box {
@@ -75,30 +75,55 @@
         height: 42px;
         border-radius: 10px;
     }
+
+    /* Reglas Responsive Especiales para Teléfonos y Tablets */
+    @media (max-width: 767.98px) {
+        .pos-grid-catalogo {
+            max-height: 320px !important;
+        }
+        .pos-cart-row {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 10px !important;
+            padding: 12px !important;
+        }
+        .pos-cart-row-controls {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            width: 100% !important;
+            border-top: 1px dashed #e2e8f0;
+            padding-top: 8px;
+        }
+        .pos-cart-item-title {
+            max-width: 100% !important;
+            white-space: normal !important;
+        }
+    }
 </style>
 
 <div class="pos-container">
-    {{-- Encabezado con estilo POS Ejecutivo --}}
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 border-bottom pb-3 mb-4">
+    {{-- Encabezado con estilo POS Ejecutivo y Responsive --}}
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 border-bottom pb-3 mb-4">
         <div class="d-flex align-items-center gap-3">
-            <div class="d-flex align-items-center justify-content-center rounded-3 bg-soft-primary text-primary" style="width: 44px; height: 44px;">
+            <div class="d-flex align-items-center justify-content-center rounded-3 bg-soft-primary text-primary flex-shrink-0" style="width: 44px; height: 44px;">
                 <span class="fa-solid fa-cash-register fs-2"></span>
             </div>
             <div>
-                <h3 class="mb-0 text-1100 fw-bold">Punto de Emisión & Facturación</h3>
-                <p class="text-600 fs--2 mb-0">Emisión rápida de facturas, venta libre de servicios/software y control fiscal directo.</p>
+                <h3 class="mb-0 text-1100 fw-bold">Punto de Emisión &amp; Facturación</h3>
+                <p class="text-600 fs--2 mb-0">Emisión de facturas adaptada para móvil, tablet y escritorio.</p>
             </div>
         </div>
 
-        <div class="d-flex flex-wrap align-items-center gap-2">
+        <div class="d-flex flex-wrap align-items-center gap-2 w-100 w-md-auto justify-content-start justify-content-md-end">
             <span class="badge badge-phoenix badge-phoenix-success py-2 px-3">
                 <span class="fa-solid fa-circle fa-beat-fade text-success me-1 fs--2"></span>
-                Régimen Pequeño Contribuyente
+                Pequeño Contribuyente
             </span>
             <a href="{{ route('admin.facturas.index') }}" class="btn btn-sm btn-phoenix-secondary">
                 <span class="fa-solid fa-list me-1"></span>Ver Emitidas
             </a>
-            <button type="submit" form="formFactura" class="btn btn-sm btn-primary px-3 shadow-sm">
+            <button type="submit" form="formFactura" class="btn btn-sm btn-primary px-3 shadow-sm flex-grow-1 flex-md-grow-0">
                 <span class="fa-solid fa-receipt me-1"></span>Cobrar y Facturar
             </button>
         </div>
@@ -120,7 +145,7 @@
     <form method="POST" action="{{ route('admin.facturas.store') }}" id="formFactura">
         @csrf
         
-        <div class="row g-4">
+        <div class="row g-4 flex-column-reverse flex-xl-row">
             {{-- ==============================================
                  COLUMNA IZQUIERDA: Catálogo Visual POS (7 cols)
                  ============================================== --}}
@@ -128,27 +153,27 @@
                 {{-- Tarjeta de Catálogo con Filtro Rápido --}}
                 <div class="card border-0 shadow-sm mb-4">
                     <div class="card-body p-3">
-                        <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-3">
+                        <div class="d-flex flex-column flex-sm-row gap-2 justify-content-between align-items-stretch align-items-sm-center mb-3">
                             <div class="pos-search-box flex-grow-1">
                                 <span class="fa-solid fa-magnifying-glass"></span>
-                                <input type="text" id="busquedaCatalogo" class="form-control" placeholder="Buscar software o servicio en el catálogo..." oninput="filtrarCatalogo()" />
+                                <input type="text" id="busquedaCatalogo" class="form-control" placeholder="Buscar software o servicio..." oninput="filtrarCatalogo()" />
                             </div>
-                            <button type="button" class="btn btn-outline-primary" onclick="abrirModalLineaManual()">
+                            <button type="button" class="btn btn-outline-primary text-nowrap" onclick="abrirModalLineaManual()">
                                 <span class="fa-solid fa-feather me-1"></span>+ Línea a la medida
                             </button>
                         </div>
 
-                        {{-- Pestañas de categorías rápidas --}}
-                        <div class="d-flex gap-2 mb-3 border-bottom pb-2">
+                        {{-- Pestañas de categorías rápidas con scroll horizontal en móvil --}}
+                        <div class="d-flex gap-2 mb-3 border-bottom pb-2 overflow-auto text-nowrap">
                             <button type="button" class="btn btn-sm btn-subtle-primary rounded-pill active" onclick="cambiarTabCatalogo('todos', this)">Todos</button>
                             <button type="button" class="btn btn-sm btn-subtle-secondary rounded-pill" onclick="cambiarTabCatalogo('software', this)">Sistemas y Software</button>
-                            <button type="button" class="btn btn-sm btn-subtle-secondary rounded-pill" onclick="cambiarTabCatalogo('servicios', this)">Servicios & Planes</button>
+                            <button type="button" class="btn btn-sm btn-subtle-secondary rounded-pill" onclick="cambiarTabCatalogo('servicios', this)">Servicios &amp; Planes</button>
                         </div>
 
                         {{-- Cuadrícula de Productos Estilo POS --}}
-                        <div class="row g-2" id="gridCatalogo" style="max-height: 480px; overflow-y: auto;">
+                        <div class="row g-2 pos-grid-catalogo" id="gridCatalogo" style="max-height: 480px; overflow-y: auto;">
                             @foreach($sistemas as $sis)
-                                <div class="col-md-6 item-catalogo" data-tipo="software" data-nombre="{{ strtolower($sis->nombre) }}">
+                                <div class="col-12 col-sm-6 item-catalogo" data-tipo="software" data-nombre="{{ strtolower($sis->nombre) }}">
                                     <div class="pos-card-product p-3 rounded-3 h-100 d-flex flex-column justify-content-between" onclick="agregarAlCarrito('S', 'Licencia / Renta de Software: {{ addslashes($sis->nombre) }}', 1, {{ (float)($sis->precio ?? 0) }})">
                                         <div class="d-flex align-items-start gap-2.5">
                                             <div class="d-flex align-items-center justify-content-center rounded-2 bg-soft-primary text-primary flex-shrink-0" style="width: 40px; height: 40px;">
@@ -169,7 +194,7 @@
                             @endforeach
 
                             @foreach($productos as $prod)
-                                <div class="col-md-6 item-catalogo" data-tipo="servicios" data-nombre="{{ strtolower($prod->nombre) }}">
+                                <div class="col-12 col-sm-6 item-catalogo" data-tipo="servicios" data-nombre="{{ strtolower($prod->nombre) }}">
                                     <div class="pos-card-product p-3 rounded-3 h-100 d-flex flex-column justify-content-between" onclick="agregarAlCarrito('S', '{{ addslashes($prod->nombre) }}', 1, 0.00)">
                                         <div class="d-flex align-items-start gap-2.5">
                                             <div class="d-flex align-items-center justify-content-center rounded-2 bg-soft-secondary text-secondary flex-shrink-0" style="width: 40px; height: 40px;">
@@ -183,7 +208,7 @@
                                         </div>
                                         <div class="d-flex justify-content-between align-items-center border-top pt-2 mt-2">
                                             <span class="fs--2 text-600">Suscripción</span>
-                                            <span class="fw-bold text-secondary font-monospace">Precio a definir</span>
+                                            <span class="fw-bold text-secondary font-monospace">Precio libre</span>
                                         </div>
                                     </div>
                                 </div>
@@ -192,12 +217,12 @@
                     </div>
                 </div>
 
-                {{-- Banner de información / atajos --}}
-                <div class="card border-0 bg-soft-primary p-3">
+                {{-- Tip POS --}}
+                <div class="card border-0 bg-soft-primary p-3 mb-4 mb-xl-0">
                     <div class="d-flex align-items-center gap-3">
                         <span class="fa-solid fa-lightbulb text-primary fs-2"></span>
                         <div class="fs--2 text-800">
-                            <strong>Tip POS:</strong> Puedes pulsar cualquier producto para añadirlo al ticket, o usar el botón <strong>"+ Línea a la medida"</strong> para redactar conceptos extensos con descripciones personalizadas.
+                            <strong>Tip:</strong> Puedes pulsar un producto para agregarlo o usar <strong>"+ Línea a la medida"</strong> para conceptos libres.
                         </div>
                     </div>
                 </div>
@@ -227,10 +252,10 @@
                         <div class="mt-2">
                             <input class="form-control form-control-sm mb-2" id="nombre_receptor" name="nombre_receptor" type="text" placeholder="Razón Social / Nombre Completo" value="{{ old('nombre_receptor', $cotizacionOrigen?->cliente_empresa) }}" required />
                             <div class="row g-2">
-                                <div class="col-6">
+                                <div class="col-12 col-sm-6">
                                     <input class="form-control form-control-sm" id="correo_receptor" name="correo_receptor" type="email" placeholder="Correo (opcional)" value="{{ old('correo_receptor', $cotizacionOrigen?->cliente_correo) }}" />
                                 </div>
-                                <div class="col-6">
+                                <div class="col-12 col-sm-6">
                                     <input class="form-control form-control-sm" id="direccion_receptor" name="direccion_receptor" type="text" placeholder="Dirección" value="{{ old('direccion_receptor', $cotizacionOrigen?->cliente_direccion ?? 'Ciudad') }}" />
                                 </div>
                             </div>
@@ -246,8 +271,8 @@
                             </button>
                         </div>
 
-                        {{-- Lista dinámica de ítems tipo tarjeta POS --}}
-                        <div id="listaCarrito" style="max-height: 280px; overflow-y: auto;" class="d-flex flex-column gap-2 mb-3">
+                        {{-- Lista dinámica de ítems tipo tarjeta POS adaptable --}}
+                        <div id="listaCarrito" style="max-height: 320px; overflow-y: auto;" class="d-flex flex-column gap-2 mb-3">
                             {{-- Se inyectan dinámicamente con JS --}}
                         </div>
 
@@ -255,21 +280,21 @@
                         <div id="carritoVacio" class="text-center py-4 border border-dashed rounded-3 bg-light">
                             <span class="fa-solid fa-basket-shopping text-400 fs-3 mb-2 d-block"></span>
                             <p class="text-600 fs--1 mb-0">El ticket se encuentra vacío</p>
-                            <span class="fs--2 text-500">Toca un software del catálogo o pulsa "+ Línea a la medida".</span>
+                            <span class="fs--2 text-500">Toca un software o pulsa "+ Línea a la medida".</span>
                         </div>
 
                         <hr class="my-3">
 
-                        {{-- Opciones de Venta --}}
+                        {{-- Opciones de Venta adaptables --}}
                         <div class="row g-2 mb-3">
-                            <div class="col-6">
+                            <div class="col-12 col-sm-6">
                                 <label class="form-label fs--2 fw-bold text-700 mb-1" for="moneda">Moneda</label>
                                 <select class="form-select form-select-sm" id="moneda" name="moneda" onchange="actualizarMoneda()">
                                     <option value="USD" {{ old('moneda', $cotizacionOrigen?->moneda ?? 'USD') === 'USD' ? 'selected' : '' }}>USD ($) Dólares</option>
                                     <option value="GTQ" {{ old('moneda', $cotizacionOrigen?->moneda) === 'GTQ' ? 'selected' : '' }}>GTQ (Q) Quetzales</option>
                                 </select>
                             </div>
-                            <div class="col-6">
+                            <div class="col-12 col-sm-6">
                                 <label class="form-label fs--2 fw-bold text-700 mb-1" for="metodo_pago">Método de Cobro</label>
                                 <select class="form-select form-select-sm" id="metodo_pago" name="metodo_pago">
                                     <option value="transferencia" selected>Transferencia</option>
@@ -331,14 +356,14 @@
             <div class="modal-body">
                 <div class="mb-3">
                     <label class="form-label fw-bold">Clasificación SAT</label>
-                    <div class="d-flex gap-3">
+                    <div class="d-flex flex-column flex-sm-row gap-2 gap-sm-3">
                         <div class="form-check">
                             <input class="form-check-input" type="radio" name="modal_tipo" id="modal_tipo_s" value="S" checked>
                             <label class="form-check-label" for="modal_tipo_s"><strong>Servicio (S)</strong> - Desarrollo, renta, asesoría</label>
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="radio" name="modal_tipo" id="modal_tipo_b" value="B">
-                            <label class="form-check-label" for="modal_tipo_b"><strong>Bien (B)</strong> - Producto, hardware, licencia</label>
+                            <label class="form-check-label" for="modal_tipo_b"><strong>Bien (B)</strong> - Licencia, hardware</label>
                         </div>
                     </div>
                 </div>
@@ -347,11 +372,11 @@
                     <textarea class="form-control" id="modal_desc" rows="3" placeholder="Describa a detalle el alcance, periodo o condiciones..."></textarea>
                 </div>
                 <div class="row g-2">
-                    <div class="col-6">
+                    <div class="col-12 col-sm-6">
                         <label class="form-label fw-bold">Cantidad</label>
                         <input class="form-control" type="number" id="modal_cant" value="1" min="1" step="1">
                     </div>
-                    <div class="col-6">
+                    <div class="col-12 col-sm-6">
                         <label class="form-label fw-bold">Precio Unitario</label>
                         <input class="form-control" type="number" id="modal_precio" value="0.00" min="0" step="0.01">
                     </div>
@@ -366,14 +391,12 @@
 </div>
 
 <script>
-    // Carrito de compras tipo POS
     let carrito = [];
     let modalManual = null;
 
     document.addEventListener('DOMContentLoaded', function() {
         modalManual = new bootstrap.Modal(document.getElementById('modalLineaManual'));
 
-        // Si viene desde cotización, precargar sus ítems
         @if($cotizacionOrigen && $cotizacionOrigen->items->isNotEmpty())
             @foreach($cotizacionOrigen->items as $it)
                 agregarAlCarrito(
@@ -425,35 +448,35 @@
             const div = document.createElement('div');
             div.className = 'pos-cart-row p-2.5 d-flex align-items-center gap-2';
             div.innerHTML = `
-                <div class="flex-grow-1 min-w-0">
+                <div class="flex-grow-1 min-w-0 w-100">
                     <div class="d-flex align-items-center gap-1">
                         <span class="badge ${item.tipo === 'B' ? 'bg-primary' : 'bg-info'} text-white fs--2">${item.tipo}</span>
                         <input type="hidden" name="items[${index}][tipo]" value="${item.tipo}">
-                        <span class="fw-bold fs--1 text-truncate text-1000 d-inline-block" style="max-width: 220px;" title="${item.descripcion}">${item.descripcion}</span>
+                        <span class="fw-bold fs--1 text-truncate text-1000 d-inline-block pos-cart-item-title" style="max-width: 200px;" title="${item.descripcion}">${item.descripcion}</span>
                     </div>
                     <textarea class="d-none" name="items[${index}][descripcion]">${item.descripcion}</textarea>
                     <div class="d-flex align-items-center gap-2 mt-1">
                         <span class="fs--2 text-muted">P.U:</span>
-                        <input type="number" step="0.01" class="form-control form-control-sm font-monospace p-1 text-end" style="width: 75px; height: 24px; font-size: 11px;" value="${item.precio.toFixed(2)}" onchange="cambiarPrecioItem(${index}, this.value)" name="items[${index}][precio_unitario]">
+                        <input type="number" step="0.01" class="form-control form-control-sm font-monospace p-1 text-end" style="width: 80px; height: 26px; font-size: 11px;" value="${item.precio.toFixed(2)}" onchange="cambiarPrecioItem(${index}, this.value)" name="items[${index}][precio_unitario]">
                     </div>
                 </div>
 
-                {{-- Controles Táctiles POS de Cantidad --}}
-                <div class="d-flex align-items-center gap-1 flex-shrink-0">
-                    <button type="button" class="pos-qty-btn" onclick="ajustarCantidad(${index}, -1)">-</button>
-                    <input type="number" class="pos-qty-input" value="${item.cantidad}" min="1" step="1" onchange="fijarCantidadItem(${index}, this.value)" name="items[${index}][cantidad]">
-                    <button type="button" class="pos-qty-btn" onclick="ajustarCantidad(${index}, 1)">+</button>
-                </div>
+                {{-- Controles Responsive de Cantidad y Total --}}
+                <div class="pos-cart-row-controls d-flex align-items-center gap-2 flex-shrink-0">
+                    <div class="d-flex align-items-center gap-1">
+                        <button type="button" class="pos-qty-btn" onclick="ajustarCantidad(${index}, -1)">-</button>
+                        <input type="number" class="pos-qty-input" value="${item.cantidad}" min="1" step="1" onchange="fijarCantidadItem(${index}, this.value)" name="items[${index}][cantidad]">
+                        <button type="button" class="pos-qty-btn" onclick="ajustarCantidad(${index}, 1)">+</button>
+                    </div>
 
-                {{-- Total de la línea --}}
-                <div class="font-monospace fw-bold fs--1 text-end" style="width: 65px;">
-                    ${simbolo}${subtotal.toFixed(2)}
-                </div>
+                    <div class="font-monospace fw-bold fs--1 text-end text-primary" style="min-width: 70px;">
+                        ${simbolo}${subtotal.toFixed(2)}
+                    </div>
 
-                {{-- Botón eliminar --}}
-                <button type="button" class="btn btn-sm btn-link text-danger p-0" onclick="quitarItem(${index})">
-                    <span class="fa-solid fa-trash-can"></span>
-                </button>
+                    <button type="button" class="btn btn-sm btn-link text-danger p-0 ms-1" onclick="quitarItem(${index})" title="Eliminar">
+                        <span class="fa-solid fa-trash-can"></span>
+                    </button>
+                </div>
             `;
             contenedor.appendChild(div);
         });
