@@ -49,12 +49,32 @@
             </nav>
             <div class="d-flex align-items-center gap-2">
                 <h2 class="mb-0 text-1100">Factura {{ $doc->numero_interno }}</h2>
-                <span class="badge badge-phoenix badge-phoenix-success fs--1">Emitida</span>
+                @if ($doc->estado === 'certificado')
+                    <span class="badge badge-phoenix badge-phoenix-success fs--1">
+                        <span class="fa-solid fa-circle-check me-1"></span>Certificada SAT
+                    </span>
+                @elseif ($doc->estado === 'error')
+                    <span class="badge badge-phoenix badge-phoenix-danger fs--1">
+                        <span class="fa-solid fa-triangle-exclamation me-1"></span>Error de Certificación
+                    </span>
+                @else
+                    <span class="badge badge-phoenix badge-phoenix-warning fs--1">
+                        <span class="fa-solid fa-clock me-1"></span>Sin Certificar SAT
+                    </span>
+                @endif
                 <span class="badge badge-phoenix badge-phoenix-primary fs--2">{{ $doc->moneda }}</span>
             </div>
             <p class="text-700 mb-0">Receptor: <strong>{{ $doc->nombre_receptor }}</strong> &middot; NIT: {{ $doc->nit_receptor ?: 'CF' }}</p>
         </div>
         <div class="d-flex flex-wrap gap-2">
+            @if ($doc->estado !== 'certificado')
+                <form method="POST" action="{{ route('admin.facturas.certificar-sat', $doc) }}" onsubmit="return confirm('¿Enviar este documento a certificar ante la SAT / INFILE?')">
+                    @csrf
+                    <button type="submit" class="btn btn-phoenix-warning">
+                        <span class="fa-solid fa-stamp me-1"></span>{{ $doc->estado === 'error' ? 'Reintentar Certificación' : 'Certificar en SAT' }}
+                    </button>
+                </form>
+            @endif
             <a href="{{ route('admin.facturas.documento.imprimir', $doc) }}?formato=factura" target="_blank" class="btn btn-phoenix-primary">
                 <span class="fa-solid fa-file-invoice me-1"></span>Ver A4
             </a>
@@ -69,6 +89,44 @@
             </a>
         </div>
     </div>
+
+    @if (session('exito'))
+        <div class="alert alert-subtle-success alert-dismissible fade show mb-4 border-success" role="alert">
+            <span class="fa-solid fa-circle-check me-2"></span>{{ session('exito') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
+    @if (session('error_sat') || $doc->error_mensaje)
+        <div class="alert alert-subtle-danger alert-dismissible fade show mb-4 border-danger" role="alert">
+            <div class="d-flex align-items-start gap-2">
+                <span class="fa-solid fa-triangle-exclamation text-danger fs-1 mt-1"></span>
+                <div class="flex-grow-1">
+                    <h6 class="text-danger fw-bold mb-1">Error de Certificación FEL (INFILE / SAT):</h6>
+                    <div class="text-900 font-monospace fs--1 bg-white p-2 rounded border border-danger-subtle">
+                        {{ session('error_sat') ?? $doc->error_mensaje }}
+                    </div>
+                    <div class="mt-2 fs--2 text-700">
+                        Puede corregir los datos o credenciales y presionar el botón <strong>"Reintentar Certificación"</strong> arriba.
+                    </div>
+                </div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
+    @if ($doc->estado === 'certificado')
+        <div class="alert alert-subtle-success mb-4 border-success d-flex align-items-center justify-content-between">
+            <div>
+                <span class="fa-solid fa-stamp text-success me-2 fs-1"></span>
+                <strong class="text-success">Documento Autorizado por SAT:</strong>
+                <span class="font-monospace ms-2">UUID: {{ $doc->uuid_sat }}</span>
+                <span class="ms-3 text-700">Serie: <strong>{{ $doc->serie_sat }}</strong></span>
+                <span class="ms-3 text-700">Número: <strong>{{ $doc->numero_sat }}</strong></span>
+            </div>
+            <span class="fs--2 text-muted">Certificado el {{ $doc->fecha_certificacion ? $doc->fecha_certificacion->format('d/m/Y H:i') : '' }}</span>
+        </div>
+    @endif
 
     <div class="row g-4 mb-4">
         {{-- Detalle de ítems facturados (Lo que se consumió) --}}

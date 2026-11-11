@@ -9,6 +9,7 @@ use App\Models\DocumentoTributarioItem;
 use App\Models\Producto;
 use App\Models\Sistema;
 use App\Services\ConsultaNitService;
+use App\Services\DTEService;
 use App\Services\QrService;
 use App\Support\Sitio;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -42,6 +43,20 @@ class FacturaLibreController extends Controller
     {
         $documento->loadMissing('items');
         return view('admin.facturas.show', ['doc' => $documento]);
+    }
+
+    /**
+     * Reintentar o certificar la factura ante INFILE / SAT.
+     */
+    public function certificarSat(DocumentoTributario $documento, DTEService $dteService): RedirectResponse
+    {
+        $resultado = $dteService->certificar($documento);
+
+        if ($resultado['exito']) {
+            return back()->with('exito', "Factura certificada exitosamente ante la SAT (UUID: {$resultado['uuid']}).");
+        }
+
+        return back()->with('error_sat', "INFILE / SAT rechazó la factura: {$resultado['error']}");
     }
 
     /**
