@@ -20,7 +20,7 @@ class Pagina extends Model
     public const RESERVADAS = [
         'admin', 'login', 'logout', 'sistemas', 'manuales', 'contacto', 'forgot-password', 'reset-password',
         'two-factor-challenge', 'user', 'up', 'storage', 'assets', 'vendors', 'email', 'password', 'chat', 'broadcasting', 'mi-cuenta',
-        'paypal',
+        'paypal', 'api',
     ];
 
     /** Dirección de la política de privacidad (enlazada en el pie y en los formularios). */

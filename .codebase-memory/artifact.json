@@ -1,11 +1,11 @@
 {
     "schema_version": 2,
-    "commit": "53b605e91bee8ac103f20d4f50f7d1dfe2d75876",
-    "indexed_at": "2026-11-03T16:31:04Z",
+    "commit": "e4cf7e238034039c14488f1d51b198284fa3dea1",
+    "indexed_at": "2026-11-03T16:37:34Z",
     "project": "run-media-kmoreno-57D9-29451-Kendall-trabajo-personal-laragon-lading-page-solutionsgt",
     "nodes": 5527,
-    "edges": 20518,
+    "edges": 20526,
     "original_size": 36962304,
-    "compressed_size": 4983250,
+    "compressed_size": 4994638,
     "compression_level": 3
 }

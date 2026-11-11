@@ -44,7 +44,7 @@ restaurante solo sirvió de modelo inicial (estructura, módulo de Correos, Dock
   El `.env` local apunta a esa BD real: `migrate` y `db:seed` escriben ahí.
 - Tablas: `users`, `configuracion_sitio` (una fila), `paginas`, `secciones`, `elementos`, `categorias_sistema`, `manuales`, `configuracion_correo`, `plantillas_correo`, `bitacora_correos`, `sistemas`, `sistema_imagenes`, `servicios` (planes), `clientes`
   (incluye logo y testimonio), `direcciones`, `mensajes_contacto`, `conversaciones`, `mensajes_chat`, `visitas`,
-  `bitacora_cambios`, `cuentas`, `contratos`, `configuracion_pagos`, `productos`, `precios`, `suscripciones`, `pagos`
+  `bitacora_cambios`, `cuentas`, `contratos`, `configuracion_pagos`, `productos`, `precios`, `suscripciones`, `pagos`, `configuracion_licencias`, `instalaciones`, `pagos_licencia`
   + las de Laravel (`sessions`, `cache`, `jobs`…).
 - `DatabaseSeeder` solo crea lo que falta (no pisa lo editado en el panel). El usuario inicial sale de
   `ADMIN_EMAIL` / `ADMIN_PASSWORD` o se genera y se muestra una sola vez.
@@ -207,6 +207,30 @@ restaurante solo sirvió de modelo inicial (estructura, módulo de Correos, Dock
   (cobros cercanos, pagos a medias y borra intentos sin aprobar > 3 días). Plantillas `pago_recibido`, `nueva_venta`,
   `suscripcion_cancelada`. «Mi cuenta» → Pagos: suscripciones (cancelar) e historial. Excel en `/admin/ventas/exportar`.
 - En pruebas PayPal se simula con `Http::fake` (`tests/Feature/VentasTest.php`).
+
+## Licencias Nexus (pedido del usuario 2026-11-04)
+
+- Controla las instalaciones de **Nexus ERP** en renta (cada cliente con su propio contenedor y BD; el código de Nexus
+  vive en `nexus-erp`, con el protocolo en su `docs/instalacion-clientes/licencia.md`). El usuario no tiene planes de
+  precios: los acuerda en persona (monto y periodo por instalación).
+- Etapas por días de mora (las **aplica Nexus**; aquí solo se calculan para mostrarlas, con la misma cuenta en
+  `Instalacion::estado()`): al día → por vencer → gracia → restringido → solo lectura. Nunca se borran datos.
+- `instalaciones`: identificador (= `NEXUS_LICENCIA_ID`), URL de su Nexus, tipo renta/venta (venta = sin vencimiento),
+  `vence_el` (pagos a mano), `contrato_id` (opcional: PayPal extiende el contrato y con él la licencia), `prorroga_hasta`,
+  modo `NORMAL`/`FORZAR_ACTIVO`/`SUSPENDIDO`, días de cada etapa (vacío = los de `configuracion_licencias`), monitoreo
+  (última consulta, versión, usuarios, empresas, etapa que aplica). Vencimiento efectivo = el mayor de pago a mano,
+  contrato y prórroga.
+- Todo con `App\Services\Licencias`: `registrarPago` corre `vence_el` N meses **desde el vencimiento anterior** (si no
+  había, desde el día del pago), quita una suspensión manual; `anularPago` (solo el último) lo devuelve; `prorrogar`,
+  `cambiarModo`; cada cambio llama `avisar()` = `POST {url}/licencia/sincronizar` (sin datos: Nexus vuelve a consultar).
+  `Contrato::saved` con `hasta` cambiado avisa a las instalaciones vinculadas (`AppServiceProvider`).
+- Consulta de Nexus: `POST /api/nexus/licencia` (`Api\LicenciaNexusController`, sin CSRF, `throttle:60,1`) con token
+  Bearer (solo su sha256 en `token_hash`; se muestra una vez al crear o con «Token nuevo»). Responde
+  `{datos: base64(JSON), firma: base64(Ed25519)}`; el par de claves se genera solo en `configuracion_licencias`
+  (privada cifrada con APP_KEY; **no regenerarla**: todas las instalaciones tienen la pública en su `.env`).
+- `licencias:revisar` (diario 8:00): plantilla `licencia_aviso` al `correo_cobro` al entrar en cada etapa y
+  `licencia_estado` a «Avisos a» al entrar en mora o si deja de consultar más de 24 h. Cada aviso una vez.
+- Panel → Ventas → Licencias Nexus (`admin/licencias`). Pruebas: `tests/Feature/LicenciasNexusTest.php` (Nexus simulado con `Http::fake`).
 
 ## Despliegue (Docker)
 

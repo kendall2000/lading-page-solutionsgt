@@ -1,0 +1,240 @@
+/* ==========================================================================
+   SOLUTIONS GT - PANEL ADMINISTRATIVO (/admin)
+   Tokens de movimiento, sombras multicapa y micro-interacción refinada
+   Filosofía de diseño de alta calidad (Emil Kowalski Standards)
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. TOKENS DE MOVIMIENTO Y SOMBRAS AMBIENTALES MULTICAPA
+   -------------------------------------------------------------------------- */
+:root {
+  /* Curvas custom con aceleración inicial rápida (nunca ease-in débil) */
+  --admin-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --admin-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --admin-ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* Tiempos de respuesta física óptimos */
+  --admin-duration-feedback: 160ms;
+  --admin-duration-fast: 180ms;
+  --admin-duration-ui: 220ms;
+
+  /* Sombras multicapa refinadas (reemplaza sombras duras por difusión natural) */
+  --phoenix-box-shadow-sm: 
+    0 1px 2px rgba(15, 23, 42, 0.04), 
+    0 2px 4px rgba(15, 23, 42, 0.03);
+
+  --phoenix-box-shadow: 
+    0 4px 6px -1px rgba(15, 23, 42, 0.05), 
+    0 2px 4px -2px rgba(15, 23, 42, 0.03),
+    0 0 0 1px rgba(15, 23, 42, 0.03);
+
+  --phoenix-box-shadow-lg: 
+    0 10px 25px -5px rgba(15, 23, 42, 0.07), 
+    0 20px 25px -5px rgba(15, 23, 42, 0.04),
+    0 0 0 1px rgba(15, 23, 42, 0.04);
+
+  --phoenix-dropdown-box-shadow: 
+    0 10px 15px -3px rgba(15, 23, 42, 0.08), 
+    0 4px 6px -4px rgba(15, 23, 42, 0.04),
+    0 0 0 1px rgba(15, 23, 42, 0.04);
+
+  --phoenix-modal-box-shadow: 
+    0 25px 50px -12px rgba(15, 23, 42, 0.18),
+    0 0 0 1px rgba(15, 23, 42, 0.05);
+}
+
+/* Modo oscuro adaptado */
+:root.dark,
+.dark {
+  --phoenix-box-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
+  --phoenix-box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --phoenix-box-shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  --phoenix-dropdown-box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  --phoenix-modal-box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+/* --------------------------------------------------------------------------
+   2. TIPOGRAFÍA Y PRECISIÓN NUMÉRICA (TABULAR NUMS)
+   -------------------------------------------------------------------------- */
+/* Números fijos para finanzas, estadísticas y badges que evitan saltos de ancho */
+.card h3,
+.card .h3,
+.table td,
+.badge,
+.nav-link-badge,
+[class*="estadisticas"] {
+  font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------------------------------------------------------
+   3. FEEDBACK FÍSICO TÁCTIL EN BOTONES Y ACCIONES (.btn)
+   -------------------------------------------------------------------------- */
+.btn {
+  transition: 
+    transform var(--admin-duration-feedback) var(--admin-ease-out),
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease !important;
+  will-change: transform;
+}
+
+/* Sensación de pulsación física al hacer clic */
+.btn:active:not(:disabled):not(.disabled) {
+  transform: scale(0.97) !important;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .btn:hover:not(:disabled):not(.disabled) {
+    transform: translateY(-1px);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   4. TARJETAS DE KPIS Y MÓDULOS INTERACTIVOS (MICRO-HOVER)
+   -------------------------------------------------------------------------- */
+.card {
+  box-shadow: var(--phoenix-box-shadow);
+  border: 1px solid rgba(15, 23, 42, 0.06) !important;
+  transition: transform var(--admin-duration-fast) var(--admin-ease-out),
+              box-shadow var(--admin-duration-fast) var(--admin-ease-out) !important;
+}
+
+/* Tarjetas clicables (enlaces a KPIs o módulos) */
+a.card,
+.card[href] {
+  cursor: pointer;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  a.card:hover,
+  .card[href]:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--phoenix-box-shadow-lg) !important;
+  }
+}
+
+a.card:active,
+.card[href]:active {
+  transform: scale(0.99) !important;
+}
+
+/* --------------------------------------------------------------------------
+   5. REFACTORIZACIÓN MODAL (ESCALA CENTRADA ACELERADA POR GPU)
+   -------------------------------------------------------------------------- */
+.modal-backdrop.fade {
+  opacity: 0;
+  transition: opacity var(--admin-duration-ui) var(--admin-ease-out) !important;
+  will-change: opacity;
+}
+
+.modal-backdrop.show {
+  opacity: 0.55 !important;
+}
+
+/* En lugar de caer desde arriba (-50px), emerge suavemente desde el centro */
+.modal.fade .modal-dialog {
+  opacity: 0;
+  transform: scale(0.95) !important;
+  transform-origin: center center !important;
+  transition: 
+    transform var(--admin-duration-ui) var(--admin-ease-out),
+    opacity var(--admin-duration-ui) var(--admin-ease-out) !important;
+  will-change: transform, opacity;
+}
+
+.modal.show .modal-dialog {
+  opacity: 1;
+  transform: scale(1) !important;
+}
+
+.modal-content {
+  box-shadow: var(--phoenix-modal-box-shadow) !important;
+  border-radius: 0.75rem;
+}
+
+/* --------------------------------------------------------------------------
+   6. DROPDOWNS Y MENÚS FLOTANTES (ORIGIN-AWARE ENTER)
+   -------------------------------------------------------------------------- */
+.dropdown-menu {
+  box-shadow: var(--phoenix-dropdown-box-shadow) !important;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(15, 23, 42, 0.07);
+}
+
+.dropdown-menu.show {
+  animation: adminDropdownIn var(--admin-duration-fast) var(--admin-ease-out) forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes adminDropdownIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   7. NAVEGACIÓN VERTICAL Y TRANSICIONES COLAPSIBLES
+   -------------------------------------------------------------------------- */
+.navbar-vertical .nav-link {
+  transition: background-color 150ms ease, color 150ms ease, transform 150ms var(--admin-ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .navbar-vertical .nav-link:hover {
+    transform: translateX(2px);
+  }
+}
+
+.collapsing {
+  transition: height var(--admin-duration-ui) var(--admin-ease-out) !important;
+}
+
+/* --------------------------------------------------------------------------
+   8. TABLAS CON FILAS ACTIVAS Y BORDES SUTILES
+   -------------------------------------------------------------------------- */
+.table tbody tr {
+  transition: background-color 150ms ease;
+}
+
+.table-hover tbody tr:hover {
+  background-color: rgba(56, 116, 255, 0.035) !important;
+}
+
+/* --------------------------------------------------------------------------
+   9. ACCESIBILIDAD Y REDUCCIÓN DE MOVIMIENTO (prefers-reduced-motion)
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .btn,
+  .btn:hover,
+  .btn:active,
+  a.card:hover,
+  .card[href]:hover,
+  .modal.fade .modal-dialog,
+  .modal.show .modal-dialog,
+  .dropdown-menu.show,
+  .navbar-vertical .nav-link:hover {
+    transform: none !important;
+    will-change: auto !important;
+  }
+
+  .modal.fade .modal-dialog {
+    opacity: 0;
+    transition: opacity 120ms ease !important;
+  }
+  .modal.show .modal-dialog {
+    opacity: 1;
+  }
+}

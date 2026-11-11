@@ -6,6 +6,7 @@ use App\Models\BitacoraCambio;
 use App\Models\CategoriaSistema;
 use App\Models\Cliente;
 use App\Models\ConfiguracionCorreo;
+use App\Models\ConfiguracionLicencias;
 use App\Models\ConfiguracionPagos;
 use App\Models\ConfiguracionSitio;
 use App\Models\Contrato;
@@ -13,9 +14,11 @@ use App\Models\Conversacion;
 use App\Models\Cuenta;
 use App\Models\Direccion;
 use App\Models\Elemento;
+use App\Models\Instalacion;
 use App\Models\Manual;
 use App\Models\MensajeContacto;
 use App\Models\Pagina;
+use App\Models\PagoLicencia;
 use App\Models\PlantillaCorreo;
 use App\Models\Precio;
 use App\Models\Producto;
@@ -46,6 +49,8 @@ class Bitacora
         Cuenta::class => ['Cuentas de clientes', 'Cuenta'], Contrato::class => ['Cuentas de clientes', 'Sistema contratado'],
         Producto::class => ['Ventas', 'Producto'], Precio::class => ['Ventas', 'Precio'], Suscripcion::class => ['Ventas', 'Suscripción'],
         ConfiguracionPagos::class => ['Ventas', 'Conexión con PayPal'],
+        Instalacion::class => ['Licencias Nexus', 'Instalación'], PagoLicencia::class => ['Licencias Nexus', 'Pago de licencia'],
+        ConfiguracionLicencias::class => ['Licencias Nexus', 'Configuración de licencias'],
     ];
 
     /** Campos que cambian solos (contadores, marcas de tiempo): no son un cambio de nadie. */
@@ -53,10 +58,12 @@ class Bitacora
         'created_at', 'updated_at', 'visitas', 'remember_token', 'ultimo_acceso', 'no_leidos_admin', 'no_leidos_visitante',
         'ultimo_mensaje_en', 'probado_en', 'leido_en', 'token_hash', 'token_tipo', 'token_vence', 'invitada_en',
         'paypal_id', 'paypal_modo', 'paypal_plan_id', 'sincronizada_en', 'siguiente_cobro',
+        'ultima_consulta_en', 'ip_consulta', 'version', 'usuarios_activos', 'empresas_activas', 'etapa_reportada', 'avisado_en',
+        'aviso_resultado', 'correo_etapa', 'correo_vence_el', 'sin_comunicacion_avisada_en',
     ];
 
     /** Secretos aunque el modelo no los oculte. */
-    private const SECRETOS = ['password', 'clave', 'client_secret', 'clave_prueba', 'token_hash', 'two_factor_secret', 'two_factor_recovery_codes'];
+    private const SECRETOS = ['password', 'clave', 'client_secret', 'clave_prueba', 'clave_privada', 'token_hash', 'two_factor_secret', 'two_factor_recovery_codes'];
 
     public function modelo(string $accion, Model $modelo): void
     {

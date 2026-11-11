@@ -6,3 +6,4 @@ use Illuminate\Support\Facades\Schedule;
 Schedule::command('respaldo:crear')->dailyAt('03:00')->withoutOverlapping();
 Schedule::command('sitio:limpiar')->dailyAt('03:30')->withoutOverlapping();
 Schedule::command('pagos:sincronizar')->everySixHours()->withoutOverlapping();
+Schedule::command('licencias:revisar')->dailyAt('08:00')->withoutOverlapping();

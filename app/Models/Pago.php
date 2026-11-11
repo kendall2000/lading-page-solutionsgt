@@ -21,7 +21,30 @@ class Pago extends Model
     protected $fillable = [
         'cuenta_id', 'producto_id', 'precio_id', 'suscripcion_id', 'paypal_orden_id', 'paypal_id', 'paypal_modo', 'estado',
         'descripcion', 'periodo', 'monto', 'moneda', 'correo', 'pagado_en',
+        'numero_comprobante', 'token_publico', 'receptor_nombre', 'receptor_documento', 'receptor_direccion', 'receptor_pais', 'notas_factura',
     ];
+
+    public function asegurarComprobante(): void
+    {
+        $dirty = false;
+        if (empty($this->numero_comprobante)) {
+            $prefijo = 'INV-' . ($this->pagado_en ? $this->pagado_en->format('Y') : date('Y'));
+            $this->numero_comprobante = $prefijo . '-' . str_pad((string)$this->id, 5, '0', STR_PAD_LEFT);
+            $dirty = true;
+        }
+        if (empty($this->token_publico)) {
+            $this->token_publico = bin2hex(random_bytes(24));
+            $dirty = true;
+        }
+        if ($dirty) {
+            $this->saveQuietly();
+        }
+    }
+
+    public function documentoTributario(): BelongsTo
+    {
+        return $this->belongsTo(DocumentoTributario::class, 'id', 'pago_id');
+    }
 
     protected function casts(): array
     {

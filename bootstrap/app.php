@@ -22,8 +22,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // Detrás del proxy del servidor: IP real del visitante.
         $middleware->trustProxies(at: '*');
 
-        // PayPal manda sus avisos sin token CSRF (se comprueban con su firma).
-        $middleware->validateCsrfTokens(except: ['paypal/aviso']);
+        // PayPal manda sus avisos sin token CSRF (se comprueban con su firma), y las instalaciones de
+        // Nexus consultan su licencia con su propio token (LicenciaNexusController).
+        $middleware->validateCsrfTokens(except: ['paypal/aviso', 'api/nexus/licencia']);
         $middleware->web(append: [EncabezadosSeguridad::class, UsuarioActivo::class]);
         $middleware->alias([
             'sin-cache' => PreventBackHistory::class, 'visita' => RegistrarVisita::class, 'cuenta.verificada' => CuentaVerificada::class,

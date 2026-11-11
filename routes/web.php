@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\DireccionController;
 use App\Http\Controllers\Admin\ElementoController;
 use App\Http\Controllers\Admin\EstadisticaController;
 use App\Http\Controllers\Admin\InicioController;
+use App\Http\Controllers\Admin\LicenciaController;
 use App\Http\Controllers\Admin\ManualController;
 use App\Http\Controllers\Admin\MensajeController;
 use App\Http\Controllers\Admin\PaginaController;
@@ -22,14 +23,19 @@ use App\Http\Controllers\Admin\ServicioController;
 use App\Http\Controllers\Admin\SistemaController;
 use App\Http\Controllers\Admin\UsuarioController;
 use App\Http\Controllers\Admin\VentaController;
+use App\Http\Controllers\Api\LicenciaNexusController;
 use App\Http\Controllers\AvisoPayPalController;
 use App\Http\Controllers\ChatController;
+use App\Http\Controllers\ComprobanteController;
 use App\Http\Controllers\Cuenta\AccesoController;
 use App\Http\Controllers\Cuenta\PagoController;
 use App\Http\Controllers\Cuenta\PortalController;
 use App\Http\Controllers\SeoController;
 use App\Http\Controllers\SitioController;
 use Illuminate\Support\Facades\Route;
+
+// Verificación pública de comprobante mediante QR
+Route::get('validar/comprobante/{token}', [ComprobanteController::class, 'verificar'])->name('comprobantes.verificar');
 
 // Sitio público.
 // «visita»: contador de visitas propio (App\Services\Visitas).
@@ -44,6 +50,9 @@ Route::get('robots.txt', [SeoController::class, 'robots'])->name('robots');
 
 // Avisos de PayPal (webhook): sin CSRF (bootstrap/app.php); el estado se vuelve a pedir a PayPal.
 Route::post('paypal/aviso', AvisoPayPalController::class)->middleware('throttle:120,1')->name('paypal.aviso');
+
+// Cada instalación de Nexus ERP consulta aquí su licencia (token Bearer; respuesta firmada). Ver LicenciaNexusController.
+Route::post('api/nexus/licencia', LicenciaNexusController::class)->middleware('throttle:60,1')->name('api.nexus.licencia');
 
 // Chat en vivo del visitante (widget). Se identifica con una cookie; ver ChatController.
 Route::prefix('chat')->name('chat.')->group(function () {
@@ -96,6 +105,8 @@ Route::prefix('mi-cuenta')->name('cuenta.')->middleware('sin-cache')->group(func
             Route::post('comprar/{precio}', [PagoController::class, 'comprar'])->middleware('throttle:10,10')->name('comprar.pagar');
             Route::post('comprar/{precio}/iniciar', [PagoController::class, 'iniciar'])->middleware('throttle:10,10')->name('comprar.iniciar');
             Route::get('pagos', [PagoController::class, 'index'])->name('pagos');
+            Route::get('pagos/{pago}/imprimir', [ComprobanteController::class, 'imprimir'])->name('pagos.cliente.imprimir');
+            Route::get('pagos/{pago}/descargar-pdf', [ComprobanteController::class, 'descargarPdf'])->name('pagos.cliente.descargar-pdf');
             Route::get('pagos/suscripcion', [PagoController::class, 'volverSuscripcion'])->middleware('throttle:20,1')->name('pagos.suscripcion');
             Route::get('pagos/orden', [PagoController::class, 'volverOrden'])->middleware('throttle:20,1')->name('pagos.orden');
             Route::get('pagos/cancelado', [PagoController::class, 'cancelado'])->name('pagos.cancelado');
@@ -147,10 +158,22 @@ Route::middleware(['auth:web', 'sin-cache'])->prefix('admin')->name('admin.')->g
     Route::post('cotizaciones/{cotizacion}/enviar', [CotizacionController::class, 'enviarCorreo'])->name('cotizaciones.enviar');
     Route::get('ventas', [VentaController::class, 'index'])->name('ventas.index');
     Route::get('ventas/exportar', [VentaController::class, 'exportar'])->name('ventas.exportar');
+    Route::get('pagos/{pago}/imprimir', [ComprobanteController::class, 'imprimir'])->name('pagos.imprimir');
+    Route::get('pagos/{pago}/descargar-pdf', [ComprobanteController::class, 'descargarPdf'])->name('pagos.descargar-pdf');
     Route::post('ventas/paypal', [VentaController::class, 'guardar'])->name('ventas.paypal');
     Route::post('ventas/paypal/probar', [VentaController::class, 'probar'])->middleware('throttle:10,1')->name('ventas.probar');
     Route::post('suscripciones/{suscripcion}/sincronizar', [VentaController::class, 'sincronizar'])->middleware('throttle:30,1')->name('suscripciones.sincronizar');
     Route::post('suscripciones/{suscripcion}/cancelar', [VentaController::class, 'cancelar'])->middleware('throttle:10,1')->name('suscripciones.cancelar');
+    // Licencias de las instalaciones de Nexus ERP (clientes en renta)
+    Route::resource('licencias', LicenciaController::class)->parameters(['licencias' => 'licencia']);
+    Route::put('licencias-configuracion', [LicenciaController::class, 'configuracion'])->name('licencias.configuracion');
+    Route::post('licencias/{licencia}/pagos', [LicenciaController::class, 'pago'])->middleware('throttle:20,1')->name('licencias.pago');
+    Route::post('licencias/pagos/{pago}/anular', [LicenciaController::class, 'anularPago'])->middleware('throttle:20,1')->name('licencias.pago.anular');
+    Route::post('licencias/{licencia}/prorroga', [LicenciaController::class, 'prorroga'])->middleware('throttle:20,1')->name('licencias.prorroga');
+    Route::delete('licencias/{licencia}/prorroga', [LicenciaController::class, 'quitarProrroga'])->middleware('throttle:20,1')->name('licencias.prorroga.quitar');
+    Route::post('licencias/{licencia}/modo', [LicenciaController::class, 'modo'])->middleware('throttle:20,1')->name('licencias.modo');
+    Route::post('licencias/{licencia}/avisar', [LicenciaController::class, 'avisar'])->middleware('throttle:20,1')->name('licencias.avisar');
+    Route::post('licencias/{licencia}/token', [LicenciaController::class, 'token'])->middleware('throttle:10,1')->name('licencias.token');
 
     Route::resource('servicios', ServicioController::class)->except('show')->parameters(['servicios' => 'servicio']);
     Route::resource('clientes', ClienteController::class)->except('show')->parameters(['clientes' => 'cliente']);

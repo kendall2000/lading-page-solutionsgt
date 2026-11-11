@@ -2,8 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\Contrato;
 use App\Models\User;
 use App\Services\Bitacora;
+use App\Services\Licencias;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
@@ -38,5 +40,9 @@ class AppServiceProvider extends ServiceProvider
             $e->user instanceof User ? $e->user : User::query()->where('email', mb_strtolower((string) ($e->credentials['email'] ?? '')))->first(),
             nombre: mb_substr((string) ($e->credentials['email'] ?? '—'), 0, 145),
         ));
+
+        // Si cambia el vencimiento de un contrato (PayPal lo extiende al cobrar), las instalaciones de Nexus
+        // vinculadas consultan su licencia ya.
+        Contrato::saved(fn (Contrato $c) => $c->wasChanged('hasta') && app(Licencias::class)->contratoCambio($c));
     }
 }

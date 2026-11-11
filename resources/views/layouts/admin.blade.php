@@ -3,6 +3,7 @@
 <head>
     @include('partials.head')
     <meta name="robots" content="noindex">
+    <link href="{{ asset('assets/css/admin.css') }}" rel="stylesheet">
 </head>
 <body>
 @php
@@ -20,6 +21,7 @@
             ['admin.cotizaciones.index', 'admin.cotizaciones.*', 'file-text', 'Cotizaciones'],
             ['admin.ventas.index', ['admin.ventas.*', 'admin.suscripciones.*'], 'shopping-cart', 'Suscripciones y pagos'],
             ['admin.productos.index', 'admin.productos.*', 'shopping-bag', 'Productos y precios'],
+            ['admin.licencias.index', 'admin.licencias.*', 'key', 'Licencias Nexus'],
         ],
         'Sitio web' => [
             ['admin.paginas.index', ['admin.paginas.*', 'admin.secciones.*'], 'layout', 'Páginas y menú'],

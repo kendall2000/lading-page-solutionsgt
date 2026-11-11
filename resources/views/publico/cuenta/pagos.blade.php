@@ -51,7 +51,7 @@
         @else
             <div class="table-responsive">
                 <table class="table table-sm fs--1 mb-0 align-middle">
-                    <thead><tr><th class="ps-0">Fecha</th><th>Concepto</th><th class="text-end">Monto</th><th>Estado</th><th class="pe-0">Referencia</th></tr></thead>
+                    <thead><tr><th class="ps-0">Fecha</th><th>Concepto</th><th class="text-end">Monto</th><th>Estado</th><th>Referencia</th><th class="pe-0 text-end">Comprobante</th></tr></thead>
                     <tbody>
                         @foreach ($pagos as $p)
                             @php [$estadoTexto, $estadoColor] = $p->estadoInfo(); @endphp
@@ -60,7 +60,20 @@
                                 <td>{{ $p->descripcion }}</td>
                                 <td class="text-end text-nowrap fw-semi-bold">{{ $p->montoTexto() }}</td>
                                 <td><span class="badge badge-phoenix badge-phoenix-{{ $estadoColor }}">{{ $estadoTexto }}</span></td>
-                                <td class="pe-0 text-600">{{ $p->paypal_id }}</td>
+                                <td class="text-600">{{ $p->paypal_id }}</td>
+                                <td class="pe-0 text-end text-nowrap">
+                                    <div class="btn-group">
+                                        <a href="{{ route('cuenta.pagos.cliente.imprimir', $p) }}?formato=factura" target="_blank" class="btn btn-xs btn-phoenix-primary" title="Ver Factura A4">
+                                            <span class="fa-solid fa-file-invoice me-1"></span>A4
+                                        </a>
+                                        <a href="{{ route('cuenta.pagos.cliente.imprimir', $p) }}?formato=ticket" target="_blank" class="btn btn-xs btn-phoenix-secondary" title="Ver Ticket">
+                                            <span class="fa-solid fa-receipt me-1"></span>Ticket
+                                        </a>
+                                        <a href="{{ route('cuenta.pagos.cliente.descargar-pdf', $p) }}?formato=factura" class="btn btn-xs btn-phoenix-info" title="Descargar PDF">
+                                            <span class="fa-solid fa-download"></span>
+                                        </a>
+                                    </div>
+                                </td>
                             </tr>
                         @endforeach
                     </tbody>
