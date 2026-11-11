@@ -16,7 +16,7 @@
         </div>
     </div>
 
-    {{-- Tarjetas de métricas o resumen rápido --}}
+    {{-- Métricas rápidas --}}
     <div class="row g-3 mb-4">
         <div class="col-md-6 col-xxl-3">
             <div class="card h-100">
@@ -28,7 +28,7 @@
                         </div>
                         <span class="badge badge-phoenix badge-phoenix-primary fs--2">SAT</span>
                     </div>
-                    <p class="text-600 fs--2 mt-2 mb-0">Facturación libre con o sin desglose según convenga.</p>
+                    <p class="text-600 fs--2 mt-2 mb-0">Facturación libre sin desglose forzado de IVA.</p>
                 </div>
             </div>
         </div>
@@ -76,7 +76,7 @@
         </div>
     </div>
 
-    {{-- Últimas facturas libres emitidas --}}
+    {{-- Tabla de Facturas Emitidas con opción para VER CONSUMO DETALLADO --}}
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Historial de facturas directas</h5>
@@ -100,35 +100,54 @@
                                 <th class="ps-3">No. Factura</th>
                                 <th>Fecha</th>
                                 <th>Cliente / Receptor</th>
+                                <th>Consumo / Conceptos</th>
                                 <th>Condición</th>
-                                <th>Ítems</th>
                                 <th class="text-end">Total</th>
                                 <th>Estado</th>
-                                <th class="pe-3 text-end">Formatos</th>
+                                <th class="pe-3 text-end">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach ($facturas as $f)
                                 <tr>
-                                    <td class="ps-3 font-monospace fw-bold text-primary">{{ $f->numero_interno }}</td>
+                                    <td class="ps-3 font-monospace fw-bold">
+                                        <a href="{{ route('admin.facturas.show', $f) }}" class="text-primary text-decoration-none">
+                                            {{ $f->numero_interno }}
+                                        </a>
+                                    </td>
                                     <td>{{ $f->fecha_emision ? $f->fecha_emision->format('d/m/Y') : $f->created_at->format('d/m/Y') }}</td>
                                     <td>
                                         <div class="fw-bold">{{ $f->nombre_receptor }}</div>
                                         <div class="text-600 fs--2">NIT: {{ $f->nit_receptor ?: 'CF' }}</div>
                                     </td>
+                                    <td>
+                                        {{-- Visualización rápida del consumo --}}
+                                        <div class="text-truncate" style="max-width: 260px;" title="{{ $f->items->pluck('descripcion')->join(', ') }}">
+                                            @foreach($f->items->take(2) as $it)
+                                                <span class="badge {{ $it->tipo === 'B' ? 'badge-phoenix-primary' : 'badge-phoenix-info' }} fs--2 me-1">{{ $it->tipo }}</span>
+                                                <span class="text-800">{{ $it->descripcion }}</span><br>
+                                            @endforeach
+                                            @if($f->items->count() > 2)
+                                                <span class="text-muted fs--2">+{{ $f->items->count() - 2 }} más...</span>
+                                            @endif
+                                        </div>
+                                    </td>
                                     <td><span class="badge badge-phoenix badge-phoenix-secondary">{{ ucfirst($f->condicion_pago) }}</span></td>
-                                    <td>{{ $f->items->count() }} línea(s)</td>
-                                    <td class="text-end fw-bolder">
+                                    <td class="text-end fw-bolder font-monospace">
                                         {{ $f->moneda === 'GTQ' ? 'Q' : '$' }}{{ number_format($f->total, 2) }} {{ $f->moneda }}
                                     </td>
                                     <td><span class="badge badge-phoenix badge-phoenix-success">Emitida</span></td>
                                     <td class="pe-3 text-end text-nowrap">
                                         <div class="btn-group">
-                                            <a href="{{ route('admin.facturas.documento.imprimir', $f) }}?formato=factura" target="_blank" class="btn btn-xs btn-phoenix-primary" title="Ver Formato A4">
-                                                <span class="fa-solid fa-file-invoice me-1"></span>A4
+                                            {{-- Botón para ver el detalle de lo que consumió --}}
+                                            <a href="{{ route('admin.facturas.show', $f) }}" class="btn btn-xs btn-phoenix-primary" title="Ver consumo y detalle de factura">
+                                                <span class="fa-solid fa-eye me-1"></span>Ver
+                                            </a>
+                                            <a href="{{ route('admin.facturas.documento.imprimir', $f) }}?formato=factura" target="_blank" class="btn btn-xs btn-phoenix-secondary" title="Ver Formato A4">
+                                                <span class="fa-solid fa-file-invoice"></span>
                                             </a>
                                             <a href="{{ route('admin.facturas.documento.imprimir', $f) }}?formato=ticket" target="_blank" class="btn btn-xs btn-phoenix-secondary" title="Ver Formato Ticket">
-                                                <span class="fa-solid fa-receipt me-1"></span>Ticket
+                                                <span class="fa-solid fa-receipt"></span>
                                             </a>
                                             <a href="{{ route('admin.facturas.documento.descargar-pdf', $f) }}?formato=factura" class="btn btn-xs btn-phoenix-info" title="Descargar PDF">
                                                 <span class="fa-solid fa-download"></span>

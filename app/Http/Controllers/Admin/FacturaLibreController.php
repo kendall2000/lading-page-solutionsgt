@@ -36,6 +36,15 @@ class FacturaLibreController extends Controller
     }
 
     /**
+     * Muestra el detalle de la factura y los ítems/conceptos consumidos.
+     */
+    public function show(DocumentoTributario $documento): View
+    {
+        $documento->loadMissing('items');
+        return view('admin.facturas.show', ['doc' => $documento]);
+    }
+
+    /**
      * Formulario moderno para emitir factura:
      * - Puede cargar desde una cotización existente (?cotizacion=ID)
      * - Tiene catálogo de sistemas y productos para seleccionar con un clic
@@ -131,8 +140,13 @@ class FacturaLibreController extends Controller
                 $doc->items()->create($ip);
             }
 
-            return redirect()->route('admin.facturas.documento.imprimir', $doc)
-                ->with('exito', 'Factura ' . $doc->numero_interno . ' emitida correctamente.');
+            return redirect()->route('admin.facturas.show', $doc)
+                ->with('venta_exitosa', [
+                    'id' => $doc->id,
+                    'numero' => $doc->numero_interno,
+                    'total' => $doc->total,
+                    'moneda' => $doc->moneda,
+                ]);
         });
     }
 
