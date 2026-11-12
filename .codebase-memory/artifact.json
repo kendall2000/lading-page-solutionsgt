@@ -1,11 +1,11 @@
 {
     "schema_version": 2,
-    "commit": "e4cf7e238034039c14488f1d51b198284fa3dea1",
-    "indexed_at": "2026-11-03T16:37:34Z",
-    "project": "run-media-kmoreno-57D9-29451-Kendall-trabajo-personal-laragon-lading-page-solutionsgt",
-    "nodes": 5527,
-    "edges": 20526,
-    "original_size": 36962304,
-    "compressed_size": 4994638,
+    "commit": "40e1c736c1cb665da7a0f32c61cd051f7641b1fc",
+    "indexed_at": "2026-11-12T16:01:24Z",
+    "project": "run-media-kmoreno-57D9-2945-Kendall-trabajo-personal-laragon-lading-page-solutionsgt",
+    "nodes": 5862,
+    "edges": 21739,
+    "original_size": 38797312,
+    "compressed_size": 5305909,
     "compression_level": 3
 }

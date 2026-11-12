@@ -2,108 +2,49 @@
 
 @section('contenido')
 <style>
-    /* Estilos inspirados en el diseño POS Ejecutivo de sistema-inventario con adaptación Responsive Completa */
-    .pos-container {
-        font-family: inherit;
-    }
-    .pos-card-product {
-        transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-        border: 1px solid rgba(226, 232, 240, 0.9);
-        background: #ffffff;
-        cursor: pointer;
-        user-select: none;
-    }
-    .pos-card-product:hover {
-        transform: translateY(-2px);
-        border-color: #3b82f6;
-        box-shadow: 0 10px 20px -5px rgba(59, 130, 246, 0.15);
-    }
-    .pos-card-product:active {
-        transform: translateY(0);
-    }
-    .pos-cart-row {
-        transition: all 0.15s ease;
-        border: 1px solid #f1f5f9;
-        background: #f8fafc;
-        border-radius: 12px;
-    }
-    .pos-cart-row:hover {
-        background: #ffffff;
-        border-color: #cbd5e1;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-    }
-    .pos-qty-btn {
-        width: 32px;
-        height: 32px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 8px;
-        border: 1px solid #cbd5e1;
-        background: #ffffff;
-        color: #334155;
-        font-weight: bold;
-        transition: all 0.1s;
-    }
-    .pos-qty-btn:hover {
-        background: #f1f5f9;
-        color: #0f172a;
-    }
-    .pos-qty-input {
-        width: 48px;
-        height: 32px;
-        text-align: center;
-        font-family: monospace;
-        font-weight: 700;
-        font-size: 13px;
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
-        background: #ffffff;
-    }
-    .pos-search-box {
-        position: relative;
-    }
-    .pos-search-box .fa-magnifying-glass {
-        position: absolute;
-        top: 50%;
-        left: 12px;
-        transform: translateY(-50%);
-        color: #94a3b8;
-    }
-    .pos-search-box input {
-        padding-left: 36px;
-        height: 42px;
-        border-radius: 10px;
+    /* Offset para Sticky en Desktop por debajo del navbar administrativo */
+    @media (min-width: 1200px) {
+        .sticky-xl-top-ticket {
+            position: sticky;
+            top: 4.8rem;
+            z-index: 10;
+        }
     }
 
-    /* Reglas Responsive Especiales para Teléfonos y Tablets */
-    @media (max-width: 767.98px) {
-        .pos-grid-catalogo {
-            max-height: 320px !important;
+    /* Feedback físico sutil para tarjetas del catálogo (Emil Kowalski) */
+    .card-product-pos {
+        transition: transform 140ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 140ms ease, border-color 140ms ease;
+        user-select: none;
+    }
+    .card-product-pos:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px -4px rgba(15, 23, 42, 0.08);
+        border-color: rgba(56, 116, 255, 0.5) !important;
+    }
+    .card-product-pos:active {
+        transform: scale(0.985) translateY(0);
+    }
+
+    /* Animación de entrada suave para ítems añadidos al ticket */
+    @media (prefers-reduced-motion: no-preference) {
+        @keyframes cartItemEnter {
+            0% {
+                opacity: 0;
+                transform: translateY(-5px) scale(0.985);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
         }
-        .pos-cart-row {
-            flex-direction: column !important;
-            align-items: stretch !important;
-            gap: 10px !important;
-            padding: 12px !important;
-        }
-        .pos-cart-row-controls {
-            display: flex !important;
-            justify-content: space-between !important;
-            align-items: center !important;
-            width: 100% !important;
-            border-top: 1px dashed #e2e8f0;
-            padding-top: 8px;
-        }
-        .pos-cart-item-title {
-            max-width: 100% !important;
-            white-space: normal !important;
+        .cart-row-animate {
+            animation: cartItemEnter 160ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
         }
     }
 </style>
 
-<div class="pos-container">
-    {{-- Encabezado con estilo POS Ejecutivo y Responsive --}}
+<div>
+    {{-- Encabezado oficial con clases Phoenix --}}
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 border-bottom pb-3 mb-4">
         <div class="d-flex align-items-center gap-3">
             <div class="d-flex align-items-center justify-content-center rounded-3 bg-soft-primary text-primary flex-shrink-0" style="width: 44px; height: 44px;">
@@ -117,7 +58,7 @@
 
         <div class="d-flex flex-wrap align-items-center gap-2 w-100 w-md-auto justify-content-start justify-content-md-end">
             <span class="badge badge-phoenix badge-phoenix-success py-2 px-3">
-                <span class="fa-solid fa-circle fa-beat-fade text-success me-1 fs--2"></span>
+                <span class="fa-solid fa-circle text-success me-1 fs--2"></span>
                 Pequeño Contribuyente
             </span>
             <a href="{{ route('admin.facturas.index') }}" class="btn btn-sm btn-phoenix-secondary">
@@ -130,7 +71,7 @@
     </div>
 
     @if ($cotizacionOrigen)
-        <div class="alert alert-subtle-info d-flex align-items-center justify-content-between mb-4 border-info">
+        <div class="alert alert-soft-info d-flex align-items-center justify-content-between mb-4 border-info">
             <div class="d-flex align-items-center">
                 <span class="fa-solid fa-file-invoice text-info fs-2 me-3"></span>
                 <div>
@@ -151,43 +92,45 @@
                  ============================================== --}}
             <div class="col-12 col-xl-7">
                 {{-- Tarjeta de Catálogo con Filtro Rápido --}}
-                <div class="card border-0 shadow-sm mb-4">
+                <div class="card border border-200 mb-4">
                     <div class="card-body p-3">
                         <div class="d-flex flex-column flex-sm-row gap-2 justify-content-between align-items-stretch align-items-sm-center mb-3">
-                            <div class="pos-search-box flex-grow-1">
-                                <span class="fa-solid fa-magnifying-glass"></span>
-                                <input type="text" id="busquedaCatalogo" class="form-control" placeholder="Buscar software o servicio..." oninput="filtrarCatalogo()" />
+                            <div class="search-box flex-grow-1 position-relative">
+                                <input type="text" id="busquedaCatalogo" class="form-control search-input fuzzy-search" placeholder="Buscar software o servicio..." oninput="filtrarCatalogo()" />
+                                <span class="fas fa-search search-box-icon"></span>
                             </div>
-                            <button type="button" class="btn btn-outline-primary text-nowrap" onclick="abrirModalLineaManual()">
+                            <button type="button" class="btn btn-phoenix-primary text-nowrap" onclick="abrirModalLineaManual()">
                                 <span class="fa-solid fa-feather me-1"></span>+ Línea a la medida
                             </button>
                         </div>
 
                         {{-- Pestañas de categorías rápidas con scroll horizontal en móvil --}}
                         <div class="d-flex gap-2 mb-3 border-bottom pb-2 overflow-auto text-nowrap">
-                            <button type="button" class="btn btn-sm btn-subtle-primary rounded-pill active" onclick="cambiarTabCatalogo('todos', this)">Todos</button>
-                            <button type="button" class="btn btn-sm btn-subtle-secondary rounded-pill" onclick="cambiarTabCatalogo('software', this)">Sistemas y Software</button>
-                            <button type="button" class="btn btn-sm btn-subtle-secondary rounded-pill" onclick="cambiarTabCatalogo('servicios', this)">Servicios &amp; Planes</button>
+                            <button type="button" class="btn btn-sm btn-phoenix-primary rounded-pill active" onclick="cambiarTabCatalogo('todos', this)">Todos</button>
+                            <button type="button" class="btn btn-sm btn-phoenix-secondary rounded-pill" onclick="cambiarTabCatalogo('software', this)">Sistemas y Software</button>
+                            <button type="button" class="btn btn-sm btn-phoenix-secondary rounded-pill" onclick="cambiarTabCatalogo('servicios', this)">Servicios &amp; Planes</button>
                         </div>
 
-                        {{-- Cuadrícula de Productos Estilo POS --}}
-                        <div class="row g-2 pos-grid-catalogo" id="gridCatalogo" style="max-height: 480px; overflow-y: auto;">
+                        {{-- Cuadrícula de Productos Estilo Catálogo Phoenix --}}
+                        <div class="row g-2 scrollbar" id="gridCatalogo" style="max-height: 520px; overflow-y: auto;">
                             @foreach($sistemas as $sis)
                                 <div class="col-12 col-sm-6 item-catalogo" data-tipo="software" data-nombre="{{ strtolower($sis->nombre) }}">
-                                    <div class="pos-card-product p-3 rounded-3 h-100 d-flex flex-column justify-content-between" onclick="agregarAlCarrito('S', 'Licencia / Renta de Software: {{ addslashes($sis->nombre) }}', 1, {{ (float)($sis->precio ?? 0) }})">
-                                        <div class="d-flex align-items-start gap-2.5">
-                                            <div class="d-flex align-items-center justify-content-center rounded-2 bg-soft-primary text-primary flex-shrink-0" style="width: 40px; height: 40px;">
-                                                <span class="fa-solid fa-laptop-code fs-1"></span>
+                                    <div class="card h-100 border border-200 card-product-pos cursor-pointer" onclick="agregarAlCarrito('S', 'Licencia / Renta de Software: {{ addslashes($sis->nombre) }}', 1, {{ (float)($sis->precio ?? 0) }})">
+                                        <div class="card-body p-3 d-flex flex-column justify-content-between">
+                                            <div class="d-flex align-items-start gap-2.5">
+                                                <div class="d-flex align-items-center justify-content-center rounded-2 bg-soft-primary text-primary flex-shrink-0" style="width: 40px; height: 40px;">
+                                                    <span class="fa-solid fa-laptop-code fs-1"></span>
+                                                </div>
+                                                <div class="min-w-0 flex-grow-1">
+                                                    <div class="fw-bold text-1100 text-truncate fs--1">{{ $sis->nombre }}</div>
+                                                    <div class="text-600 fs--2 line-clamp-1">{{ $sis->resumen ?: 'Software desarrollado para empresas' }}</div>
+                                                    <span class="badge badge-phoenix badge-phoenix-info fs--2 mt-1">Servicio (S)</span>
+                                                </div>
                                             </div>
-                                            <div class="min-w-0 flex-grow-1">
-                                                <div class="fw-bold text-1100 text-truncate fs--1">{{ $sis->nombre }}</div>
-                                                <div class="text-600 fs--2 line-clamp-1">{{ $sis->resumen ?: 'Software desarrollado para empresas' }}</div>
-                                                <span class="badge badge-phoenix badge-phoenix-info fs--2 mt-1">Servicio (S)</span>
+                                            <div class="d-flex justify-content-between align-items-center border-top border-200 pt-2 mt-2">
+                                                <span class="fs--2 text-600">Licenciamiento</span>
+                                                <span class="fw-bold text-primary font-monospace">{{ $sis->precio > 0 ? '$'.number_format($sis->precio, 2) : 'A convenir' }}</span>
                                             </div>
-                                        </div>
-                                        <div class="d-flex justify-content-between align-items-center border-top pt-2 mt-2">
-                                            <span class="fs--2 text-600">Licenciamiento</span>
-                                            <span class="fw-bold text-primary font-monospace">{{ $sis->precio > 0 ? '$'.number_format($sis->precio, 2) : 'A convenir' }}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -195,20 +138,22 @@
 
                             @foreach($productos as $prod)
                                 <div class="col-12 col-sm-6 item-catalogo" data-tipo="servicios" data-nombre="{{ strtolower($prod->nombre) }}">
-                                    <div class="pos-card-product p-3 rounded-3 h-100 d-flex flex-column justify-content-between" onclick="agregarAlCarrito('S', '{{ addslashes($prod->nombre) }}', 1, 0.00)">
-                                        <div class="d-flex align-items-start gap-2.5">
-                                            <div class="d-flex align-items-center justify-content-center rounded-2 bg-soft-secondary text-secondary flex-shrink-0" style="width: 40px; height: 40px;">
-                                                <span class="fa-solid fa-cube fs-1"></span>
+                                    <div class="card h-100 border border-200 card-product-pos cursor-pointer" onclick="agregarAlCarrito('S', '{{ addslashes($prod->nombre) }}', 1, 0.00)">
+                                        <div class="card-body p-3 d-flex flex-column justify-content-between">
+                                            <div class="d-flex align-items-start gap-2.5">
+                                                <div class="d-flex align-items-center justify-content-center rounded-2 bg-soft-secondary text-secondary flex-shrink-0" style="width: 40px; height: 40px;">
+                                                    <span class="fa-solid fa-cube fs-1"></span>
+                                                </div>
+                                                <div class="min-w-0 flex-grow-1">
+                                                    <div class="fw-bold text-1100 text-truncate fs--1">{{ $prod->nombre }}</div>
+                                                    <div class="text-600 fs--2 line-clamp-1">{{ $prod->descripcion ?: 'Servicio técnico o plan' }}</div>
+                                                    <span class="badge badge-phoenix badge-phoenix-secondary fs--2 mt-1">Plan / Servicio</span>
+                                                </div>
                                             </div>
-                                            <div class="min-w-0 flex-grow-1">
-                                                <div class="fw-bold text-1100 text-truncate fs--1">{{ $prod->nombre }}</div>
-                                                <div class="text-600 fs--2 line-clamp-1">{{ $prod->descripcion ?: 'Servicio técnico o plan' }}</div>
-                                                <span class="badge badge-phoenix badge-phoenix-secondary fs--2 mt-1">Plan / Servicio</span>
+                                            <div class="d-flex justify-content-between align-items-center border-top border-200 pt-2 mt-2">
+                                                <span class="fs--2 text-600">Suscripción</span>
+                                                <span class="fw-bold text-secondary font-monospace">Precio libre</span>
                                             </div>
-                                        </div>
-                                        <div class="d-flex justify-content-between align-items-center border-top pt-2 mt-2">
-                                            <span class="fs--2 text-600">Suscripción</span>
-                                            <span class="fw-bold text-secondary font-monospace">Precio libre</span>
                                         </div>
                                     </div>
                                 </div>
@@ -217,8 +162,8 @@
                     </div>
                 </div>
 
-                {{-- Tip POS --}}
-                <div class="card border-0 bg-soft-primary p-3 mb-4 mb-xl-0">
+                {{-- Tip POS con componentes nativos --}}
+                <div class="card border border-200 bg-soft-primary p-3 mb-4 mb-xl-0">
                     <div class="d-flex align-items-center gap-3">
                         <span class="fa-solid fa-lightbulb text-primary fs-2"></span>
                         <div class="fs--2 text-800">
@@ -230,12 +175,13 @@
 
             {{-- ==============================================
                  COLUMNA DERECHA: Carrito, Receptor y Totales (5 cols)
+                 Sticky en escritorio con align-self-start y offset superior
                  ============================================== --}}
-            <div class="col-12 col-xl-5">
-                <div class="card border-0 shadow-sm mb-4">
+            <div class="col-12 col-xl-5 align-self-start sticky-xl-top-ticket">
+                <div class="card border border-200 shadow-sm mb-4">
                     
                     {{-- 1. Buscador y Datos del Cliente con Búsqueda SAT --}}
-                    <div class="card-header bg-body-highlight py-3 border-bottom">
+                    <div class="card-header bg-body py-3 border-bottom border-200">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <span class="text-uppercase fs--2 fw-bold text-600">Cliente / Receptor</span>
                             <span class="badge badge-phoenix badge-phoenix-primary fs--2">Consulta SAT</span>
@@ -271,19 +217,19 @@
                             </button>
                         </div>
 
-                        {{-- Lista dinámica de ítems tipo tarjeta POS adaptable --}}
-                        <div id="listaCarrito" style="max-height: 320px; overflow-y: auto;" class="d-flex flex-column gap-2 mb-3">
+                        {{-- Lista dinámica de ítems tipo tarjeta adaptada a Phoenix --}}
+                        <div id="listaCarrito" style="max-height: 280px; overflow-y: auto;" class="scrollbar d-flex flex-column gap-2 mb-3">
                             {{-- Se inyectan dinámicamente con JS --}}
                         </div>
 
-                        {{-- Contenedor vacío --}}
-                        <div id="carritoVacio" class="text-center py-4 border border-dashed rounded-3 bg-light">
+                        {{-- Contenedor vacío oficial Phoenix --}}
+                        <div id="carritoVacio" class="text-center py-4 border border-dashed border-300 rounded-3 bg-light">
                             <span class="fa-solid fa-basket-shopping text-400 fs-3 mb-2 d-block"></span>
                             <p class="text-600 fs--1 mb-0">El ticket se encuentra vacío</p>
                             <span class="fs--2 text-500">Toca un software o pulsa "+ Línea a la medida".</span>
                         </div>
 
-                        <hr class="my-3">
+                        <hr class="my-3 border-200">
 
                         {{-- Opciones de Venta adaptables --}}
                         <div class="row g-2 mb-3">
@@ -311,21 +257,21 @@
                             <input type="hidden" name="condicion_pago" value="contado">
                         </div>
 
-                        {{-- Panel de Totales Resumido estilo POS --}}
-                        <div class="rounded-3 bg-body-highlight p-3 border">
+                        {{-- Panel de Totales Resumido estilo Order Summary de Phoenix --}}
+                        <div class="rounded-3 bg-light p-3 border border-200">
                             <div class="d-flex justify-content-between fs--1 text-700 mb-1">
                                 <span>Régimen Fiscal:</span>
-                                <span class="badge bg-secondary">Pequeño Contribuyente</span>
+                                <span class="badge badge-phoenix badge-phoenix-secondary">Pequeño Contribuyente</span>
                             </div>
                             <div class="d-flex justify-content-between fs--1 text-700 mb-1">
                                 <span>Subtotal:</span>
-                                <span class="fw-bold font-monospace" id="txtSubtotal">0.00</span>
+                                <span class="fw-bold font-monospace text-900" id="txtSubtotal">0.00</span>
                             </div>
                             <div class="d-flex justify-content-between fs--1 text-700 mb-2">
                                 <span>Desglose IVA:</span>
                                 <span class="text-success fw-bold">Exento (5% Mensual SAT)</span>
                             </div>
-                            <div class="border-top pt-2 d-flex justify-content-between align-items-center">
+                            <div class="border-top border-200 pt-2 d-flex justify-content-between align-items-center">
                                 <span class="fs-1 fw-bold text-1100">TOTAL:</span>
                                 <span class="fs-2 fw-bolder text-primary font-monospace" id="txtTotal">0.00</span>
                             </div>
@@ -348,8 +294,8 @@
 {{-- Modal para redactar Línea a la Medida --}}
 <div class="modal fade" id="modalLineaManual" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
+        <div class="modal-content border border-200">
+            <div class="modal-header border-bottom border-200">
                 <h5 class="modal-title"><span class="fa-solid fa-pen-to-square me-2 text-primary"></span>Agregar Concepto Personalizado</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -378,12 +324,12 @@
                     </div>
                     <div class="col-12 col-sm-6">
                         <label class="form-label fw-bold">Precio Unitario</label>
-                        <input class="form-control" type="number" id="modal_precio" value="0.00" min="0" step="0.01">
+                        <input class="form-control" type="number" id="modal_precio" value="0.00" min="0" step="0.01" onfocus="this.select()">
                     </div>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <div class="modal-footer border-top border-200">
+                <button type="button" class="btn btn-phoenix-secondary" data-bs-dismiss="modal">Cancelar</button>
                 <button type="button" class="btn btn-primary" onclick="confirmarLineaManual()">Agregar al Ticket</button>
             </div>
         </div>
@@ -446,30 +392,30 @@
             total += subtotal;
 
             const div = document.createElement('div');
-            div.className = 'pos-cart-row p-2.5 d-flex align-items-center gap-2';
+            div.className = 'border border-200 rounded-3 bg-light p-2.5 d-flex flex-column flex-sm-row align-items-stretch align-items-sm-center justify-content-between gap-2 cart-row-animate';
             div.innerHTML = `
-                <div class="flex-grow-1 min-w-0 w-100">
+                <div class="flex-grow-1 min-w-0">
                     <div class="d-flex align-items-center gap-1">
-                        <span class="badge ${item.tipo === 'B' ? 'bg-primary' : 'bg-info'} text-white fs--2">${item.tipo}</span>
+                        <span class="badge ${item.tipo === 'B' ? 'badge-phoenix-primary' : 'badge-phoenix-info'} fs--2">${item.tipo}</span>
                         <input type="hidden" name="items[${index}][tipo]" value="${item.tipo}">
-                        <span class="fw-bold fs--1 text-truncate text-1000 d-inline-block pos-cart-item-title" style="max-width: 200px;" title="${item.descripcion}">${item.descripcion}</span>
+                        <span class="fw-bold fs--1 text-truncate text-1000 d-inline-block" style="max-width: 220px;" title="${item.descripcion}">${item.descripcion}</span>
                     </div>
                     <textarea class="d-none" name="items[${index}][descripcion]">${item.descripcion}</textarea>
                     <div class="d-flex align-items-center gap-2 mt-1">
-                        <span class="fs--2 text-muted">P.U:</span>
-                        <input type="number" step="0.01" class="form-control form-control-sm font-monospace p-1 text-end" style="width: 80px; height: 26px; font-size: 11px;" value="${item.precio.toFixed(2)}" onchange="cambiarPrecioItem(${index}, this.value)" name="items[${index}][precio_unitario]">
+                        <span class="fs--2 text-600">P.U:</span>
+                        <input type="number" step="0.01" class="form-control form-control-sm font-monospace p-1 text-end" style="width: 82px; height: 26px; font-size: 11px;" value="${item.precio.toFixed(2)}" onfocus="this.select()" onchange="cambiarPrecioItem(${index}, this.value)" name="items[${index}][precio_unitario]">
                     </div>
                 </div>
 
-                {{-- Controles Responsive de Cantidad y Total --}}
-                <div class="pos-cart-row-controls d-flex align-items-center gap-2 flex-shrink-0">
-                    <div class="d-flex align-items-center gap-1">
-                        <button type="button" class="pos-qty-btn" onclick="ajustarCantidad(${index}, -1)">-</button>
-                        <input type="number" class="pos-qty-input" value="${item.cantidad}" min="1" step="1" onchange="fijarCantidadItem(${index}, this.value)" name="items[${index}][cantidad]">
-                        <button type="button" class="pos-qty-btn" onclick="ajustarCantidad(${index}, 1)">+</button>
+                {{-- Controles de Cantidad oficiales Phoenix (+/-) con clase input-spin-none --}}
+                <div class="d-flex align-items-center justify-content-between justify-content-sm-end gap-2 flex-shrink-0 pt-2 pt-sm-0 border-top border-200 border-top-sm-0">
+                    <div class="input-group input-group-sm flex-nowrap border border-300 rounded-2 bg-white" style="width: 95px;">
+                        <button type="button" class="btn btn-sm px-2 text-700 border-0" onclick="ajustarCantidad(${index}, -1)">-</button>
+                        <input type="number" class="form-control text-center input-spin-none bg-transparent border-0 px-0 font-monospace fw-bold fs--1" value="${item.cantidad}" min="1" step="1" onchange="fijarCantidadItem(${index}, this.value)" name="items[${index}][cantidad]">
+                        <button type="button" class="btn btn-sm px-2 text-700 border-0" onclick="ajustarCantidad(${index}, 1)">+</button>
                     </div>
 
-                    <div class="font-monospace fw-bold fs--1 text-end text-primary" style="min-width: 70px;">
+                    <div class="font-monospace fw-bold fs--1 text-end text-primary" style="min-width: 65px;">
                         ${simbolo}${subtotal.toFixed(2)}
                     </div>
 
@@ -573,11 +519,11 @@
         });
 
         btn.parentElement.querySelectorAll('button').forEach(b => {
-            b.classList.remove('btn-subtle-primary', 'active');
-            b.classList.add('btn-subtle-secondary');
+            b.classList.remove('btn-phoenix-primary', 'active');
+            b.classList.add('btn-phoenix-secondary');
         });
-        btn.classList.remove('btn-subtle-secondary');
-        btn.classList.add('btn-subtle-primary', 'active');
+        btn.classList.remove('btn-phoenix-secondary');
+        btn.classList.add('btn-phoenix-primary', 'active');
     }
 
     function consultarNitSat() {
