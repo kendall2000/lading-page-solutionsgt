@@ -32,6 +32,9 @@
                                 <span class="text-primary"><span data-feather="{{ \App\Support\Bloques::TIPOS[$sec->tipo]['icono'] ?? 'square' }}"></span></span>
                                 <div class="flex-1 min-w-0">
                                     <a class="fw-bold text-1000" href="{{ route('admin.secciones.edit', $sec) }}">{{ $sec->titulo ?: $sec->nombreTipo() }}</a>
+                                    @if (\App\Support\Bloques::tieneElementos($sec->tipo) && ($sec->elementos_visibles_count ?? $sec->elementos_count) === 0)
+                                        <span class="badge badge-phoenix badge-phoenix-warning ms-1">Vacía: no se muestra</span>
+                                    @endif
                                     <div class="fs--2 text-600">
                                         {{ $sec->nombreTipo() }}
                                         @if (\App\Support\Bloques::tieneElementos($sec->tipo)) · {{ $sec->elementos_count }} {{ \Illuminate\Support\Str::lower(\App\Support\Bloques::TIPOS[$sec->tipo]['elementos']['nombre']) }}@endif

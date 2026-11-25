@@ -48,7 +48,12 @@ class PaginaController extends Controller
     public function edit(Pagina $pagina): View
     {
         return view('admin.paginas.form', [
-            'pagina' => $pagina->load(['secciones' => fn ($q) => $q->withCount('elementos')]),
+            'pagina' => $pagina->load([
+                'secciones' => fn ($q) => $q->withCount([
+                    'elementos',
+                    'elementos as elementos_visibles_count' => fn ($e) => $e->where('visible', true),
+                ]),
+            ]),
             'padres' => $this->padres($pagina),
         ]);
     }

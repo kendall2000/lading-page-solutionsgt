@@ -8,6 +8,7 @@ use App\Models\Manual;
 use App\Models\MensajeContacto;
 use App\Models\Pagina;
 use App\Models\Sistema;
+use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -156,5 +157,25 @@ class SitioPublicoTest extends TestCase
             ->assertDontSee('<script>alert(1)</script>', false)
             ->assertSee('youtube-nocookie.com/embed/dQw4w9WgXcQ', false);
         $this->get("/sistemas/{$sistema->slug}")->assertSee('Cómo abrir caja');
+    }
+
+    public function test_secciones_sin_elementos_no_se_muestran_y_avisan_en_el_panel(): void
+    {
+        $inicio = Pagina::query()->where('es_inicio', true)->firstOrFail();
+        $inicio->secciones()->create(['tipo' => 'tecnologias', 'titulo' => 'Stack vacío secreto', 'orden' => 91, 'visible' => true]);
+        $inicio->secciones()->create(['tipo' => 'tarjetas', 'titulo' => 'Tarjetas vacías secretas', 'orden' => 92, 'visible' => true]);
+        $inicio->secciones()->create(['tipo' => 'preguntas', 'titulo' => 'Preguntas vacías secretas', 'orden' => 93, 'visible' => true]);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertDontSee('Stack vacío secreto')
+            ->assertDontSee('Tarjetas vacías secretas')
+            ->assertDontSee('Preguntas vacías secretas');
+
+        $admin = User::query()->firstOrFail();
+        $this->actingAs($admin)->get(route('admin.paginas.edit', $inicio))
+            ->assertOk()
+            ->assertSee('Stack vacío secreto')
+            ->assertSee('Vacía: no se muestra');
     }
 }
