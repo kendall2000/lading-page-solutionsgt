@@ -49,14 +49,29 @@ class ChatController extends Controller
     public function iniciar(Request $request, Correos $correos): JsonResponse
     {
         abort_unless(Sitio::config()->chat_activo, 404);
+        $campoContacto = $request->has('contacto') ? 'contacto' : 'correo';
+        $reglaContacto = function (string $attribute, mixed $value, \Closure $fail): void {
+            $valor = trim((string) $value);
+            if (filter_var($valor, FILTER_VALIDATE_EMAIL)) {
+                return;
+            }
+            $soloSimbolosTelefono = preg_match('/^[+\d\s\-()]+$/', $valor) === 1;
+            $digitos = preg_replace('/\D/', '', $valor);
+            if ($soloSimbolosTelefono && strlen($digitos) >= 8 && strlen($digitos) <= 15) {
+                return;
+            }
+            $fail('Escribe un correo válido o un número de WhatsApp (8 a 15 dígitos).');
+        };
         $datos = $request->validate([
             'nombre' => ['required', 'string', 'max:120', new PocosEnlaces(0)],
-            'correo' => ['required', 'email', 'max:150'],
+            $campoContacto => ['required', 'string', 'max:150', $reglaContacto],
             'telefono' => ['nullable', 'string', 'max:30'],
             'mensaje' => ['required', 'string', 'max:'.Chat::MAXIMO, new PocosEnlaces],
             'pagina' => ['nullable', 'string', 'max:255'],
             'empresa_web' => ['prohibited'], // campo trampa para robots
-        ], [], ['nombre' => 'nombre', 'correo' => 'correo', 'mensaje' => 'mensaje']);
+        ], [
+            "{$campoContacto}.required" => 'Escribe tu WhatsApp o tu correo para poder responderte.',
+        ], ['nombre' => 'nombre', 'contacto' => 'WhatsApp o correo', 'correo' => 'correo', 'mensaje' => 'mensaje']);
         // Enviado sin pasar por el widget o en menos segundos de lo que tarda una persona.
         if (Antispam::muyRapido($request->input('llegada'))) {
             throw ValidationException::withMessages(['llegada' => Antispam::MENSAJE_RAPIDO]);
@@ -66,13 +81,18 @@ class ChatController extends Controller
         $cuenta = Auth::guard('cliente')->user();
         $cuenta = $cuenta?->verificada() && $cuenta->activa ? $cuenta : null;
 
+        $valorContacto = trim((string) $datos[$campoContacto]);
+        $esCorreo = (bool) filter_var($valorContacto, FILTER_VALIDATE_EMAIL);
+        $correoVisitante = $esCorreo ? Str::lower($valorContacto) : null;
+        $telefonoVisitante = $esCorreo ? ($datos['telefono'] ?? null) : mb_substr($valorContacto, 0, 30);
+
         $token = Str::random(48);
         $conversacion = Conversacion::query()->create([
             'cuenta_id' => $cuenta?->id,
             'token_hash' => Conversacion::hashToken($token),
             'nombre' => $cuenta->nombre ?? $datos['nombre'],
-            'correo' => $cuenta->correo ?? Str::lower($datos['correo']),
-            'telefono' => $cuenta->telefono ?? $datos['telefono'] ?? null,
+            'correo' => $cuenta ? $cuenta->correo : $correoVisitante,
+            'telefono' => $cuenta ? $cuenta->telefono : $telefonoVisitante,
             'pagina' => $datos['pagina'] ?? null,
             'ip' => $request->ip(),
             'user_agent' => Str::limit((string) $request->userAgent(), 250, ''),
@@ -80,8 +100,9 @@ class ChatController extends Controller
         $this->chat->enviar($conversacion, 'visitante', $datos['mensaje']);
 
         // Aviso por correo (Correos → «Avisos a»): por si nadie está conectado al panel.
+        $contactoAviso = collect([$conversacion->correo, $conversacion->telefono])->filter()->implode(' · ') ?: '—';
         $correos->avisar('nuevo_chat', [
-            'nombre' => $conversacion->nombre, 'correo' => $conversacion->correo, 'pagina' => $conversacion->pagina ?: '—',
+            'nombre' => $conversacion->nombre, 'correo' => $contactoAviso, 'pagina' => $conversacion->pagina ?: '—',
             'mensaje' => $datos['mensaje'], 'enlace' => route('admin.chat.index', ['c' => $conversacion->id]),
         ], $conversacion->correo);
 
@@ -132,6 +153,9 @@ class ChatController extends Controller
     {
         $conversacion = $this->conversacion($request);
         abort_unless($conversacion, 404);
+        if (blank($conversacion->correo)) {
+            return response()->json(['message' => 'Esta conversación no tiene un correo registrado.'], 422);
+        }
 
         $enviado = $correos->enviar('copia_chat', $conversacion->correo, [
             'nombre' => $conversacion->nombre,
@@ -190,6 +214,7 @@ class ChatController extends Controller
                 'nombre' => $conversacion->nombre,
                 'canal' => $conversacion->canal(),
                 'estado' => $conversacion->estado,
+                'tiene_correo' => filled($conversacion->correo),
             ] : null,
             'mensajes' => $conversacion ? $this->chat->historial($conversacion) : [],
             'leido_hasta' => $conversacion ? $this->chat->leidoHasta($conversacion, 'visitante') : 0,

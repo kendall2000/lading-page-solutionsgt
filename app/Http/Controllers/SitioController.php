@@ -91,19 +91,22 @@ class SitioController extends Controller
         }
 
         $request->mergeIfMissing(['tipo' => 'contacto']);
+        $esCorto = $request->boolean('corto');
         $datos = $request->validate([
             'tipo' => ['required', Rule::in(array_keys(MensajeContacto::TIPOS))],
             'nombre' => ['required', 'string', 'max:120', new PocosEnlaces(0)],
             'empresa' => ['nullable', 'string', 'max:150', new PocosEnlaces(0)],
-            'correo' => ['required', 'email', 'max:150'],
-            'telefono' => ['nullable', 'string', 'max:30'],
+            'correo' => ['nullable', 'email', 'max:150', 'required_without:telefono'],
+            'telefono' => ['nullable', 'string', 'max:30', 'required_without:correo'],
             'sistema_id' => ['nullable', 'required_if:tipo,demo,prueba', 'exists:sistemas,id'],
-            // Un mensaje general necesita texto; si es sobre un sistema, se completa solo.
-            'mensaje' => ['nullable', Rule::requiredIf(fn () => $request->input('tipo') === 'contacto' && ! $request->filled('sistema_id')), 'string', 'max:3000', new PocosEnlaces],
+            // Un mensaje general necesita texto; si es sobre un sistema o versión corta, se completa solo.
+            'mensaje' => ['nullable', Rule::requiredIf(fn () => ! $esCorto && $request->input('tipo') === 'contacto' && ! $request->filled('sistema_id')), 'string', 'max:3000', new PocosEnlaces],
         ], [
+            'correo.required_without' => 'Escribe tu WhatsApp o tu correo para poder responderte.',
+            'telefono.required_without' => 'Escribe tu WhatsApp o tu correo para poder responderte.',
             'sistema_id.required_if' => 'Elige el sistema que quieres conocer.',
             'mensaje.required' => 'Escribe tu mensaje.',
-        ], ['nombre' => 'nombre', 'correo' => 'correo', 'mensaje' => 'mensaje', 'telefono' => 'teléfono']);
+        ], ['nombre' => 'nombre', 'correo' => 'correo', 'mensaje' => 'mensaje', 'telefono' => 'WhatsApp']);
 
         // Enviado sin pasar por el formulario o en menos segundos de lo que tarda una persona.
         if (Antispam::muyRapido($request->input('llegada'))) {
@@ -124,14 +127,20 @@ class SitioController extends Controller
                 $datos['tipo'] === 'prueba' => "Quiero probar {$sistema->nombre} por {$sistema->dias_prueba} días.",
                 $datos['tipo'] === 'demo' => "Quiero una demostración de {$sistema?->nombre}.",
                 (bool) $sistema?->proximamente => "Avísenme cuando {$sistema->nombre} esté disponible.",
-                default => "Quiero información de {$sistema?->nombre}.",
+                $sistema !== null => "Quiero información de {$sistema->nombre}.",
+                default => 'Quiero información sobre sus sistemas.',
             };
         }
 
-        // El mismo mensaje del mismo correo hace poco (doble clic, recarga o robot): no se repite ni se avisa otra vez.
-        $repetido = MensajeContacto::query()->where('correo', $datos['correo'])->where('mensaje', $datos['mensaje'])
-            ->where('created_at', '>=', now()->subMinutes(10))->exists();
-        if ($repetido) {
+        // El mismo mensaje del mismo contacto hace poco (doble clic, recarga o robot): no se repite ni se avisa otra vez.
+        $consultaRepetido = MensajeContacto::query()->where('mensaje', $datos['mensaje'])
+            ->where('created_at', '>=', now()->subMinutes(10));
+        if (filled($datos['correo'] ?? null)) {
+            $consultaRepetido->where('correo', $datos['correo']);
+        } else {
+            $consultaRepetido->where('telefono', $datos['telefono']);
+        }
+        if ($consultaRepetido->exists()) {
             return $volver()->with('contacto_ok', $datos['tipo']);
         }
 
@@ -141,16 +150,19 @@ class SitioController extends Controller
 
         $mensaje = MensajeContacto::query()->create($datos + ['ip' => $request->ip(), 'cuenta_id' => $cuentaId]);
 
-        // Correos con plantilla (Panel → Correos): aviso a «Avisos a» y confirmación al visitante.
+        // Correos con plantilla (Panel → Correos): aviso a «Avisos a» y confirmación al visitante (solo si dejó correo).
         // Si el servidor está apagado o falla, la solicitud igual queda en el panel y el intento en la bitácora.
         $correos->avisar('nuevo_mensaje', [
             'tipo' => $mensaje->tipoInfo()[2], 'nombre' => $mensaje->nombre, 'empresa' => $mensaje->empresa ?: '—',
-            'correo' => $mensaje->correo, 'telefono' => $mensaje->telefono ?: '—', 'sistema_interes' => $sistema?->nombre ?? '—',
+            'correo' => $mensaje->correo ?: '—', 'telefono' => $mensaje->telefono ?: '—',
+            'whatsapp' => $mensaje->enlaceWhatsapp() ?: '', 'sistema_interes' => $sistema?->nombre ?? '—',
             'mensaje' => $mensaje->mensaje, 'enlace' => route('admin.mensajes.show', $mensaje),
         ], $mensaje->correo);
-        $correos->enviar('confirmacion_contacto', $mensaje->correo, [
-            'nombre' => $mensaje->nombre, 'mensaje' => $mensaje->mensaje, 'enlace' => route('inicio'),
-        ]);
+        if (filled($mensaje->correo)) {
+            $correos->enviar('confirmacion_contacto', $mensaje->correo, [
+                'nombre' => $mensaje->nombre, 'mensaje' => $mensaje->mensaje, 'enlace' => route('inicio'),
+            ]);
+        }
 
         return $volver()->with('contacto_ok', $mensaje->tipo);
     }

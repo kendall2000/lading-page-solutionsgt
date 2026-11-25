@@ -14,10 +14,11 @@
                     <div class="fs-0 text-900" style="white-space: pre-line">{{ $mensaje->mensaje }}</div>
                     <hr />
                     <div class="d-flex flex-wrap gap-2">
-                        <a class="btn btn-primary btn-sm" href="mailto:{{ $mensaje->correo }}?subject={{ rawurlencode('Re: tu mensaje a '.\App\Support\Sitio::nombre()) }}"><span class="fa-solid fa-reply me-2"></span>Responder por correo</a>
-                        @if ($mensaje->telefono)
-                            @php $tel = preg_replace('/\D/', '', $mensaje->telefono); $tel = strlen($tel) === 8 ? '502'.$tel : $tel; @endphp
-                            <a class="btn btn-success btn-sm" href="https://wa.me/{{ $tel }}" target="_blank" rel="noopener"><span class="fa-brands fa-whatsapp me-2"></span>WhatsApp</a>
+                        @if ($mensaje->correo)
+                            <a class="btn btn-primary btn-sm" href="mailto:{{ $mensaje->correo }}?subject={{ rawurlencode('Re: tu mensaje a '.\App\Support\Sitio::nombre()) }}"><span class="fa-solid fa-reply me-2"></span>Responder por correo</a>
+                        @endif
+                        @if ($wa = $mensaje->enlaceWhatsapp())
+                            <a class="btn btn-success btn-sm" href="{{ $wa }}" target="_blank" rel="noopener"><span class="fa-brands fa-whatsapp me-2"></span>Responder por WhatsApp</a>
                             <a class="btn btn-phoenix-secondary btn-sm" href="tel:{{ $mensaje->telefono }}"><span class="fa-solid fa-phone me-2"></span>Llamar</a>
                         @endif
                     </div>
@@ -62,8 +63,16 @@
                                     <input class="form-control" id="dias" name="dias" type="number" min="1" max="365" required value="{{ old('dias', $mensaje->sistema?->dias_prueba ?? 15) }}" />
                                 </div>
                             </div>
+                            @if (! $mensaje->correo)
+                                <div class="alert alert-soft-warning fs--1 py-2 mt-3 mb-0 d-flex flex-wrap align-items-center justify-content-between gap-2">
+                                    <span><span class="fa-solid fa-triangle-exclamation me-2"></span>Este contacto no dejó correo, escríbele por WhatsApp.</span>
+                                    @if ($wa = $mensaje->enlaceWhatsapp())
+                                        <a class="btn btn-success btn-sm" href="{{ $wa }}" target="_blank" rel="noopener"><span class="fa-brands fa-whatsapp me-1"></span>Responder por WhatsApp</a>
+                                    @endif
+                                </div>
+                            @endif
                             <div class="d-flex flex-wrap gap-2 mt-3">
-                                <button class="btn btn-success" type="submit" name="enviar" value="1"><span class="fa-solid fa-paper-plane me-2"></span>Guardar y enviar por correo</button>
+                                <button class="btn btn-success" type="submit" name="enviar" value="1" @disabled(! $mensaje->correo)><span class="fa-solid fa-paper-plane me-2"></span>Guardar y enviar por correo</button>
                                 <button class="btn btn-phoenix-secondary" type="submit" name="enviar" value="0">Solo guardar</button>
                             </div>
                         </form>
@@ -78,7 +87,7 @@
                     <dl class="row mb-0">
                         <dt class="col-5 text-700 fw-semi-bold">Nombre</dt><dd class="col-7">{{ $mensaje->nombre }}</dd>
                         <dt class="col-5 text-700 fw-semi-bold">Empresa</dt><dd class="col-7">{{ $mensaje->empresa ?: '—' }}</dd>
-                        <dt class="col-5 text-700 fw-semi-bold">Correo</dt><dd class="col-7 text-break"><a href="mailto:{{ $mensaje->correo }}">{{ $mensaje->correo }}</a></dd>
+                        <dt class="col-5 text-700 fw-semi-bold">Correo</dt><dd class="col-7 text-break">@if ($mensaje->correo)<a href="mailto:{{ $mensaje->correo }}">{{ $mensaje->correo }}</a>@else—@endif</dd>
                         <dt class="col-5 text-700 fw-semi-bold">Teléfono</dt><dd class="col-7">{{ $mensaje->telefono ?: '—' }}</dd>
                         <dt class="col-5 text-700 fw-semi-bold">Sistema</dt><dd class="col-7">{{ $mensaje->sistema?->nombre ?? '—' }}</dd>
                         <dt class="col-5 text-700 fw-semi-bold">IP</dt><dd class="col-7 mb-0">{{ $mensaje->ip ?: '—' }}</dd>

@@ -39,10 +39,10 @@ class ConfiguracionSitio extends Model
         return Imagenes::url($this->{$campo});
     }
 
-    /** Enlace de WhatsApp con mensaje inicial (o null si no hay número). */
-    public function enlaceWhatsapp(string $texto = ''): ?string
+    /** Enlace de WhatsApp para cualquier número (8 dígitos → antepone 502 de Guatemala). */
+    public static function whatsappPara(?string $telefono, string $texto = ''): ?string
     {
-        $numero = preg_replace('/\D/', '', (string) $this->whatsapp);
+        $numero = preg_replace('/\D/', '', (string) $telefono);
         if ($numero === '') {
             return null;
         }
@@ -51,6 +51,12 @@ class ConfiguracionSitio extends Model
         }
 
         return 'https://wa.me/'.$numero.($texto !== '' ? '?text='.rawurlencode($texto) : '');
+    }
+
+    /** Enlace de WhatsApp con mensaje inicial (o null si no hay número). */
+    public function enlaceWhatsapp(string $texto = ''): ?string
+    {
+        return self::whatsappPara($this->whatsapp, $texto);
     }
 
     /** @return array<string, array{0:string,1:string}> red => [url, ícono], solo las que tienen enlace. */

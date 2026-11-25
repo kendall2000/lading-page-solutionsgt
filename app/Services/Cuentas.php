@@ -95,9 +95,12 @@ class Cuentas
 
     public function vincular(Cuenta $cuenta): void
     {
+        if (blank($cuenta->correo)) {
+            return;
+        }
         $correo = Str::lower($cuenta->correo);
         foreach ([Conversacion::class, MensajeContacto::class] as $modelo) {
-            $modelo::query()->whereNull('cuenta_id')->where(DB::raw('LOWER(correo)'), $correo)->update(['cuenta_id' => $cuenta->id]);
+            $modelo::query()->whereNull('cuenta_id')->whereNotNull('correo')->where(DB::raw('LOWER(correo)'), $correo)->update(['cuenta_id' => $cuenta->id]);
         }
     }
 }

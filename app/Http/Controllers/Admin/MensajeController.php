@@ -91,6 +91,10 @@ class MensajeController extends Controller
             return back()->with('status', 'Datos de prueba guardados (no se envió correo).');
         }
 
+        if (blank($mensaje->correo)) {
+            return back()->with('aviso', 'Este contacto no dejó correo, escríbele por WhatsApp.');
+        }
+
         $enviado = $correos->enviar('credenciales_prueba', $mensaje->correo, [
             'nombre' => $mensaje->nombre,
             'sistema_nombre' => $mensaje->sistema?->nombre ?? 'el sistema',

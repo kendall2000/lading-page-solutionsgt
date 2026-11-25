@@ -121,7 +121,7 @@ class Bloques
             'nombre' => 'Contacto', 'icono' => 'mail',
             'descripcion' => 'Formulario de contacto, teléfonos, direcciones, redes y mapa.',
             'campos' => ['etiqueta', 'titulo', 'contenido'],
-            'opciones' => ['mapa'],
+            'opciones' => ['mapa', 'corta'],
         ],
     ];
 

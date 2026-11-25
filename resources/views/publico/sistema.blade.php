@@ -34,6 +34,9 @@
                         @endif
                         @if ($sistema->ofreceDemo())
                             <a class="btn btn-lg btn-primary rounded-pill me-2 mb-2" href="?tipo=demo#solicitar">Solicitar una demo</a>
+                            @if ($waDemoSistema = $cfg->enlaceWhatsapp("Hola, vi {$sistema->nombre} en su sitio y quiero ver una demostración."))
+                                <a class="btn btn-lg btn-success rounded-pill me-2 mb-2" href="{{ $waDemoSistema }}" target="_blank" rel="noopener"><span class="fa-brands fa-whatsapp me-2"></span>Demo por WhatsApp</a>
+                            @endif
                         @endif
                         @if ($sistema->url_demo)
                             <a class="btn btn-link fs-0 p-0 mb-2" href="{{ $sistema->url_demo }}" target="_blank" rel="noopener">{{ $sistema->modalidad === 'gratis' ? 'Usar gratis' : 'Ver demo en línea' }}<span class="fa-solid fa-arrow-up-right-from-square ms-2 fs--1"></span></a>

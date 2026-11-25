@@ -62,4 +62,9 @@ class Conversacion extends Model
     {
         return mb_strtoupper(collect(preg_split('/\s+/', trim($this->nombre)))->take(2)->map(fn ($p) => mb_substr($p, 0, 1))->implode(''));
     }
+
+    public function enlaceWhatsapp(string $texto = ''): ?string
+    {
+        return ConfiguracionSitio::whatsappPara($this->telefono, $texto);
+    }
 }

@@ -64,4 +64,9 @@ class MensajeContacto extends Model
     {
         return self::TIPOS[$this->tipo] ?? self::TIPOS['contacto'];
     }
+
+    public function enlaceWhatsapp(string $texto = ''): ?string
+    {
+        return ConfiguracionSitio::whatsappPara($this->telefono, $texto);
+    }
 }

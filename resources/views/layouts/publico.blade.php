@@ -43,8 +43,10 @@
     <script type="application/ld+json">{!! json_encode($organizacion, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) !!}</script>
     @stack('datos_estructurados')
     <style>
-        .sgt-whatsapp { position: fixed; left: 1.5rem; bottom: 2.5rem; z-index: 1030; width: 3.5rem; height: 3.5rem; border-radius: 50%; background: #25d366; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.75rem; box-shadow: 0 .5rem 1.5rem rgba(0,0,0,.2); transition: transform .2s; }
-        .sgt-whatsapp:hover { color: #fff; transform: scale(1.08); }
+        .sgt-whatsapp { position: fixed; left: 1.5rem; bottom: 2.5rem; z-index: 1030; height: 3.5rem; min-width: 3.5rem; padding: 0 1rem; border-radius: 999px; background: #25d366; color: #fff; display: inline-flex; align-items: center; justify-content: center; gap: .5rem; font-size: 1.5rem; text-decoration: none; box-shadow: 0 .5rem 1.5rem rgba(0,0,0,.2); transition: transform .2s; }
+        .sgt-whatsapp:hover { color: #fff; transform: scale(1.04); }
+        @media (max-width: 767.98px) { .sgt-whatsapp { width: 3.5rem; padding: 0; } }
+        @media (prefers-reduced-motion: reduce) { .sgt-whatsapp { transition: none; } .sgt-whatsapp:hover { transform: none; } }
         .sgt-icono { width: 3.5rem; height: 3.5rem; border-radius: 1rem; display: inline-flex; align-items: center; justify-content: center; font-size: 1.5rem; background: rgba(var(--phoenix-primary-rgb), .1); color: var(--phoenix-primary); flex-shrink: 0; }
         .sgt-icono-sm { width: 2.5rem; height: 2.5rem; border-radius: .75rem; font-size: 1.1rem; }
         .sgt-captura { border-radius: .75rem; box-shadow: 0 1.5rem 3rem -1rem rgba(36, 40, 46, .25); }
@@ -170,7 +172,10 @@
 @endif
 
 @if ($whatsapp)
-    <a class="sgt-whatsapp" href="{{ $whatsapp }}" target="_blank" rel="noopener" title="Escríbeme por WhatsApp" aria-label="WhatsApp"><span class="fa-brands fa-whatsapp"></span></a>
+    <a class="sgt-whatsapp" href="{{ $whatsapp }}" target="_blank" rel="noopener" title="Escríbeme por WhatsApp" aria-label="¿Dudas? Escríbeme por WhatsApp">
+        <span class="fa-brands fa-whatsapp"></span>
+        <span class="d-none d-md-inline fs--1 fw-bold">¿Dudas? Escríbeme</span>
+    </a>
 @endif
 
 @push('vendors')

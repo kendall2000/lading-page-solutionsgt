@@ -49,7 +49,7 @@
                             <p class="fs--1 text-700 mb-2"><span class="fa-solid fa-circle-user me-1"></span>Chateas como <strong>{{ $cuentaChat->nombre }}</strong>. La conversación queda guardada en <a href="{{ route('cuenta.conversaciones') }}">Mi cuenta</a>.</p>
                         @else
                             <input class="form-control form-control-sm mb-2" name="nombre" placeholder="Tu nombre *" maxlength="120" required aria-label="Nombre" />
-                            <input class="form-control form-control-sm mb-2" name="correo" type="email" placeholder="Tu correo *" maxlength="150" required aria-label="Correo" />
+                            <input class="form-control form-control-sm mb-2" name="contacto" type="text" placeholder="WhatsApp o correo *" maxlength="150" required aria-label="WhatsApp o correo" />
                         @endif
                         <textarea class="form-control form-control-sm mb-2" name="mensaje" rows="3" placeholder="¿En qué te ayudamos? *" maxlength="2000" required aria-label="Mensaje"></textarea>
                         <div class="text-danger fs--1 mb-2 d-none" id="sgtChatError"></div>
@@ -64,10 +64,11 @@
                     <div class="border border-300 rounded-3 p-3 mt-3 text-center d-none" id="sgtChatCerrada">
                         <p class="fw-bold mb-1"><span class="fa-solid fa-circle-check text-success me-2"></span>La conversación fue cerrada</p>
                         @if ($cuentaChat)
-                            <p class="fs--1 text-700 mb-3">Gracias por escribirnos. La conversación queda guardada en <a href="{{ route('cuenta.conversaciones') }}">Mi cuenta</a>; también puedes pedir una copia por correo.</p>
+                            <p class="fs--1 text-700 mb-3" id="sgtChatCerradaConCorreo">Gracias por escribirnos. La conversación queda guardada en <a href="{{ route('cuenta.conversaciones') }}">Mi cuenta</a>; también puedes pedir una copia por correo.</p>
                         @else
-                            <p class="fs--1 text-700 mb-3">Gracias por escribirnos. Esta conversación no se guardará en este navegador; si <a href="{{ route('cuenta.registro') }}">creas una cuenta</a> con este correo, la verás ahí. ¿Quieres una copia por correo?</p>
+                            <p class="fs--1 text-700 mb-3" id="sgtChatCerradaConCorreo">Gracias por escribirnos. Esta conversación no se guardará en este navegador; si <a href="{{ route('cuenta.registro') }}">creas una cuenta</a> con este correo, la verás ahí. ¿Quieres una copia por correo?</p>
                         @endif
+                        <p class="fs--1 text-700 mb-3 d-none" id="sgtChatCerradaSinCorreo">Gracias por escribirnos. Puedes empezar un chat nuevo cuando quieras.</p>
                         <div class="d-grid gap-2">
                             <button class="btn btn-phoenix-primary btn-sm" type="button" id="sgtChatCopia"><span class="fa-solid fa-envelope me-2"></span>Enviarme una copia por correo</button>
                             <button class="btn btn-primary btn-sm" type="button" id="sgtChatNuevo"><span class="fa-solid fa-comment-medical me-2"></span>Empezar un chat nuevo</button>
@@ -161,11 +162,15 @@
             conectar();
         }
 
-        // Soporte cerró: se ocultan los campos y se ofrecen la copia por correo y un chat nuevo.
+        // Soporte cerró: se ocultan los campos y se ofrece copia por correo (solo si dejó correo) y un chat nuevo.
         function mostrarCerrada() {
             if (cerrada) return;
             cerrada = true;
             envio.classList.add('d-none');
+            var tieneCorreo = Boolean(conversacion && conversacion.tiene_correo);
+            $('sgtChatCopia').classList.toggle('d-none', !tieneCorreo);
+            $('sgtChatCerradaConCorreo').classList.toggle('d-none', !tieneCorreo);
+            $('sgtChatCerradaSinCorreo').classList.toggle('d-none', tieneCorreo);
             cerradaBox.classList.remove('d-none');
             if (!abierto()) boton.classList.add('sgt-nuevo');
             alFinal();
@@ -216,7 +221,9 @@
             e.preventDefault();
             error.classList.add('d-none');
             var f = new FormData(inicio);
-            var datos = { nombre: f.get('nombre'), correo: f.get('correo'), mensaje: f.get('mensaje'), pagina: location.pathname, llegada: f.get('llegada') };
+            var datos = { nombre: f.get('nombre'), mensaje: f.get('mensaje'), pagina: location.pathname, llegada: f.get('llegada') };
+            if (f.has('contacto')) datos.contacto = f.get('contacto');
+            else datos.correo = f.get('correo');
             if (f.get('empresa_web')) datos.empresa_web = f.get('empresa_web');
             var btn = inicio.querySelector('button');
             btn.disabled = true;

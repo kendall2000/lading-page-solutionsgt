@@ -74,19 +74,20 @@ restaurante solo sirvió de modelo inicial (estructura, módulo de Correos, Dock
 - Widget flotante de la plantilla (`support-chat`) en todo el sitio (`publico/partes/chat`), bandeja en
   `/admin/chat` (diseño `apps/chat.html`) y aviso (toast + contador) en todo el panel.
 - Tablas `conversaciones` (visitante identificado por cookie cifrada `chat_visitante`; en la base solo el
-  sha256 del token) y `mensajes_chat`. Guardar/enviar siempre con `App\Services\Chat`.
+  sha256 del token; `correo` es opcional porque el visitante puede iniciar con **correo o WhatsApp** en un
+  solo campo) y `mensajes_chat`. Guardar/enviar siempre con `App\Services\Chat`.
 - Tiempo real con **Laravel Reverb** (contenedor `solutionsgt-reverb`, puerto público 8098): evento
   `MensajeEnviado` (ShouldBroadcastNow, sin cola) por canales privados `chat.conversacion.{id}` y `chat.panel`.
   El panel se autoriza en `/broadcasting/auth` (`routes/channels.php`); el visitante en `POST /chat/auth`
   comprobando su cookie. Si Reverb no responde, el mensaje queda guardado y ambos lados consultan cada pocos
   segundos (respaldo). Echo y pusher-js compilados en `public/vendors` (sin npm).
 - `.env`: `REVERB_HOST/PORT` = cómo el sitio habla con Reverb (red interna); `REVERB_PUBLICO_*` = cómo se
-  conecta el navegador. Aviso de chat nuevo por correo con la plantilla `nuevo_chat`.
+  conecta el navegador. Aviso de chat nuevo por correo con la plantilla `nuevo_chat` (muestra teléfono si no hay correo).
 - **Lectura (✓ Enviado / ✓✓ Visto)**: `mensajes_chat.leido_en`. Solo se marca con la conversación a la vista:
   visitante con la ventana abierta (`POST /chat/leer`), panel al abrirla o consultando con `leer=1` (pestaña
   visible). `Chat::marcarLeidos()` transmite `MensajesLeidos`. Consultar mensajes nunca marca como leído.
 - **Cierre**: `Chat::cerrar()` deja un mensaje `autor=sistema`, transmite `ConversacionCerrada` y el widget ofrece
-  copia por correo (plantilla `copia_chat`) o chat nuevo. El navegador del visitante la olvida (cookie borrada);
+  copia por correo (plantilla `copia_chat`, **solo si dejó correo**) o chat nuevo. El navegador del visitante la olvida (cookie borrada);
   el panel la conserva en «Cerradas» como solo lectura, y si tiene `cuenta_id` el cliente la ve en «Mi cuenta».
 - En pruebas el broadcaster es `null`: las JSON con cookie necesitan `withCredentials()`.
 
@@ -102,7 +103,10 @@ restaurante solo sirvió de modelo inicial (estructura, módulo de Correos, Dock
   `/{pagina:slug}`. Las direcciones de `Pagina::RESERVADAS` no se pueden usar como página.
 - Software: `sistemas` con `categoria_id`, `modalidad` (gratis/premium/a_medida), `precio`, `acepta_demo`,
   `acepta_prueba` y `dias_prueba`. El formulario (`publico/partes/formulario`) guarda en `mensajes_contacto` con
-  `tipo` contacto/demo/prueba; desde el panel se envían credenciales de prueba (clave cifrada) con la plantilla
+  `tipo` contacto/demo/prueba y pide **correo o WhatsApp (al menos uno)**: si solo deja WhatsApp, `correo` queda
+  `null`, no se envía confirmación por correo, el aviso `nuevo_mensaje` incluye `whatsapp` (`wa.me`) y en el panel
+  se bloquea el envío de credenciales por correo sugiriendo WhatsApp. El bloque `contacto` acepta la opción `corta`
+  para usarse compacto en el inicio. Desde el panel se envían credenciales de prueba (clave cifrada) con la plantilla
   `credenciales_prueba`. El usuario de prueba se crea a mano en el sistema correspondiente.
 - Manuales: `manuales` (Markdown, PDF en Contabo, video YouTube/Vimeo), por sistema.
 - SEO (`SeoController`): `/sitemap.xml` y `/robots.txt` se arman solos con lo publicado (no crear

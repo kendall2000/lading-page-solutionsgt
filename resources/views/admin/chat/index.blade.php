@@ -136,15 +136,20 @@
                                     @if ($actual->cuenta_id)<a class="badge badge-phoenix badge-phoenix-success fs--2 ms-1" href="{{ route('admin.cuentas.edit', $actual->cuenta_id) }}" title="La ve en «Mi cuenta»">Tiene cuenta</a>@endif
                                 </h5>
                                 <p class="fs--2 text-700 mb-0">
-                                    <a href="mailto:{{ $actual->correo }}">{{ $actual->correo }}</a>
-                                    @if ($actual->telefono) &middot; {{ $actual->telefono }}@endif
-                                    @if ($actual->pagina) &middot; <span title="Página donde empezó">{{ $actual->pagina }}</span>@endif
+                                    @if ($actual->correo)<a href="mailto:{{ $actual->correo }}">{{ $actual->correo }}</a>@endif
+                                    @if ($actual->telefono)@if ($actual->correo) &middot; @endif{{ $actual->telefono }}@endif
+                                    @if ($actual->pagina)@if ($actual->correo || $actual->telefono) &middot; @endif<span title="Página donde empezó">{{ $actual->pagina }}</span>@endif
                                 </p>
                             </div>
                         </div>
 
                         {{-- Acciones del header --}}
                         <div class="d-flex align-items-center gap-2">
+                            @if ($wa = $actual->enlaceWhatsapp())
+                                <a class="btn btn-success btn-sm" href="{{ $wa }}" target="_blank" rel="noopener">
+                                    <span class="fa-brands fa-whatsapp me-1"></span>WhatsApp
+                                </a>
+                            @endif
                             @if ($actual->estado === 'abierta')
                                 <form method="POST" action="{{ route('admin.chat.cerrar', $actual) }}" onsubmit="return confirm('¿Cerrar la conversación? Al visitante le aparecerá el aviso y podrá pedir una copia por correo; su navegador la olvidará.')">
                                     @csrf

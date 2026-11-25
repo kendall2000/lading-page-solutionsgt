@@ -1,5 +1,10 @@
 {{-- Botones de un sistema en el catálogo: detalle, usar gratis, pedir demostración o prueba. --}}
-@php $tam = ($chico ?? false) ? 'btn-sm' : ''; @endphp
+@php
+    $tam = ($chico ?? false) ? 'btn-sm' : '';
+    $waDemo = $sis->ofreceDemo()
+        ? \App\Support\Sitio::config()->enlaceWhatsapp("Hola, vi {$sis->nombre} en su sitio y quiero ver una demostración.")
+        : null;
+@endphp
 <div class="d-flex flex-wrap gap-2 justify-content-center justify-content-md-start">
     <a class="btn btn-primary {{ $tam }}" href="{{ route('sistema', $sis->slug) }}">Ver detalle</a>
     @if ($sis->modalidad === 'gratis' && $sis->url_demo)
@@ -13,5 +18,8 @@
     @endif
     @if ($sis->ofreceDemo())
         <a class="btn btn-phoenix-primary {{ $tam }}" href="{{ route('sistema', ['sistema' => $sis->slug, 'tipo' => 'demo']) }}#solicitar">Pedir demo</a>
+    @endif
+    @if ($waDemo)
+        <a class="btn btn-success {{ $tam }}" href="{{ $waDemo }}" target="_blank" rel="noopener"><span class="fa-brands fa-whatsapp me-1"></span>Demo por WhatsApp</a>
     @endif
 </div>

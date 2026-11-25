@@ -207,7 +207,13 @@
                                     @break
                                 @default
                                     @php
-                                        $textos = ['solo_destacados' => 'Solo los destacados', 'filtros' => 'Mostrar filtros (categoría, tipo, prueba)', 'mapa' => 'Mostrar el mapa de la dirección principal', 'whatsapp' => 'Agregar botón de WhatsApp'];
+                                        $textos = [
+                                            'solo_destacados' => 'Solo los destacados',
+                                            'filtros' => 'Mostrar filtros (categoría, tipo, prueba)',
+                                            'mapa' => 'Mostrar el mapa de la dirección principal',
+                                            'corta' => 'Versión corta (solo nombre, WhatsApp/correo, sistema y botón; ideal para el inicio)',
+                                            'whatsapp' => 'Agregar botón de WhatsApp',
+                                        ];
                                     @endphp
                                     <div class="form-check form-switch mb-2">
                                         <input class="form-check-input" id="op_{{ $opcion }}" name="opciones[{{ $opcion }}]" type="checkbox" value="1" @checked($op($opcion)) />

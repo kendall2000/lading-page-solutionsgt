@@ -82,7 +82,7 @@ class SeccionController extends Controller
         ] + Imagenes::MENSAJES);
 
         $opciones = array_filter($datos['opciones'] ?? [], fn ($v) => $v !== null && $v !== '');
-        foreach (['solo_destacados', 'filtros', 'mapa', 'whatsapp'] as $check) {
+        foreach (['solo_destacados', 'filtros', 'mapa', 'corta', 'whatsapp'] as $check) {
             if (in_array($check, Bloques::TIPOS[$seccion->tipo]['opciones'], true)) {
                 $opciones[$check] = $request->boolean("opciones.{$check}");
             }
